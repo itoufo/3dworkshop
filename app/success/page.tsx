@@ -1,14 +1,43 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+
+interface Customer {
+  id: string
+  name: string
+  email: string
+  phone?: string
+}
+
+interface Workshop {
+  id: string
+  title: string
+  description: string
+  price: number
+  duration: string
+  location?: string
+}
+
+interface Booking {
+  id: string
+  workshop_id: string
+  customer_id: string
+  booking_date: string
+  booking_time: string
+  participants: number
+  total_amount: number
+  status: string
+  payment_status: string
+  workshop?: Workshop
+  customer?: Customer
+}
 
 export default function SuccessPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [booking, setBooking] = useState<any>(null)
+  const [booking, setBooking] = useState<Booking | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {

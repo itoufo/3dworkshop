@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
-import bcrypt from 'bcryptjs'
 
 export default function AdminLayout({
   children,

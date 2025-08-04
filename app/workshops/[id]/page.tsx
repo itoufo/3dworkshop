@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import { loadStripe } from '@stripe/stripe-js'
+import Image from 'next/image'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -24,23 +25,23 @@ export default function WorkshopDetail() {
   })
 
   useEffect(() => {
+    async function fetchWorkshop() {
+      const { data, error } = await supabase
+        .from('workshops')
+        .select('*')
+        .eq('id', params.id)
+        .single()
+
+      if (error) {
+        console.error('Error fetching workshop:', error)
+      } else {
+        setWorkshop(data as Workshop)
+      }
+      setLoading(false)
+    }
+    
     fetchWorkshop()
   }, [params.id])
-
-  async function fetchWorkshop() {
-    const { data, error } = await supabase
-      .from('workshops')
-      .select('*')
-      .eq('id', params.id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching workshop:', error)
-    } else {
-      setWorkshop(data as Workshop)
-    }
-    setLoading(false)
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -136,11 +137,15 @@ export default function WorkshopDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div>
             {workshop.image_url && (
-              <img
-                src={workshop.image_url}
-                alt={workshop.title}
-                className="w-full h-96 object-cover rounded-lg mb-6"
-              />
+              <div className="relative w-full h-96 mb-6">
+                <Image
+                  src={workshop.image_url}
+                  alt={workshop.title}
+                  fill
+                  className="object-cover rounded-lg"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              </div>
             )}
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{workshop.title}</h1>
             <p className="text-gray-600 mb-6">{workshop.description}</p>

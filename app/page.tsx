@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 
@@ -49,11 +50,15 @@ export default async function Home() {
                 className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
               >
                 {workshop.image_url && (
-                  <img
-                    src={workshop.image_url}
-                    alt={workshop.title}
-                    className="w-full h-48 object-cover rounded-t-lg"
-                  />
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={workshop.image_url}
+                      alt={workshop.title}
+                      fill
+                      className="object-cover rounded-t-lg"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
                 )}
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
