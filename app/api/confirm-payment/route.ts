@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
         status: 'confirmed',
         payment_status: 'paid',
         stripe_session_id: sessionId,
-        stripe_payment_intent_id: session.payment_intent?.id || null
+        stripe_payment_intent_id: typeof session.payment_intent === 'string' 
+          ? session.payment_intent 
+          : session.payment_intent?.id || null
       })
       .eq('id', bookingId)
       .select(`
