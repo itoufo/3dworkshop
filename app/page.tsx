@@ -67,6 +67,25 @@ export default async function Home() {
                   <p className="text-gray-600 mb-4 line-clamp-2">
                     {workshop.description}
                   </p>
+                  {/* 開催日時の表示 */}
+                  {(workshop.event_date || workshop.event_time) && (
+                    <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      {workshop.event_date && (
+                        <div className="text-lg font-bold text-indigo-900 mb-1">
+                          📅 {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+                            year: '2-digit',
+                            month: '2-digit',
+                            day: '2-digit'
+                          }).replace(/\//g, '/')}
+                        </div>
+                      )}
+                      {workshop.event_time && (
+                        <div className="text-lg font-semibold text-indigo-700">
+                          🕰️ {workshop.event_time.slice(0, 5)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-2xl font-bold text-indigo-600">
                       ¥{workshop.price.toLocaleString()}
@@ -75,8 +94,11 @@ export default async function Home() {
                       {workshop.duration}分
                     </span>
                   </div>
-                  <div className="mt-4 text-sm text-gray-500">
-                    最大{workshop.max_participants}名
+                  <div className="mt-4 flex justify-between items-center text-sm text-gray-500">
+                    <span>最大{workshop.max_participants}名</span>
+                    {workshop.location && (
+                      <span>📍 {workshop.location}</span>
+                    )}
                   </div>
                 </div>
               </Link>

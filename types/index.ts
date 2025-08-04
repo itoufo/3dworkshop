@@ -26,6 +26,8 @@ export interface Customer {
   email: string
   name: string
   phone?: string
+  age?: number
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say'
   stripe_customer_id?: string
   created_at: string
   updated_at: string

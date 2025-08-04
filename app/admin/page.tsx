@@ -225,6 +225,12 @@ export default function AdminDashboard() {
                   電話番号
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  年齢
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  性別
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   登録日
                 </th>
               </tr>
@@ -240,6 +246,15 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {customer.phone || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {customer.age || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {customer.gender === 'male' ? '男性' : 
+                     customer.gender === 'female' ? '女性' :
+                     customer.gender === 'other' ? 'その他' :
+                     customer.gender === 'prefer_not_to_say' ? '回答しない' : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(customer.created_at).toLocaleDateString('ja-JP')}
@@ -270,6 +285,9 @@ export default function AdminDashboard() {
                     タイトル
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    開催日時
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     価格
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -288,6 +306,18 @@ export default function AdminDashboard() {
                   <tr key={workshop.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {workshop.title}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {workshop.event_date ? (
+                        <div>
+                          <div>{new Date(workshop.event_date).toLocaleDateString('ja-JP')}</div>
+                          {workshop.event_time && (
+                            <div className="text-xs text-gray-500">{workshop.event_time}</div>
+                          )}
+                        </div>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ¥{workshop.price.toLocaleString()}
