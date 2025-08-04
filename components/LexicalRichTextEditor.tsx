@@ -24,8 +24,9 @@ import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPl
 import { TRANSFORMERS } from '@lexical/markdown'
 import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin'
 import ToolbarPlugin from './plugins/ToolbarPlugin'
-import ImagePlugin from './plugins/ImagePlugin'
+import ImagePlugin, { INSERT_IMAGE_COMMAND } from './plugins/ImagePlugin'
 import { ImageNode } from './nodes/ImageNode'
+import EditorRefPlugin from './plugins/EditorRefPlugin'
 import { 
   Eye, 
   EyeOff, 
@@ -186,8 +187,14 @@ export default function LexicalRichTextEditor({
     if (!file) return
 
     try {
-      await uploadImage(file)
-      // 画像はImagePluginで処理される
+      const imageUrl = await uploadImage(file)
+      // エディタがマウントされている場合のみ画像を挿入
+      if (window.lexicalEditor) {
+        window.lexicalEditor.dispatchCommand(
+          INSERT_IMAGE_COMMAND,
+          { src: imageUrl, altText: file.name }
+        )
+      }
     } catch (error) {
       console.error('Error uploading file:', error)
       alert('ファイルのアップロードに失敗しました')
@@ -276,6 +283,7 @@ export default function LexicalRichTextEditor({
               <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
               <TabIndentationPlugin />
               <HtmlPlugin html={content} />
+              <EditorRefPlugin />
             </div>
           </div>
         </LexicalComposer>

@@ -2,10 +2,10 @@
 
 import { useEffect } from 'react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $insertNodes, COMMAND_PRIORITY_EDITOR } from 'lexical'
+import { $insertNodes, COMMAND_PRIORITY_EDITOR, createCommand } from 'lexical'
 import { ImageNode, $createImageNode } from '../nodes/ImageNode'
 
-export const INSERT_IMAGE_COMMAND = 'INSERT_IMAGE_COMMAND'
+export const INSERT_IMAGE_COMMAND = createCommand<{src: string; altText?: string}>('INSERT_IMAGE_COMMAND')
 
 interface ImagePluginProps {
   uploadImage?: (file: File) => Promise<string>
@@ -20,8 +20,8 @@ export default function ImagePlugin(_props: ImagePluginProps) {
     }
 
     return editor.registerCommand(
-      INSERT_IMAGE_COMMAND as never,
-      (payload: { src: string; altText?: string }) => {
+      INSERT_IMAGE_COMMAND,
+      (payload) => {
         const imageNode = $createImageNode({
           src: payload.src,
           altText: payload.altText || '',

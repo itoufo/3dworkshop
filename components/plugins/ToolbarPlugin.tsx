@@ -25,8 +25,7 @@ import {
 import { $createHeadingNode } from '@lexical/rich-text'
 import { $setBlocksType } from '@lexical/selection'
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
-
-const INSERT_IMAGE_COMMAND = 'INSERT_IMAGE_COMMAND'
+import { INSERT_IMAGE_COMMAND } from './ImagePlugin'
 
 import {
   Bold,
@@ -181,30 +180,41 @@ export default function ToolbarPlugin({ uploadImage }: ToolbarPluginProps) {
   }
 
   const insertImage = async () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file && uploadImage) {
-        try {
-          const imageUrl = await uploadImage(file)
-          editor.update(() => {
-            const selection = $getSelection()
-            if ($isRangeSelection(selection)) {
-              editor.dispatchCommand(
-                INSERT_IMAGE_COMMAND as never,
-                { src: imageUrl, altText: file.name } as never
-              )
-            }
-          })
-        } catch (error) {
-          console.error('Error uploading image:', error)
-          alert('画像のアップロードに失敗しました')
+    // モーダルでアップロードかURLを選択
+    const choice = window.confirm('画像をアップロードしますか？\n\nOK: ファイルをアップロード\nキャンセル: URLを入力')
+    
+    if (choice) {
+      // ファイルアップロード
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0]
+        if (file && uploadImage) {
+          try {
+            const imageUrl = await uploadImage(file)
+            editor.dispatchCommand(
+              INSERT_IMAGE_COMMAND,
+              { src: imageUrl, altText: file.name }
+            )
+          } catch (error) {
+            console.error('Error uploading image:', error)
+            alert('画像のアップロードに失敗しました')
+          }
         }
       }
+      input.click()
+    } else {
+      // URL入力
+      const url = window.prompt('画像URLを入力してください:')
+      if (url) {
+        const altText = window.prompt('代替テキストを入力してください (オプション):') || ''
+        editor.dispatchCommand(
+          INSERT_IMAGE_COMMAND,
+          { src: url, altText }
+        )
+      }
     }
-    input.click()
   }
 
   const ToolbarButton = ({
