@@ -5,6 +5,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
+  ssr: false,
+})
 
 export default function EditWorkshop() {
   const params = useParams()
@@ -15,11 +20,14 @@ export default function EditWorkshop() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    rich_description: '',
     price: 0,
     duration: 0,
     max_participants: 10,
     location: '',
-    image_url: ''
+    image_url: '',
+    event_date: '',
+    event_time: ''
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -43,11 +51,14 @@ export default function EditWorkshop() {
         setFormData({
           title: data.title,
           description: data.description || '',
+          rich_description: data.rich_description || '',
           price: data.price,
           duration: data.duration,
           max_participants: data.max_participants,
           location: data.location || '',
-          image_url: data.image_url || ''
+          image_url: data.image_url || '',
+          event_date: data.event_date || '',
+          event_time: data.event_time || ''
         })
         // 既存画像をプレビューに設定
         if (data.image_url) {
@@ -104,11 +115,14 @@ export default function EditWorkshop() {
         .update({
           title: formData.title,
           description: formData.description,
+          rich_description: formData.rich_description || null,
           price: formData.price,
           duration: formData.duration,
           max_participants: formData.max_participants,
           location: formData.location,
           image_url: imageUrl,
+          event_date: formData.event_date || null,
+          event_time: formData.event_time || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -200,14 +214,54 @@ export default function EditWorkshop() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                説明
+                簡潔な説明 *
               </label>
               <textarea
-                rows={4}
+                required
+                rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="一覧に表示される簡潔な説明"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                詳細説明
+              </label>
+              <RichTextEditor
+                content={formData.rich_description}
+                onChange={(content) => setFormData({ ...formData, rich_description: content })}
+                placeholder="ワークショップの詳細な内容を入力"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  開催日 *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.event_date}
+                  onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  開始時刻 *
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={formData.event_time}
+                  onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -4,16 +4,25 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
+  ssr: false,
+})
 
 export default function NewWorkshopPage() {
   const router = useRouter()
   const [workshop, setWorkshop] = useState({
     title: '',
     description: '',
+    rich_description: '',
     price: '',
     duration: '',
     max_participants: '',
-    image_url: ''
+    location: '',
+    image_url: '',
+    event_date: '',
+    event_time: ''
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -61,10 +70,14 @@ export default function NewWorkshopPage() {
         .insert({
           title: workshop.title,
           description: workshop.description,
+          rich_description: workshop.rich_description || null,
           price: parseInt(workshop.price),
           duration: parseInt(workshop.duration),
           max_participants: parseInt(workshop.max_participants),
-          image_url: imageUrl || null
+          location: workshop.location || null,
+          image_url: imageUrl || null,
+          event_date: workshop.event_date || null,
+          event_time: workshop.event_time || null
         })
 
       if (error) throw error
@@ -100,18 +113,57 @@ export default function NewWorkshopPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              説明 *
+              簡潔な説明 *
             </label>
             <textarea
               required
-              rows={4}
+              rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               value={workshop.description}
               onChange={(e) => setWorkshop({ ...workshop, description: e.target.value })}
+              placeholder="一覧に表示される簡潔な説明"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              詳細説明
+            </label>
+            <RichTextEditor
+              content={workshop.rich_description}
+              onChange={(content) => setWorkshop({ ...workshop, rich_description: content })}
+              placeholder="ワークショップの詳細な内容を入力"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                開催日 *
+              </label>
+              <input
+                type="date"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                value={workshop.event_date}
+                onChange={(e) => setWorkshop({ ...workshop, event_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                開始時刻 *
+              </label>
+              <input
+                type="time"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                value={workshop.event_time}
+                onChange={(e) => setWorkshop({ ...workshop, event_time: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 価格（円） *
@@ -151,6 +203,18 @@ export default function NewWorkshopPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 value={workshop.max_participants}
                 onChange={(e) => setWorkshop({ ...workshop, max_participants: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                開催場所
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                value={workshop.location}
+                onChange={(e) => setWorkshop({ ...workshop, location: e.target.value })}
+                placeholder="例: 東京都渋谷区"
               />
             </div>
           </div>

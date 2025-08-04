@@ -15,8 +15,6 @@ export default function WorkshopDetail() {
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
   const [loading, setLoading] = useState(true)
   const [booking, setBooking] = useState({
-    date: '',
-    time: '',
     participants: 1,
     name: '',
     email: '',
@@ -64,14 +62,14 @@ export default function WorkshopDetail() {
 
       if (customerError) throw customerError
 
-      // 予約情報を保存
+      // 予約情報を保存（ワークショップの日時を使用）
       const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           workshop_id: workshop.id,
           customer_id: customer.id,
-          booking_date: booking.date,
-          booking_time: booking.time,
+          booking_date: workshop.event_date || new Date().toISOString().split('T')[0],
+          booking_time: workshop.event_time || '10:00',
           participants: booking.participants,
           total_amount: workshop.price * booking.participants,
           notes: booking.notes,
@@ -150,9 +148,35 @@ export default function WorkshopDetail() {
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{workshop.title}</h1>
             <p className="text-gray-600 mb-6">{workshop.description}</p>
             
+            {/* リッチテキストの詳細説明を表示 */}
+            {workshop.rich_description && (
+              <div 
+                className="prose prose-sm max-w-none mb-6 p-4 bg-gray-50 rounded-lg"
+                dangerouslySetInnerHTML={{ __html: workshop.rich_description }}
+              />
+            )}
+            
             <div className="bg-white rounded-lg p-6 shadow">
-              <h3 className="font-semibold text-lg mb-4">詳細情報</h3>
+              <h3 className="font-semibold text-lg mb-4">開催情報</h3>
               <dl className="space-y-2">
+                {workshop.event_date && (
+                  <div className="flex justify-between">
+                    <dt className="text-gray-600">開催日</dt>
+                    <dd className="font-semibold">
+                      {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </dd>
+                  </div>
+                )}
+                {workshop.event_time && (
+                  <div className="flex justify-between">
+                    <dt className="text-gray-600">開始時刻</dt>
+                    <dd className="font-semibold">{workshop.event_time}</dd>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <dt className="text-gray-600">料金</dt>
                   <dd className="font-semibold">¥{workshop.price.toLocaleString()}</dd>
@@ -165,39 +189,35 @@ export default function WorkshopDetail() {
                   <dt className="text-gray-600">最大参加人数</dt>
                   <dd>{workshop.max_participants}名</dd>
                 </div>
+                {workshop.location && (
+                  <div className="flex justify-between">
+                    <dt className="text-gray-600">開催場所</dt>
+                    <dd>{workshop.location}</dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
 
           <div className="bg-white rounded-lg p-6 shadow">
             <h2 className="text-2xl font-bold mb-6">予約フォーム</h2>
+            
+            {/* 開催日時の確認表示 */}
+            {workshop.event_date && workshop.event_time && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">予約日時:</span> 
+                  {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })} 
+                  {workshop.event_time}〜
+                </p>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  予約日
-                </label>
-                <input
-                  type="date"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  value={booking.date}
-                  onChange={(e) => setBooking({ ...booking, date: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  時間
-                </label>
-                <input
-                  type="time"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  value={booking.time}
-                  onChange={(e) => setBooking({ ...booking, time: e.target.value })}
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   参加人数

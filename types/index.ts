@@ -2,10 +2,14 @@ export interface Workshop {
   id: string
   title: string
   description: string
+  rich_description?: string
   price: number
   duration: number
   max_participants: number
+  location?: string
   image_url?: string
+  event_date?: string
+  event_time?: string
   available_dates?: AvailableDate[]
   stripe_price_id?: string
   created_at: string
