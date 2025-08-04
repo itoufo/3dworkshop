@@ -3,6 +3,10 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 
+// キャッシュを無効化してリアルタイムデータを取得
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function getWorkshops() {
   const { data, error } = await supabase
     .from('workshops')
@@ -14,6 +18,7 @@ async function getWorkshops() {
     return []
   }
 
+  console.log('Homepage workshops:', data)
   return data as Workshop[]
 }
 

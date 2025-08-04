@@ -57,7 +57,57 @@ BEGIN
 END $$;
 ```
 
-### 3. 実行後の確認
+### 3. RLS（Row Level Security）ポリシーの設定
+
+**重要: ワークショップが表示されない場合は、このSQLも実行してください**
+
+```sql
+-- Enable RLS on workshops table
+ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Allow public read access to workshops" ON public.workshops;
+DROP POLICY IF EXISTS "Allow all operations for workshops" ON public.workshops;
+
+-- Create policy to allow public read access
+CREATE POLICY "Allow public read access to workshops" 
+ON public.workshops 
+FOR SELECT 
+TO public 
+USING (true);
+
+-- Create policy to allow all operations (for development)
+CREATE POLICY "Allow all operations for workshops" 
+ON public.workshops 
+FOR ALL 
+TO public 
+USING (true)
+WITH CHECK (true);
+
+-- Similarly for customers and bookings tables
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+
+-- Allow all operations for customers and bookings (for development)
+DROP POLICY IF EXISTS "Allow all operations for customers" ON public.customers;
+DROP POLICY IF EXISTS "Allow all operations for bookings" ON public.bookings;
+
+CREATE POLICY "Allow all operations for customers" 
+ON public.customers 
+FOR ALL 
+TO public 
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow all operations for bookings" 
+ON public.bookings 
+FOR ALL 
+TO public 
+USING (true)
+WITH CHECK (true);
+```
+
+### 4. 実行後の確認
 - 「Table Editor」でworkshopsテーブルを確認
 - 新しいカラムが追加されていることを確認：
   - event_date (date型)

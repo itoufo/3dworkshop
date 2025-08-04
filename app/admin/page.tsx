@@ -35,10 +35,15 @@ export default function AdminDashboard() {
         .order('created_at', { ascending: false })
 
       // ワークショップ情報を取得
-      const { data: workshopsData } = await supabase
+      const { data: workshopsData, error: workshopsError } = await supabase
         .from('workshops')
         .select('*')
         .order('created_at', { ascending: false })
+      
+      if (workshopsError) {
+        console.error('Error fetching workshops:', workshopsError)
+      }
+      console.log('Fetched workshops:', workshopsData)
 
       setBookings(bookingsData || [])
       setCustomers(customersData || [])
