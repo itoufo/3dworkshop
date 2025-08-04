@@ -42,6 +42,13 @@ export default function NewWorkshopPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    
+    // 価格のバリデーション
+    if (parseInt(workshop.price) < 50) {
+      alert('価格は50円以上で設定してください')
+      return
+    }
+    
     setUploading(true)
 
     try {
@@ -171,11 +178,13 @@ export default function NewWorkshopPage() {
               <input
                 type="number"
                 required
-                min="0"
+                min="50"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 value={workshop.price}
                 onChange={(e) => setWorkshop({ ...workshop, price: e.target.value })}
+                placeholder="最低50円から"
               />
+              <p className="text-xs text-gray-500 mt-1">Stripeの最低決済金額は50円です</p>
             </div>
 
             <div>
