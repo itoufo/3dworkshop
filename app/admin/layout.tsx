@@ -25,12 +25,24 @@ export default function AdminLayout({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 簡易的な認証（本番環境では環境変数からハッシュ化されたパスワードと比較）
-    if (password === 'admin123') {
-      Cookies.set('admin_auth', 'true', { expires: 1 }) // 1日有効
-      setIsAuthenticated(true)
-    } else {
-      alert('パスワードが正しくありません')
+    try {
+      // APIエンドポイントで認証
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password })
+      })
+      
+      if (response.ok) {
+        Cookies.set('admin_auth', 'true', { expires: 1 }) // 1日有効
+        setIsAuthenticated(true)
+      } else {
+        alert('パスワードが正しくありません')
+      }
+    } catch (error) {
+      alert('認証エラーが発生しました')
     }
   }
 
