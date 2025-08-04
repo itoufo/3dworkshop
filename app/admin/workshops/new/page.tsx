@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
-const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
+const AdvancedRichTextEditor = dynamic(() => import('@/components/AdvancedRichTextEditor'), {
   ssr: false,
 })
 
@@ -129,10 +129,10 @@ export default function NewWorkshopPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               詳細説明
             </label>
-            <RichTextEditor
+            <AdvancedRichTextEditor
               content={workshop.rich_description}
               onChange={(content) => setWorkshop({ ...workshop, rich_description: content })}
-              placeholder="ワークショップの詳細な内容を入力"
+              placeholder="ワークショップの詳細な内容を入力してください。太字、見出し、リスト、画像などが使用できます。"
             />
           </div>
 
