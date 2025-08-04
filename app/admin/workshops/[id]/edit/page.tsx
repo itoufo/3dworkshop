@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
+import Image from 'next/image'
 
 export default function EditWorkshop() {
   const params = useParams()
@@ -20,6 +21,8 @@ export default function EditWorkshop() {
     location: '',
     image_url: ''
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     fetchWorkshop()
@@ -46,6 +49,10 @@ export default function EditWorkshop() {
           location: data.location || '',
           image_url: data.image_url || ''
         })
+        // 既存画像をプレビューに設定
+        if (data.image_url) {
+          setImagePreview(data.image_url)
+        }
       }
     } catch (error) {
       console.error('Error fetching workshop:', error)
@@ -55,11 +62,43 @@ export default function EditWorkshop() {
     }
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
 
     try {
+      let imageUrl = formData.image_url
+
+      // 新しい画像がアップロードされた場合
+      if (imageFile) {
+        const formDataUpload = new FormData()
+        formDataUpload.append('file', imageFile)
+
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formDataUpload
+        })
+
+        if (!response.ok) {
+          throw new Error('画像のアップロードに失敗しました')
+        }
+
+        const data = await response.json()
+        imageUrl = data.imageUrl
+      }
+
       const { error } = await supabase
         .from('workshops')
         .update({
@@ -69,7 +108,7 @@ export default function EditWorkshop() {
           duration: formData.duration,
           max_participants: formData.max_participants,
           location: formData.location,
-          image_url: formData.image_url,
+          image_url: imageUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -231,15 +270,54 @@ export default function EditWorkshop() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                画像URL
+                メイン画像
               </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="https://example.com/image.jpg"
-              />
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleImageChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="text-xs text-gray-500">JPEG, PNG, WebP形式 (最大5MB)</p>
+                
+                {imagePreview && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-700 mb-2">プレビュー:</p>
+                    <div className="relative w-full h-48">
+                      <Image
+                        src={imagePreview}
+                        alt="プレビュー"
+                        fill
+                        className="object-cover rounded-md"
+                        unoptimized={imagePreview.startsWith('data:')}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    または画像URLを入力
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.image_url}
+                    onChange={(e) => {
+                      setFormData({ ...formData, image_url: e.target.value })
+                      if (e.target.value && !imageFile) {
+                        setImagePreview(e.target.value)
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="https://example.com/image.jpg"
+                    disabled={!!imageFile}
+                  />
+                  {imageFile && (
+                    <p className="text-xs text-gray-500 mt-1">画像ファイルを選択中のため、URLは入力できません</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-between pt-6">

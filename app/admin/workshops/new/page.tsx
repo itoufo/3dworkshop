@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
 
 export default function NewWorkshopPage() {
   const router = useRouter()
@@ -14,11 +15,47 @@ export default function NewWorkshopPage() {
     max_participants: '',
     image_url: ''
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setUploading(true)
 
     try {
+      let imageUrl = workshop.image_url
+
+      // 画像ファイルがある場合はアップロード
+      if (imageFile) {
+        const formData = new FormData()
+        formData.append('file', imageFile)
+
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!response.ok) {
+          throw new Error('画像のアップロードに失敗しました')
+        }
+
+        const data = await response.json()
+        imageUrl = data.imageUrl
+      }
+
       const { error } = await supabase
         .from('workshops')
         .insert({
@@ -27,7 +64,7 @@ export default function NewWorkshopPage() {
           price: parseInt(workshop.price),
           duration: parseInt(workshop.duration),
           max_participants: parseInt(workshop.max_participants),
-          image_url: workshop.image_url || null
+          image_url: imageUrl || null
         })
 
       if (error) throw error
@@ -37,6 +74,8 @@ export default function NewWorkshopPage() {
     } catch (error) {
       console.error('Error adding workshop:', error)
       alert('ワークショップの追加に失敗しました')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -118,14 +157,48 @@ export default function NewWorkshopPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              画像URL
+              メイン画像
             </label>
-            <input
-              type="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              value={workshop.image_url}
-              onChange={(e) => setWorkshop({ ...workshop, image_url: e.target.value })}
-            />
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleImageChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <p className="text-xs text-gray-500">JPEG, PNG, WebP形式 (最大5MB)</p>
+              
+              {imagePreview && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-700 mb-2">プレビュー:</p>
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={imagePreview}
+                      alt="プレビュー"
+                      fill
+                      className="object-cover rounded-md"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  または画像URLを入力
+                </label>
+                <input
+                  type="url"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={workshop.image_url}
+                  onChange={(e) => setWorkshop({ ...workshop, image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                  disabled={!!imageFile}
+                />
+                {imageFile && (
+                  <p className="text-xs text-gray-500 mt-1">画像ファイルを選択中のため、URLは入力できません</p>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-4 pt-4">
@@ -138,9 +211,10 @@ export default function NewWorkshopPage() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              disabled={uploading}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              追加
+              {uploading ? 'アップロード中...' : '追加'}
             </button>
           </div>
         </form>
