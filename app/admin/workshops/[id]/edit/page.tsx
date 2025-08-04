@@ -7,7 +7,7 @@ import { Workshop } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
-const AdvancedRichTextEditor = dynamic(() => import('@/components/AdvancedRichTextEditor'), {
+const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
 })
 
@@ -230,7 +230,7 @@ export default function EditWorkshop() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 詳細説明
               </label>
-              <AdvancedRichTextEditor
+              <LexicalRichTextEditor
                 content={formData.rich_description}
                 onChange={(content) => setFormData({ ...formData, rich_description: content })}
                 placeholder="ワークショップの詳細な内容を入力してください。太字、見出し、リスト、画像などが使用できます。"
