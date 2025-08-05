@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { workshop_id, booking_id, customer_email, amount, participants } = body
+    const { workshop_id, booking_id, customer_email, amount, participants, coupon_id, discount_amount } = body
 
     if (!supabaseAdmin) {
       throw new Error('Supabase admin client not available')
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
               name: workshop.title,
               description: `${workshop.description} (${participants}名)`,
             },
-            unit_amount: amount,
+            unit_amount: amount - (discount_amount || 0),
           },
           quantity: 1,
         },
@@ -45,13 +45,19 @@ export async function POST(request: NextRequest) {
       metadata: {
         booking_id: booking_id,
         workshop_id: workshop_id,
+        coupon_id: coupon_id || '',
+        discount_amount: discount_amount || 0,
       },
     })
 
-    // 予約にStripeセッションIDを保存
+    // 予約にStripeセッションIDとクーポン情報を保存
     await supabaseAdmin
       .from('bookings')
-      .update({ stripe_session_id: session.id })
+      .update({ 
+        stripe_session_id: session.id,
+        coupon_id: coupon_id || null,
+        discount_amount: discount_amount || 0
+      })
       .eq('id', booking_id)
 
     return NextResponse.json({ sessionId: session.id })
