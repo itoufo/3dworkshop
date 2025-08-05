@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Coupon } from '@/types'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Tag, CreditCard, Calendar, Save, Shield, AlertCircle } from 'lucide-react'
 
 export default function EditCouponPage() {
@@ -27,6 +28,7 @@ export default function EditCouponPage() {
   const [workshops] = useState<{id: string; title: string}[]>([])
   const [updating, setUpdating] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [navigating, setNavigating] = useState(false)
 
   useEffect(() => {
     async function fetchCoupon() {
@@ -95,6 +97,7 @@ export default function EditCouponPage() {
       if (error) throw error
 
       alert('クーポンを更新しました')
+      setNavigating(true)
       router.push('/admin')
     } catch (error) {
       console.error('Error updating coupon:', error)
@@ -120,10 +123,18 @@ export default function EditCouponPage() {
     )
   }
 
+  const handleBack = () => {
+    setNavigating(true)
+    router.push('/admin')
+  }
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      {navigating && <LoadingOverlay message="管理画面へ戻っています..." />}
+      {updating && <LoadingOverlay message="クーポンを更新しています..." />}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
-        onClick={() => router.push('/admin')}
+        onClick={handleBack}
         className="flex items-center text-gray-600 hover:text-purple-600 font-medium transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -361,7 +372,7 @@ export default function EditCouponPage() {
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => router.push('/admin')}
+                onClick={handleBack}
                 className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-all"
               >
                 <ArrowLeft className="w-4 h-4 inline mr-2" />
@@ -379,6 +390,7 @@ export default function EditCouponPage() {
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

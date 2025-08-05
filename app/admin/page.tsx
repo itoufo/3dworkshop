@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon } from '@/types'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -13,6 +14,8 @@ export default function AdminDashboard() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'coupons'>('bookings')
+  const [navigating, setNavigating] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     fetchData()
@@ -93,8 +96,15 @@ export default function AdminDashboard() {
     )
   }
 
+  const handleNavigate = (path: string) => {
+    setNavigating(true)
+    router.push(path)
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      {navigating && <LoadingOverlay message="ページを読み込んでいます..." />}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -423,13 +433,13 @@ export default function AdminDashboard() {
               <h3 className="text-lg font-semibold text-gray-900">ワークショップ一覧</h3>
               <p className="text-sm text-gray-600 mt-1">全{workshops.length}件のワークショップ</p>
             </div>
-            <Link
-              href="/admin/workshops/new"
+            <button
+              onClick={() => handleNavigate('/admin/workshops/new')}
               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
               <Plus className="w-5 h-5 mr-2" />
               新規ワークショップ追加
-            </Link>
+            </button>
           </div>
           <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
@@ -514,13 +524,13 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Link
-                          href={`/admin/workshops/${workshop.id}/edit`}
+                        <button
+                          onClick={() => handleNavigate(`/admin/workshops/${workshop.id}/edit`)}
                           className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           編集
-                        </Link>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -539,13 +549,13 @@ export default function AdminDashboard() {
               <h3 className="text-lg font-semibold text-gray-900">クーポン一覧</h3>
               <p className="text-sm text-gray-600 mt-1">全{coupons.length}件のクーポン</p>
             </div>
-            <Link
-              href="/admin/coupons/new"
+            <button
+              onClick={() => handleNavigate('/admin/coupons/new')}
               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
               <Plus className="w-5 h-5 mr-2" />
               新規クーポン作成
-            </Link>
+            </button>
           </div>
           <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
@@ -636,13 +646,13 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Link
-                          href={`/admin/coupons/${coupon.id}/edit`}
+                        <button
+                          onClick={() => handleNavigate(`/admin/coupons/${coupon.id}/edit`)}
                           className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           編集
-                        </Link>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -652,6 +662,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

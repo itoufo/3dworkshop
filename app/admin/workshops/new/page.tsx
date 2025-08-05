@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
@@ -28,6 +29,7 @@ export default function NewWorkshopPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [navigating, setNavigating] = useState(false)
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -91,6 +93,7 @@ export default function NewWorkshopPage() {
       if (error) throw error
 
       alert('ワークショップを追加しました')
+      setNavigating(true)
       router.push('/admin')
     } catch (error) {
       console.error('Error adding workshop:', error)
@@ -100,10 +103,18 @@ export default function NewWorkshopPage() {
     }
   }
 
+  const handleBack = () => {
+    setNavigating(true)
+    router.push('/admin')
+  }
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      {navigating && <LoadingOverlay message="管理画面へ戻っています..." />}
+      {uploading && <LoadingOverlay message="ワークショップを作成しています..." />}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
-        onClick={() => router.push('/admin')}
+        onClick={handleBack}
         className="flex items-center text-gray-600 hover:text-purple-600 font-medium transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -340,7 +351,7 @@ export default function NewWorkshopPage() {
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => router.push('/admin')}
+                onClick={handleBack}
                 className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-all"
               >
                 <ArrowLeft className="w-4 h-4 inline mr-2" />
@@ -358,6 +369,7 @@ export default function NewWorkshopPage() {
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

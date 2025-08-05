@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
+import LoadingOverlay from '@/components/LoadingOverlay'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -31,6 +32,7 @@ export default function EditWorkshop() {
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [navigating, setNavigating] = useState(false)
 
   useEffect(() => {
     async function fetchWorkshop() {
@@ -131,6 +133,7 @@ export default function EditWorkshop() {
       if (error) throw error
 
       alert('ワークショップを更新しました')
+      setNavigating(true)
       router.push('/admin')
     } catch (error) {
       console.error('Error updating workshop:', error)
@@ -154,6 +157,7 @@ export default function EditWorkshop() {
       if (error) throw error
 
       alert('ワークショップを削除しました')
+      setNavigating(true)
       router.push('/admin')
     } catch (error) {
       console.error('Error deleting workshop:', error)
@@ -185,14 +189,22 @@ export default function EditWorkshop() {
     )
   }
 
+  const handleBack = () => {
+    setNavigating(true)
+    router.push('/admin')
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <>
+      {navigating && <LoadingOverlay message="管理画面へ戻っています..." />}
+      {saving && <LoadingOverlay message="ワークショップを更新しています..." />}
+      <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">ワークショップ編集</h1>
             <button
-              onClick={() => router.push('/admin')}
+              onClick={handleBack}
               className="text-gray-600 hover:text-gray-900"
             >
               ← 戻る
@@ -389,7 +401,7 @@ export default function EditWorkshop() {
               <div className="space-x-3">
                 <button
                   type="button"
-                  onClick={() => router.push('/admin')}
+                  onClick={handleBack}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   キャンセル
@@ -406,6 +418,7 @@ export default function EditWorkshop() {
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

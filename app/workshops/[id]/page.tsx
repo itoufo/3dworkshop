@@ -7,6 +7,7 @@ import { Workshop } from '@/types'
 import { loadStripe } from '@stripe/stripe-js'
 import Image from 'next/image'
 import Header from '@/components/Header'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, Heart, Tag, X } from 'lucide-react'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -203,7 +204,9 @@ export default function WorkshopDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
+    <>
+      {submitting && <LoadingOverlay message="決済画面へ移動しています..." />}
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
 
       {/* Back Button */}
@@ -558,6 +561,7 @@ export default function WorkshopDetail() {
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

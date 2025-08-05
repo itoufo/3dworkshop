@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import Header from '@/components/Header'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, Sparkles } from 'lucide-react'
 
 export default function Home() {
@@ -51,7 +52,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
+    <>
+      {navigating && <LoadingOverlay message="ワークショップ詳細を読み込んでいます..." />}
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
       
       {/* Hero Section */}
@@ -207,6 +210,7 @@ export default function Home() {
           <p className="text-sm">© 2024 3D Workshop. All rights reserved.</p>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }
