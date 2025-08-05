@@ -316,9 +316,9 @@ export default function WorkshopDetail() {
                 <h3 className="font-semibold text-gray-900 mb-3">開催情報</h3>
                 <div className="space-y-3">
                   {workshop.event_date && (
-                    <div className="flex items-center text-sm">
+                    <div className="flex items-center text-sm text-gray-700">
                       <Calendar className="w-4 h-4 mr-2 text-purple-600" />
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
                           year: 'numeric',
                           month: 'long',
@@ -329,22 +329,22 @@ export default function WorkshopDetail() {
                     </div>
                   )}
                   {workshop.event_time && (
-                    <div className="flex items-center text-sm">
+                    <div className="flex items-center text-sm text-gray-700">
                       <Clock className="w-4 h-4 mr-2 text-purple-600" />
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {workshop.event_time.slice(0, 5)} 開始（{workshop.duration}分間）
                       </span>
                     </div>
                   )}
                   {workshop.location && (
-                    <div className="flex items-center text-sm">
+                    <div className="flex items-center text-sm text-gray-700">
                       <MapPin className="w-4 h-4 mr-2 text-purple-600" />
-                      <span className="font-medium">{workshop.location}</span>
+                      <span className="font-medium text-gray-900">{workshop.location}</span>
                     </div>
                   )}
-                  <div className="flex items-center text-sm">
+                  <div className="flex items-center text-sm text-gray-700">
                     <Users className="w-4 h-4 mr-2 text-purple-600" />
-                    <span className="font-medium">定員 {workshop.max_participants}名</span>
+                    <span className="font-medium text-gray-900">定員 {workshop.max_participants}名</span>
                   </div>
                 </div>
               </div>
