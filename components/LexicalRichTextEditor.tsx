@@ -270,7 +270,7 @@ export default function LexicalRichTextEditor({
                   <ContentEditable 
                     className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 focus:outline-none editor-input"
                     aria-placeholder={placeholder}
-                    placeholder={<div className="absolute top-4 left-4 text-gray-400 pointer-events-none">{placeholder}</div>}
+                    placeholder={<div className="absolute top-4 left-4 text-gray-500 pointer-events-none">{placeholder}</div>}
                   />
                 }
                 ErrorBoundary={LexicalErrorBoundary}
