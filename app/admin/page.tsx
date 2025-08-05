@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop } from '@/types'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, ChevronRight } from 'lucide-react'
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     )
   }
@@ -83,55 +84,109 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">ダッシュボード</h2>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">ダッシュボード</h2>
+            <p className="text-gray-600 mt-1">ワークショップの予約と顧客情報を管理</p>
+          </div>
+          <div className="text-sm text-gray-500">
+            <Clock className="w-4 h-4 inline mr-1" />
+            {new Date().toLocaleDateString('ja-JP', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              weekday: 'long'
+            })}
+          </div>
+        </div>
         
         {/* 統計情報 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">総予約数</h3>
-            <p className="text-3xl font-bold text-gray-900">{bookings.length}</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <TrendingUp className="w-5 h-5 text-white/60" />
+            </div>
+            <h3 className="text-sm font-medium text-white/80">総予約数</h3>
+            <p className="text-3xl font-bold">{bookings.length}</p>
+            <p className="text-xs text-white/60 mt-2">全期間の予約</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">顧客数</h3>
-            <p className="text-3xl font-bold text-gray-900">{customers.length}</p>
+          
+          <div className="bg-gradient-to-br from-pink-500 to-pink-600 p-6 rounded-2xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6" />
+              </div>
+              <TrendingUp className="w-5 h-5 text-white/60" />
+            </div>
+            <h3 className="text-sm font-medium text-white/80">顧客数</h3>
+            <p className="text-3xl font-bold">{customers.length}</p>
+            <p className="text-xs text-white/60 mt-2">登録済み顧客</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ワークショップ数</h3>
-            <p className="text-3xl font-bold text-gray-900">{workshops.length}</p>
+          
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <TrendingUp className="w-5 h-5 text-white/60" />
+            </div>
+            <h3 className="text-sm font-medium text-white/80">ワークショップ</h3>
+            <p className="text-3xl font-bold">{workshops.length}</p>
+            <p className="text-xs text-white/60 mt-2">開催予定</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <span className="text-xs bg-white/20 px-2 py-1 rounded-full">今月</span>
+            </div>
+            <h3 className="text-sm font-medium text-white/80">売上</h3>
+            <p className="text-3xl font-bold">
+              ¥{bookings.reduce((sum, b) => sum + b.total_amount, 0).toLocaleString()}
+            </p>
+            <p className="text-xs text-white/60 mt-2">全期間の合計</p>
           </div>
         </div>
 
         {/* タブ */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
+          <nav className="flex space-x-2">
             <button
               onClick={() => setActiveTab('bookings')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
                 activeTab === 'bookings'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
+              <Calendar className="w-4 h-4 inline mr-2" />
               予約管理
             </button>
             <button
               onClick={() => setActiveTab('customers')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
                 activeTab === 'customers'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
+              <Users className="w-4 h-4 inline mr-2" />
               顧客管理
             </button>
             <button
               onClick={() => setActiveTab('workshops')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
                 activeTab === 'workshops'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
+              <CreditCard className="w-4 h-4 inline mr-2" />
               ワークショップ管理
             </button>
           </nav>
@@ -140,211 +195,315 @@ export default function AdminDashboard() {
 
       {/* 予約管理 */}
       {activeTab === 'bookings' && (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  予約日時
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ワークショップ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  顧客名
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  人数
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  金額
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ステータス
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  アクション
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bookings.map((booking) => (
-                <tr key={booking.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(booking.booking_date).toLocaleDateString('ja-JP')} {booking.booking_time}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {booking.workshop?.title}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {booking.customer?.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {booking.participants}名
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ¥{booking.total_amount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      booking.status === 'confirmed' 
-                        ? 'bg-green-100 text-green-800'
-                        : booking.status === 'cancelled'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {booking.status === 'confirmed' ? '確定' : booking.status === 'cancelled' ? 'キャンセル' : '保留'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <select
-                      value={booking.status}
-                      onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
-                      className="text-indigo-600 hover:text-indigo-900 border rounded px-2 py-1"
-                    >
-                      <option value="pending">保留</option>
-                      <option value="confirmed">確定</option>
-                      <option value="cancelled">キャンセル</option>
-                    </select>
-                  </td>
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">予約一覧</h3>
+            <p className="text-sm text-gray-600 mt-1">全{bookings.length}件の予約</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    予約日時
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ワークショップ
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    顧客情報
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    人数
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    金額
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ステータス
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    アクション
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {bookings.map((booking) => (
+                  <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {new Date(booking.booking_date).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        {booking.booking_time}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {booking.workshop?.title}
+                      </div>
+                      {booking.workshop?.location && (
+                        <div className="text-xs text-gray-500">
+                          <MapPin className="w-3 h-3 inline mr-1" />
+                          {booking.workshop.location}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        <UserCircle className="w-3 h-3 inline mr-1" />
+                        {booking.customer?.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        <Mail className="w-3 h-3 inline mr-1" />
+                        {booking.customer?.email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {booking.participants}名
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">
+                        ¥{booking.total_amount.toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        booking.status === 'confirmed' 
+                          ? 'bg-green-100 text-green-800'
+                          : booking.status === 'cancelled'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {booking.status === 'confirmed' ? '✓ 確定' : booking.status === 'cancelled' ? '× キャンセル' : '○ 保留'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <select
+                        value={booking.status}
+                        onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
+                        className="text-purple-600 hover:text-purple-900 border border-purple-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      >
+                        <option value="pending">保留</option>
+                        <option value="confirmed">確定</option>
+                        <option value="cancelled">キャンセル</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* 顧客管理 */}
       {activeTab === 'customers' && (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  名前
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  メールアドレス
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  電話番号
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  年齢
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  性別
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  登録日
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {customers.map((customer) => (
-                <tr key={customer.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.phone || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.age || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.gender === 'male' ? '男性' : 
-                     customer.gender === 'female' ? '女性' :
-                     customer.gender === 'other' ? 'その他' :
-                     customer.gender === 'prefer_not_to_say' ? '回答しない' : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(customer.created_at).toLocaleDateString('ja-JP')}
-                  </td>
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">顧客一覧</h3>
+            <p className="text-sm text-gray-600 mt-1">全{customers.length}名の顧客</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    顧客情報
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    連絡先
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    属性
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    登録日
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {customers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                            <span className="text-white font-medium text-sm">
+                              {customer.name.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {customer.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            ID: {customer.id.slice(0, 8)}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        <Mail className="w-3 h-3 inline mr-1 text-gray-400" />
+                        {customer.email}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <Phone className="w-3 h-3 inline mr-1 text-gray-400" />
+                        {customer.phone || '未登録'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {customer.age && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {customer.age}歳
+                          </span>
+                        )}
+                        {customer.gender && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                            {customer.gender === 'male' ? '男性' : 
+                             customer.gender === 'female' ? '女性' :
+                             customer.gender === 'other' ? 'その他' : '回答しない'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(customer.created_at).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* ワークショップ管理 */}
       {activeTab === 'workshops' && (
         <div>
-          <div className="mb-4">
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">ワークショップ一覧</h3>
+              <p className="text-sm text-gray-600 mt-1">全{workshops.length}件のワークショップ</p>
+            </div>
             <Link
               href="/admin/workshops/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
+              <Plus className="w-5 h-5 mr-2" />
               新規ワークショップ追加
             </Link>
           </div>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    タイトル
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    開催日時
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    価格
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    所要時間
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    最大人数
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    アクション
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {workshops.map((workshop) => (
-                  <tr key={workshop.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {workshop.title}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {workshop.event_date ? (
-                        <div>
-                          <div>{new Date(workshop.event_date).toLocaleDateString('ja-JP')}</div>
-                          {workshop.event_time && (
-                            <div className="text-xs text-gray-500">{workshop.event_time}</div>
-                          )}
-                        </div>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{workshop.price.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {workshop.duration}分
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {workshop.max_participants}名
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link
-                        href={`/admin/workshops/${workshop.id}/edit`}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        編集
-                      </Link>
-                    </td>
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ワークショップ
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      開催情報
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      料金・人数
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      アクション
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {workshops.map((workshop) => (
+                    <tr key={workshop.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          {workshop.image_url ? (
+                            <img
+                              src={workshop.image_url}
+                              alt={workshop.title}
+                              className="h-12 w-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                              <span className="text-xs font-bold text-purple-600">3D</span>
+                            </div>
+                          )}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {workshop.title}
+                            </div>
+                            <div className="text-xs text-gray-500 line-clamp-1">
+                              {workshop.description}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {workshop.event_date ? (
+                          <div>
+                            <div className="text-sm text-gray-900">
+                              <Calendar className="w-3 h-3 inline mr-1 text-gray-400" />
+                              {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+                                year: '2-digit',
+                                month: '2-digit',
+                                day: '2-digit'
+                              })}
+                            </div>
+                            {workshop.event_time && (
+                              <div className="text-sm text-gray-500">
+                                <Clock className="w-3 h-3 inline mr-1 text-gray-400" />
+                                {workshop.event_time.slice(0, 5)}
+                              </div>
+                            )}
+                            {workshop.location && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                <MapPin className="w-3 h-3 inline mr-1 text-gray-400" />
+                                {workshop.location}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">未設定</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-gray-900">
+                          ¥{workshop.price.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          <Users className="w-3 h-3 inline mr-1" />
+                          最大{workshop.max_participants}名 / {workshop.duration}分
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <Link
+                          href={`/admin/workshops/${workshop.id}/edit`}
+                          className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          編集
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
