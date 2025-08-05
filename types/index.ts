@@ -45,9 +45,42 @@ export interface Booking {
   stripe_session_id?: string
   stripe_payment_intent_id?: string
   total_amount: number
+  coupon_id?: string
+  discount_amount?: number
   notes?: string
   created_at: string
   updated_at: string
   workshop?: Workshop
+  customer?: Customer
+  coupon?: Coupon
+}
+
+export interface Coupon {
+  id: string
+  code: string
+  description?: string
+  discount_type: 'percentage' | 'fixed_amount'
+  discount_value: number
+  minimum_amount?: number
+  usage_limit?: number
+  usage_count: number
+  user_limit?: number
+  valid_from: string
+  valid_until?: string
+  is_active: boolean
+  workshop_ids?: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CouponUsage {
+  id: string
+  coupon_id: string
+  booking_id: string
+  customer_id: string
+  discount_amount: number
+  used_at: string
+  coupon?: Coupon
+  booking?: Booking
   customer?: Customer
 }

@@ -30,8 +30,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // メタデータから予約IDを取得
+    // メタデータから予約IDとクーポン情報を取得
     const bookingId = session.metadata?.booking_id
+    const couponId = session.metadata?.coupon_id
+    const discountAmount = parseInt(session.metadata?.discount_amount || '0')
 
     if (!bookingId) {
       return NextResponse.json(
@@ -65,6 +67,27 @@ export async function POST(request: NextRequest) {
 
     if (bookingError) {
       throw bookingError
+    }
+
+    // クーポンが使用された場合、使用履歴を記録
+    if (couponId && discountAmount > 0 && booking) {
+      // クーポンの使用回数を増やす
+      await supabaseAdmin
+        .from('coupons')
+        .update({
+          usage_count: supabaseAdmin.raw('usage_count + 1')
+        })
+        .eq('id', couponId)
+
+      // クーポン使用履歴を作成
+      await supabaseAdmin
+        .from('coupon_usage')
+        .insert({
+          coupon_id: couponId,
+          booking_id: bookingId,
+          customer_id: booking.customer_id,
+          discount_amount: discountAmount
+        })
     }
 
     // 顧客のStripe IDを更新（存在する場合）

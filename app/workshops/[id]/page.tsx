@@ -7,7 +7,7 @@ import { Workshop } from '@/types'
 import { loadStripe } from '@stripe/stripe-js'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, UserCircle, Heart } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, UserCircle, Heart, Tag, X } from 'lucide-react'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -25,6 +25,15 @@ export default function WorkshopDetail() {
     gender: '',
     notes: ''
   })
+  const [couponCode, setCouponCode] = useState('')
+  const [couponValidation, setCouponValidation] = useState<{
+    loading: boolean
+    valid: boolean
+    error?: string
+    discount_amount?: number
+    coupon?: any
+  }>({ loading: false, valid: false })
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
 
   useEffect(() => {
     async function fetchWorkshop() {
@@ -44,6 +53,55 @@ export default function WorkshopDetail() {
     
     fetchWorkshop()
   }, [params.id])
+
+  async function validateCoupon() {
+    if (!couponCode.trim() || !workshop) return
+
+    setCouponValidation({ loading: true, valid: false })
+
+    try {
+      const response = await fetch('/api/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCode,
+          workshopId: workshop.id,
+          amount: workshop.price * booking.participants,
+          customerId: null // 新規顧客の場合はnull
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setCouponValidation({
+          loading: false,
+          valid: true,
+          discount_amount: data.discount_amount,
+          coupon: data.coupon
+        })
+        setAppliedCoupon(data.coupon)
+      } else {
+        setCouponValidation({
+          loading: false,
+          valid: false,
+          error: data.error
+        })
+      }
+    } catch (error) {
+      setCouponValidation({
+        loading: false,
+        valid: false,
+        error: 'クーポンの検証中にエラーが発生しました'
+      })
+    }
+  }
+
+  function removeCoupon() {
+    setCouponCode('')
+    setCouponValidation({ loading: false, valid: false })
+    setAppliedCoupon(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -98,7 +156,9 @@ export default function WorkshopDetail() {
           booking_id: bookingData.id,
           customer_email: booking.email,
           amount: workshop.price * booking.participants,
-          participants: booking.participants
+          participants: booking.participants,
+          coupon_id: appliedCoupon?.id,
+          discount_amount: couponValidation.discount_amount || 0
         }),
       })
 
@@ -400,13 +460,77 @@ export default function WorkshopDetail() {
                   />
                 </div>
 
+                {/* Coupon Code */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Tag className="w-4 h-4 inline mr-1" />
+                    クーポンコード
+                  </label>
+                  {!appliedCoupon ? (
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all uppercase"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="SUMMER2024"
+                      />
+                      <button
+                        type="button"
+                        onClick={validateCoupon}
+                        disabled={!couponCode.trim() || couponValidation.loading}
+                        className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {couponValidation.loading ? '検証中...' : '適用'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-800">
+                          ✓ {appliedCoupon.code} - {appliedCoupon.description || 'クーポンが適用されました'}
+                        </p>
+                        <p className="text-xs text-green-600 mt-1">
+                          {appliedCoupon.discount_type === 'percentage' 
+                            ? `${appliedCoupon.discount_value}%割引` 
+                            : `¥${appliedCoupon.discount_value.toLocaleString()}割引`}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                  {couponValidation.error && (
+                    <p className="text-sm text-red-600 mt-2">{couponValidation.error}</p>
+                  )}
+                </div>
+
                 {/* Price Summary */}
                 <div className="border-t border-gray-200 pt-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">参加費 × {booking.participants}名</span>
-                    <span className="text-xl font-semibold text-gray-900">
-                      ¥{(workshop.price * booking.participants).toLocaleString()}
-                    </span>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">参加費 × {booking.participants}名</span>
+                      <span className="text-lg text-gray-900">
+                        ¥{(workshop.price * booking.participants).toLocaleString()}
+                      </span>
+                    </div>
+                    {couponValidation.valid && couponValidation.discount_amount && (
+                      <div className="flex justify-between items-center text-green-600">
+                        <span>クーポン割引</span>
+                        <span>-¥{couponValidation.discount_amount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="text-gray-900 font-semibold">合計金額</span>
+                      <span className="text-2xl font-bold text-gray-900">
+                        ¥{((workshop.price * booking.participants) - (couponValidation.discount_amount || 0)).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 mb-6">
                     ※ 料金には材料費・設備使用料が含まれています
