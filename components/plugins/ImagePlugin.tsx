@@ -7,11 +7,7 @@ import { ImageNode, $createImageNode } from '../nodes/ImageNode'
 
 export const INSERT_IMAGE_COMMAND = createCommand<{src: string; altText?: string}>('INSERT_IMAGE_COMMAND')
 
-interface ImagePluginProps {
-  uploadImage?: (file: File) => Promise<string>
-}
-
-export default function ImagePlugin(_props: ImagePluginProps) {
+export default function ImagePlugin() {
   const [editor] = useLexicalComposerContext()
 
   useEffect(() => {

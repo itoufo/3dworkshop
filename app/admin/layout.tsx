@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Cookies from 'js-cookie'
-import { LogOut, Home, Shield, Sparkles } from 'lucide-react'
+import { LogOut, Home, Shield } from 'lucide-react'
 
 export default function AdminLayout({
   children,
@@ -43,7 +43,7 @@ export default function AdminLayout({
       } else {
         alert('パスワードが正しくありません')
       }
-    } catch (error) {
+    } catch {
       alert('認証エラーが発生しました')
     }
   }

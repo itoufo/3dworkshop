@@ -13,7 +13,7 @@ export async function uploadWorkshopImage(file: File): Promise<string | null> {
     const fileName = `${timestamp}-${randomString}.${fileExt}`
 
     // ファイルをアップロード
-    const { data, error } = await supabaseAdmin.storage
+    const { error } = await supabaseAdmin.storage
       .from('workshop-images')
       .upload(fileName, file, {
         cacheControl: '3600',

@@ -7,7 +7,7 @@ import { Workshop } from '@/types'
 import { loadStripe } from '@stripe/stripe-js'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, UserCircle, Heart, Tag, X } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, Heart, Tag, X } from 'lucide-react'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -31,9 +31,10 @@ export default function WorkshopDetail() {
     valid: boolean
     error?: string
     discount_amount?: number
-    coupon?: any
+    coupon?: {id: string; code: string; description?: string; discount_type: 'percentage' | 'fixed_amount'; discount_value: number}
   }>({ loading: false, valid: false })
-  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<{id: string; code: string; description?: string; discount_type: 'percentage' | 'fixed_amount'; discount_value: number} | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     async function fetchWorkshop() {
@@ -88,7 +89,7 @@ export default function WorkshopDetail() {
           error: data.error
         })
       }
-    } catch (error) {
+    } catch {
       setCouponValidation({
         loading: false,
         valid: false,
@@ -106,7 +107,9 @@ export default function WorkshopDetail() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
-    if (!workshop) return
+    if (!workshop || submitting) return
+
+    setSubmitting(true)
 
     try {
       // 顧客情報を保存または更新
@@ -168,9 +171,10 @@ export default function WorkshopDetail() {
       const stripe = await stripePromise
       await stripe?.redirectToCheckout({ sessionId })
 
-    } catch (error) {
-      console.error('Error creating booking:', error)
+    } catch {
+      console.error('Error creating booking')
       alert('予約の作成中にエラーが発生しました。')
+      setSubmitting(false)
     }
   }
 
@@ -538,9 +542,10 @@ export default function WorkshopDetail() {
                   
                   <button
                     type="submit"
-                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                    disabled={submitting}
+                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    決済画面へ進む
+                    {submitting ? '処理中...' : '決済画面へ進む'}
                   </button>
                   
                   <div className="mt-4 flex items-center justify-center text-xs text-gray-500">

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon } from '@/types'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, ChevronRight, Tag } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag } from 'lucide-react'
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])

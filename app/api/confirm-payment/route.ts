@@ -71,13 +71,22 @@ export async function POST(request: NextRequest) {
 
     // クーポンが使用された場合、使用履歴を記録
     if (couponId && discountAmount > 0 && booking) {
-      // クーポンの使用回数を増やす
-      await supabaseAdmin
+      // クーポンの現在の使用回数を取得
+      const { data: couponData } = await supabaseAdmin
         .from('coupons')
-        .update({
-          usage_count: supabaseAdmin.raw('usage_count + 1')
-        })
+        .select('usage_count')
         .eq('id', couponId)
+        .single()
+      
+      if (couponData) {
+        // クーポンの使用回数を増やす
+        await supabaseAdmin
+          .from('coupons')
+          .update({
+            usage_count: couponData.usage_count + 1
+          })
+          .eq('id', couponId)
+      }
 
       // クーポン使用履歴を作成
       await supabaseAdmin

@@ -1,31 +1,54 @@
-import Link from 'next/link'
+'use client'
+
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import Header from '@/components/Header'
 import { Calendar, Clock, MapPin, Users, Sparkles } from 'lucide-react'
 
-// キャッシュを無効化してリアルタイムデータを取得
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export default function Home() {
+  const router = useRouter()
+  const [workshops, setWorkshops] = useState<Workshop[]>([])
+  const [loading, setLoading] = useState(true)
+  const [navigating, setNavigating] = useState<string | null>(null)
 
-async function getWorkshops() {
-  const { data, error } = await supabase
-    .from('workshops')
-    .select('*')
-    .order('created_at', { ascending: false })
+  useEffect(() => {
+    async function fetchWorkshops() {
+      const { data, error } = await supabase
+        .from('workshops')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching workshops:', error)
-    return []
+      if (error) {
+        console.error('Error fetching workshops:', error)
+      } else {
+        setWorkshops(data as Workshop[])
+      }
+      setLoading(false)
+    }
+
+    fetchWorkshops()
+  }, [])
+
+  const handleWorkshopClick = (e: React.MouseEvent, workshopId: string) => {
+    e.preventDefault()
+    
+    // 既に遷移中の場合は何もしない
+    if (navigating) return
+    
+    setNavigating(workshopId)
+    router.push(`/workshops/${workshopId}`)
   }
 
-  console.log('Homepage workshops:', data)
-  return data as Workshop[]
-}
-
-export default async function Home() {
-  const workshops = await getWorkshops()
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 via-white to-pink-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
@@ -74,10 +97,12 @@ export default async function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {workshops.map((workshop) => (
-              <Link
+              <div
                 key={workshop.id}
-                href={`/workshops/${workshop.id}`}
-                className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1"
+                onClick={(e) => handleWorkshopClick(e, workshop.id)}
+                className={`group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1 cursor-pointer ${
+                  navigating === workshop.id ? 'opacity-75 pointer-events-none' : ''
+                }`}
               >
                 {/* Image Section */}
                 {workshop.image_url ? (
@@ -165,7 +190,7 @@ export default async function Home() {
                     残りわずか
                   </div>
                 )}
-              </Link>
+              </div>
             ))}
           </div>
         )}

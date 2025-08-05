@@ -21,9 +21,9 @@ export default function EditWorkshop() {
     title: '',
     description: '',
     rich_description: '',
-    price: 0,
-    duration: 0,
-    max_participants: 10,
+    price: '',
+    duration: '',
+    max_participants: '',
     location: '',
     image_url: '',
     event_date: '',
@@ -33,45 +33,39 @@ export default function EditWorkshop() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchWorkshop()
-  }, [params.id])
-
-  async function fetchWorkshop() {
-    try {
+    async function fetchWorkshop() {
       const { data, error } = await supabase
         .from('workshops')
         .select('*')
         .eq('id', params.id)
         .single()
 
-      if (error) throw error
-
-      if (data) {
-        setWorkshop(data as Workshop)
+      if (error) {
+        console.error('Error fetching workshop:', error)
+      } else {
+        const workshopData = data as Workshop
+        setWorkshop(workshopData)
         setFormData({
-          title: data.title,
-          description: data.description || '',
-          rich_description: data.rich_description || '',
-          price: data.price,
-          duration: data.duration,
-          max_participants: data.max_participants,
-          location: data.location || '',
-          image_url: data.image_url || '',
-          event_date: data.event_date || '',
-          event_time: data.event_time || ''
+          title: workshopData.title,
+          description: workshopData.description,
+          rich_description: workshopData.rich_description || '',
+          price: workshopData.price.toString(),
+          duration: workshopData.duration.toString(),
+          max_participants: workshopData.max_participants.toString(),
+          location: workshopData.location || '',
+          image_url: workshopData.image_url || '',
+          event_date: workshopData.event_date || '',
+          event_time: workshopData.event_time || ''
         })
-        // 既存画像をプレビューに設定
-        if (data.image_url) {
-          setImagePreview(data.image_url)
+        if (workshopData.image_url) {
+          setImagePreview(workshopData.image_url)
         }
       }
-    } catch (error) {
-      console.error('Error fetching workshop:', error)
-      alert('ワークショップの取得に失敗しました')
-    } finally {
       setLoading(false)
     }
-  }
+    
+    fetchWorkshop()
+  }, [params.id])
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -89,7 +83,7 @@ export default function EditWorkshop() {
     e.preventDefault()
     
     // 価格のバリデーション
-    if (formData.price < 50) {
+    if (parseInt(formData.price) < 50) {
       alert('価格は50円以上で設定してください')
       return
     }
@@ -123,9 +117,9 @@ export default function EditWorkshop() {
           title: formData.title,
           description: formData.description,
           rich_description: formData.rich_description || null,
-          price: formData.price,
-          duration: formData.duration,
-          max_participants: formData.max_participants,
+          price: parseInt(formData.price),
+          duration: parseInt(formData.duration),
+          max_participants: parseInt(formData.max_participants),
           location: formData.location,
           image_url: imageUrl,
           event_date: formData.event_date || null,
@@ -281,7 +275,7 @@ export default function EditWorkshop() {
                   required
                   min="50"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="最低50円から"
                 />
@@ -297,7 +291,7 @@ export default function EditWorkshop() {
                   required
                   min="0"
                   value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -313,7 +307,7 @@ export default function EditWorkshop() {
                   required
                   min="1"
                   value={formData.max_participants}
-                  onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>

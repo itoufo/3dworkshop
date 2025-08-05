@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Coupon } from '@/types'
-import { ArrowLeft, Tag, CreditCard, Calendar, Users, Save, Shield, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Tag, CreditCard, Calendar, Save, Shield, AlertCircle } from 'lucide-react'
 
 export default function EditCouponPage() {
   const params = useParams()
@@ -24,62 +24,50 @@ export default function EditCouponPage() {
     workshop_ids: [] as string[]
   })
   const [selectedWorkshops, setSelectedWorkshops] = useState<Set<string>>(new Set())
-  const [workshops, setWorkshops] = useState<any[]>([])
+  const [workshops] = useState<{id: string; title: string}[]>([])
   const [updating, setUpdating] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchCoupon()
-    fetchWorkshops()
-  }, [params.id])
+    async function fetchCoupon() {
+      try {
+        const { data, error } = await supabase
+          .from('coupons')
+          .select('*')
+          .eq('id', params.id)
+          .single()
 
-  async function fetchCoupon() {
-    try {
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('id', params.id)
-        .single()
+        if (error) throw error
 
-      if (error) throw error
-
-      if (data) {
-        setCoupon(data as Coupon)
-        setFormData({
-          code: data.code,
-          description: data.description || '',
-          discount_type: data.discount_type,
-          discount_value: data.discount_value.toString(),
-          minimum_amount: data.minimum_amount?.toString() || '',
-          usage_limit: data.usage_limit?.toString() || '',
-          user_limit: data.user_limit?.toString() || '1',
-          valid_from: data.valid_from.split('T')[0],
-          valid_until: data.valid_until ? data.valid_until.split('T')[0] : '',
-          is_active: data.is_active,
-          workshop_ids: data.workshop_ids || []
-        })
-        if (data.workshop_ids) {
-          setSelectedWorkshops(new Set(data.workshop_ids))
+        if (data) {
+          setCoupon(data as Coupon)
+          setFormData({
+            code: data.code,
+            description: data.description || '',
+            discount_type: data.discount_type,
+            discount_value: data.discount_value.toString(),
+            minimum_amount: data.minimum_amount?.toString() || '',
+            usage_limit: data.usage_limit?.toString() || '',
+            user_limit: data.user_limit?.toString() || '1',
+            valid_from: data.valid_from.split('T')[0],
+            valid_until: data.valid_until ? data.valid_until.split('T')[0] : '',
+            is_active: data.is_active,
+            workshop_ids: data.workshop_ids || []
+          })
+          if (data.workshop_ids) {
+            setSelectedWorkshops(new Set(data.workshop_ids))
+          }
         }
+      } catch (error) {
+        console.error('Error fetching coupon:', error)
+        alert('クーポン情報の取得に失敗しました')
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching coupon:', error)
-      alert('クーポン情報の取得に失敗しました')
-    } finally {
-      setLoading(false)
     }
-  }
 
-  async function fetchWorkshops() {
-    const { data } = await supabase
-      .from('workshops')
-      .select('id, title')
-      .order('created_at', { ascending: false })
-    
-    if (data) {
-      setWorkshops(data)
-    }
-  }
+    fetchCoupon()
+  }, [params.id])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -279,7 +279,7 @@ export default function LexicalRichTextEditor({
               <HistoryPlugin />
               <LinkPlugin />
               <ListPlugin />
-              <ImagePlugin uploadImage={uploadImage} />
+              <ImagePlugin />
               <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
               <TabIndentationPlugin />
               <HtmlPlugin html={content} />

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Tag, CreditCard, Calendar, Users, Save, Sparkles, Shield, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Tag, CreditCard, Calendar, Users, Save, Sparkles, AlertCircle } from 'lucide-react'
 
 export default function NewCouponPage() {
   const router = useRouter()
@@ -21,7 +21,7 @@ export default function NewCouponPage() {
     workshop_ids: [] as string[]
   })
   const [selectedWorkshops, setSelectedWorkshops] = useState<Set<string>>(new Set())
-  const [workshops, setWorkshops] = useState<any[]>([])
+  const [workshops, setWorkshops] = useState<{id: string; title: string}[]>([])
   const [creating, setCreating] = useState(false)
 
   // クーポンコード自動生成
