@@ -12,6 +12,8 @@ export interface Workshop {
   event_time?: string
   available_dates?: AvailableDate[]
   stripe_price_id?: string
+  is_pinned?: boolean
+  pin_order?: number
   created_at: string
   updated_at: string
 }
