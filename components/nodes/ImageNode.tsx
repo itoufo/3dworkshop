@@ -97,6 +97,31 @@ export class ImageNode extends DecoratorNode<React.ReactElement> {
     return node
   }
 
+  createDOM(): HTMLElement {
+    const span = document.createElement('span')
+    span.className = 'editor-image-container'
+    span.style.display = 'inline-block'
+    span.style.position = 'relative'
+    span.style.verticalAlign = 'bottom'
+    span.style.maxWidth = this.__maxWidth ? `${this.__maxWidth}px` : '100%'
+    return span
+  }
+
+  updateDOM(
+    prevNode: ImageNode
+  ): boolean {
+    if (prevNode.__src !== this.__src) {
+      return true
+    }
+    if (prevNode.__width !== this.__width) {
+      return true
+    }
+    if (prevNode.__height !== this.__height) {
+      return true
+    }
+    return false
+  }
+
   exportDOM(): DOMExportOutput {
     const element = document.createElement('img')
     element.setAttribute('src', this.__src)
@@ -186,14 +211,18 @@ export class ImageNode extends DecoratorNode<React.ReactElement> {
 
   decorate(): React.ReactElement {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={this.__src}
         alt={this.__altText}
         className="editor-image"
+        loading="lazy"
         style={{
-          maxWidth: this.__maxWidth ? `${this.__maxWidth}px` : '100%',
+          display: 'block',
+          maxWidth: '100%',
           width: this.__width !== 'inherit' ? `${this.__width}px` : 'auto',
-          height: this.__height !== 'inherit' ? `${this.__height}px` : 'auto'
+          height: this.__height !== 'inherit' ? `${this.__height}px` : 'auto',
+          objectFit: 'contain'
         }}
       />
     )

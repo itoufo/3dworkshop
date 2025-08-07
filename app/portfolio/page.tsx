@@ -30,7 +30,7 @@ export default function PortfolioPage() {
 
   async function fetchPortfolioItems() {
     try {
-      let query = supabase
+      const query = supabase
         .from('portfolio_items')
         .select('*')
         .order('display_order', { ascending: true })

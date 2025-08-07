@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Package, Printer3d } from 'lucide-react'
+import { Package, Printer } from 'lucide-react'
 
 interface Product {
   id: string
@@ -15,7 +15,7 @@ interface Product {
   category: string
   base_price: number
   image_urls: string[]
-  specifications: any
+  specifications: Record<string, unknown>
   is_active: boolean
   stock_quantity: number | null
   created_at: string
@@ -130,7 +130,7 @@ export default function ProductsPage() {
                   onClick={() => handleProductClick('new', '3d_printing')}
                   className="inline-flex items-center px-8 py-3 bg-white text-purple-600 rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
-                  <Printer3d className="w-5 h-5 mr-2" />
+                  <Printer className="w-5 h-5 mr-2" />
                   3Dプリント発注へ
                 </button>
               </div>

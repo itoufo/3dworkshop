@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Upload, FileUp, Package, Palette, Layers, Grid3x3, Clock, AlertCircle } from 'lucide-react'
+import { Upload, FileUp, Package, Palette, Layers, Grid3x3, AlertCircle } from 'lucide-react'
 
 export default function New3DPrintingOrder() {
   const router = useRouter()
@@ -68,7 +68,7 @@ export default function New3DPrintingOrder() {
       
       // Supabase Storageにアップロード
       const fileName = `${Date.now()}_${file.name}`
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('stl-files')
         .upload(fileName, file)
 

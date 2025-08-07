@@ -488,6 +488,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           {workshop.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={workshop.image_url}
                               alt={workshop.title}

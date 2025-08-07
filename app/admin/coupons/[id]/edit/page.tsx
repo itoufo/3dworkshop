@@ -25,7 +25,6 @@ export default function EditCouponPage() {
     workshop_ids: [] as string[]
   })
   const [selectedWorkshops, setSelectedWorkshops] = useState<Set<string>>(new Set())
-  const [workshops] = useState<{id: string; title: string}[]>([])
   const [updating, setUpdating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [navigating, setNavigating] = useState(false)

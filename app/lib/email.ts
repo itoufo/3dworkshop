@@ -44,6 +44,7 @@ export function generateBookingConfirmationEmail(
   time: string,
   location: string,
   userName: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userEmail: string
 ) {
   const subject = `予約確認: ${workshopTitle}`;

@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
-import { Calendar, Clock, Eye, Tag, BookOpen } from 'lucide-react'
+import { Calendar, Eye, Tag, BookOpen } from 'lucide-react'
 
 interface BlogPost {
   id: string
