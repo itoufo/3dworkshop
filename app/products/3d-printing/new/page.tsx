@@ -17,7 +17,7 @@ export default function New3DPrintingOrder() {
     file_size_mb: 0,
     material_type: 'PLA',
     material_color: 'white',
-    layer_height: 0.2,
+    layer_height: 0.4,
     infill_percentage: 20,
     notes: '',
     delivery_method: 'pickup'
@@ -34,10 +34,10 @@ export default function New3DPrintingOrder() {
   })
 
   const materials = [
-    { value: 'PLA', label: 'PLA (標準)', pricePerGram: 10 },
-    { value: 'ABS', label: 'ABS (耐熱)', pricePerGram: 12 },
-    { value: 'PETG', label: 'PETG (高強度)', pricePerGram: 15 },
-    { value: 'Resin', label: 'レジン (高精細)', pricePerGram: 30 },
+    { value: 'PLA', label: 'PLA (標準)', pricePerGram: 10, available: true },
+    { value: 'ABS', label: 'ABS (耐熱)', pricePerGram: 12, available: false },
+    { value: 'PETG', label: 'PETG (高強度)', pricePerGram: 15, available: true },
+    { value: 'Resin', label: 'レジン (高精細)', pricePerGram: 30, available: false },
   ]
 
   const colors = [
@@ -238,8 +238,13 @@ export default function New3DPrintingOrder() {
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       {materials.map(material => (
-                        <option key={material.value} value={material.value}>
+                        <option 
+                          key={material.value} 
+                          value={material.value}
+                          disabled={!material.available}
+                        >
                           {material.label} - ¥{material.pricePerGram}/g
+                          {!material.available && ' (売り切れ)'}
                         </option>
                       ))}
                     </select>
@@ -275,15 +280,9 @@ export default function New3DPrintingOrder() {
                       <Layers className="w-4 h-4 inline mr-1" />
                       積層ピッチ
                     </label>
-                    <select
-                      value={order.layer_height}
-                      onChange={(e) => setOrder({ ...order, layer_height: parseFloat(e.target.value) })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="0.1">0.1mm (高精細)</option>
-                      <option value="0.2">0.2mm (標準)</option>
-                      <option value="0.3">0.3mm (高速)</option>
-                    </select>
+                    <div className="px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                      <span className="text-gray-900">0.4mm (固定)</span>
+                    </div>
                   </div>
 
                   {/* 充填率 */}
