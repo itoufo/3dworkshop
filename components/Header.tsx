@@ -14,12 +14,30 @@ export default function Header() {
             </span>
           </Link>
           
-          <nav className="flex items-center space-x-8">
+          <nav className="flex items-center space-x-6">
             <Link
               href="/"
               className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
             >
               ワークショップ
+            </Link>
+            <Link
+              href="/products"
+              className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
+            >
+              商品・サービス
+            </Link>
+            <Link
+              href="/portfolio"
+              className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
+            >
+              実績紹介
+            </Link>
+            <Link
+              href="/blog"
+              className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
+            >
+              ブログ
             </Link>
             <Link
               href="/admin"

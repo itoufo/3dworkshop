@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Clock, MapPin, Users, Sparkles } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, Sparkles, Pin } from 'lucide-react'
 
 export default function Home() {
   const router = useRouter()
@@ -20,6 +20,8 @@ export default function Home() {
       const { data, error } = await supabase
         .from('workshops')
         .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('pin_order', { ascending: true })
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -129,8 +131,11 @@ export default function Home() {
 
                 {/* Content Section */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 flex items-center">
                     {workshop.title}
+                    {workshop.is_pinned && (
+                      <Pin className="w-5 h-5 ml-2 text-orange-500 fill-orange-500 flex-shrink-0" />
+                    )}
                   </h3>
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {workshop.description}

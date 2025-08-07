@@ -289,8 +289,8 @@ export default function WorkshopDetail() {
                     <Heart className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">作品持ち帰り</h4>
-                    <p className="text-sm text-gray-600">制作した作品はお持ち帰りいただけます</p>
+                    <h4 className="font-semibold text-gray-900">作品は後日発送</h4>
+                    <p className="text-sm text-gray-600">制作した作品は後日発送いたします</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">

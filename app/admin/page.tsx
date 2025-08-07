@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin } from 'lucide-react'
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -43,6 +43,8 @@ export default function AdminDashboard() {
       const { data: workshopsData, error: workshopsError } = await supabase
         .from('workshops')
         .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('pin_order', { ascending: true })
         .order('created_at', { ascending: false })
       
       if (workshopsError) {
@@ -85,6 +87,26 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating booking:', error)
       alert('ステータスの更新に失敗しました')
+    }
+  }
+
+  async function togglePinWorkshop(workshopId: string, currentPinStatus: boolean) {
+    try {
+      const { error } = await supabase
+        .from('workshops')
+        .update({ 
+          is_pinned: !currentPinStatus,
+          pin_order: !currentPinStatus ? Date.now() : 0
+        })
+        .eq('id', workshopId)
+
+      if (error) throw error
+
+      // データを再取得
+      fetchData()
+    } catch (error) {
+      console.error('Error updating workshop pin status:', error)
+      alert('ピン留めの更新に失敗しました')
     }
   }
 
@@ -466,6 +488,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           {workshop.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={workshop.image_url}
                               alt={workshop.title}
@@ -477,8 +500,11 @@ export default function AdminDashboard() {
                             </div>
                           )}
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 flex items-center">
                               {workshop.title}
+                              {workshop.is_pinned && (
+                                <Pin className="w-4 h-4 ml-2 text-orange-500 fill-orange-500" />
+                              )}
                             </div>
                             <div className="text-xs text-gray-500 line-clamp-1">
                               {workshop.description}
@@ -524,13 +550,26 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleNavigate(`/admin/workshops/${workshop.id}/edit`)}
-                          className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          編集
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => togglePinWorkshop(workshop.id, workshop.is_pinned || false)}
+                            className={`inline-flex items-center px-3 py-1.5 rounded-lg transition-colors ${
+                              workshop.is_pinned
+                                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                            title={workshop.is_pinned ? 'ピン留めを解除' : 'ピン留めする'}
+                          >
+                            <Pin className={`w-4 h-4 ${workshop.is_pinned ? 'fill-orange-700' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => handleNavigate(`/admin/workshops/${workshop.id}/edit`)}
+                            className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            編集
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

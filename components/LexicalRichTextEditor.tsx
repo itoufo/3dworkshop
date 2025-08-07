@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot, $insertNodes } from 'lexical'
 import { 
@@ -108,11 +108,13 @@ interface LexicalRichTextEditorProps {
 }
 
 // HTMLコンテンツを設定するプラグイン
-function HtmlPlugin({ html }: { html: string }) {
+const HtmlPlugin = React.memo(({ html }: { html: string }) => {
   const [editor] = useLexicalComposerContext()
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    if (html) {
+    // 初回のみHTMLを設定
+    if (html && !isInitialized) {
       editor.update(() => {
         const parser = new DOMParser()
         const dom = parser.parseFromString(html, 'text/html')
@@ -120,11 +122,13 @@ function HtmlPlugin({ html }: { html: string }) {
         $getRoot().clear()
         $insertNodes(nodes)
       })
+      setIsInitialized(true)
     }
-  }, [editor, html])
+  }, [editor, html, isInitialized])
 
   return null
-}
+})
+HtmlPlugin.displayName = 'HtmlPlugin'
 
 // 画像アップロードハンドラー
 async function uploadImage(file: File): Promise<string> {
@@ -152,35 +156,59 @@ export default function LexicalRichTextEditor({
   const [showPreview, setShowPreview] = useState(false)
   const [htmlContent, setHtmlContent] = useState(content)
   const [showHtmlSource, setShowHtmlSource] = useState(false)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const initialConfig: InitialConfigType = {
-    namespace: 'Workshop Editor',
-    theme,
-    onError,
-    nodes: [
-      HeadingNode,
-      ListNode,
-      ListItemNode,
-      QuoteNode,
-      CodeNode,
-      CodeHighlightNode,
-      TableNode,
-      TableCellNode,
-      TableRowNode,
-      AutoLinkNode,
-      LinkNode,
-      ImageNode
-    ]
-  }
+  const initialConfig: InitialConfigType = useMemo(
+    () => ({
+      namespace: 'Workshop Editor',
+      theme,
+      onError,
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        CodeHighlightNode,
+        TableNode,
+        TableCellNode,
+        TableRowNode,
+        AutoLinkNode,
+        LinkNode,
+        ImageNode
+      ],
+      editorState: null
+    }),
+    []
+  )
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEditorChange = (_editorState: unknown, editor: any) => {
-    editor.read(() => {
-      const html = $generateHtmlFromNodes(editor)
-      setHtmlContent(html)
-      onChange(html)
-    })
-  }
+  const handleEditorChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (_editorState: unknown, editor: any) => {
+      editor.read(() => {
+        const html = $generateHtmlFromNodes(editor)
+        setHtmlContent(html)
+        
+        // デバウンス処理でonChangeを呼び出す
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current)
+        }
+        debounceTimerRef.current = setTimeout(() => {
+          onChange(html)
+        }, 300)
+      })
+    },
+    [onChange]
+  )
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -270,7 +298,12 @@ export default function LexicalRichTextEditor({
                   <ContentEditable 
                     className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 focus:outline-none editor-input"
                     aria-placeholder={placeholder}
-                    placeholder={<div className="absolute top-4 left-4 text-gray-500 pointer-events-none">{placeholder}</div>}
+                    placeholder={
+                      <div className="absolute top-4 left-4 text-gray-500 pointer-events-none">
+                        {placeholder}
+                      </div>
+                    }
+                    spellCheck={false}
                   />
                 }
                 ErrorBoundary={LexicalErrorBoundary}
@@ -372,10 +405,17 @@ export default function LexicalRichTextEditor({
           border-left: 4px solid rgb(229, 231, 235);
           color: rgb(107, 114, 128);
         }
+        .editor-image-container {
+          display: inline-block;
+          position: relative;
+          vertical-align: bottom;
+          user-select: none;
+          margin: 15px 0;
+        }
         .editor-image {
           max-width: 100%;
           height: auto;
-          margin: 15px 0;
+          display: block;
           border-radius: 8px;
         }
       `}</style>
