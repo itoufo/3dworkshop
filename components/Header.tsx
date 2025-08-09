@@ -15,6 +15,12 @@ export default function Header() {
           </Link>
           
           <nav className="flex items-center space-x-6">
+            {/* <Link
+              href="/school"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105 animate-pulse"
+            >
+              3Dスクール
+            </Link> */}
             <Link
               href="/"
               className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
@@ -41,9 +47,9 @@ export default function Header() {
             </Link>
             <Link
               href="/admin"
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+              className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
             >
-              管理画面
+              会員メニュー
             </Link>
           </nav>
         </div>
