@@ -7,27 +7,44 @@ import { supabase } from '@/lib/supabase'
 import { Workshop } from '@/types'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Clock, MapPin, Users, Sparkles, Pin } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, Sparkles, Pin, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const ITEMS_PER_PAGE = 9
 
 export default function Home() {
   const router = useRouter()
   const [workshops, setWorkshops] = useState<Workshop[]>([])
+  const [filteredWorkshops, setFilteredWorkshops] = useState<Workshop[]>([])
   const [loading, setLoading] = useState(true)
   const [navigating, setNavigating] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     async function fetchWorkshops() {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
       const { data, error } = await supabase
         .from('workshops')
         .select('*')
         .order('is_pinned', { ascending: false })
         .order('pin_order', { ascending: true })
-        .order('created_at', { ascending: false })
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true })
 
       if (error) {
         console.error('Error fetching workshops:', error)
       } else {
-        setWorkshops(data as Workshop[])
+        const allWorkshops = data as Workshop[]
+        
+        const futureWorkshops = allWorkshops.filter(workshop => {
+          if (!workshop.event_date) return true
+          const workshopDate = new Date(workshop.event_date)
+          return workshopDate >= today
+        })
+        
+        setWorkshops(futureWorkshops)
+        setFilteredWorkshops(futureWorkshops)
       }
       setLoading(false)
     }
@@ -43,6 +60,18 @@ export default function Home() {
     
     setNavigating(workshopId)
     router.push(`/workshops/${workshopId}`)
+  }
+
+  const totalPages = Math.ceil(filteredWorkshops.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const currentWorkshops = filteredWorkshops.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 
   if (loading) {
@@ -68,14 +97,14 @@ export default function Home() {
               クリエイティブな体験を
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
             <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               3Dプリンティング
             </span>
             <br />
             ワークショップ
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             初心者から上級者まで、創造性を形にする体験を。
             最新の3Dプリンターを使って、あなたのアイデアを現実に。
           </p>
@@ -84,15 +113,15 @@ export default function Home() {
 
       {/* Workshops Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">開催予定</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">開催予定</h2>
           <div className="flex items-center space-x-2 text-sm text-gray-500">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             <span>予約受付中</span>
           </div>
         </div>
         
-        {workshops.length === 0 ? (
+        {filteredWorkshops.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-12 h-12 text-gray-400" />
@@ -100,8 +129,9 @@ export default function Home() {
             <p className="text-gray-500 text-lg">現在、予約可能なワークショップはありません</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {workshops.map((workshop) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+              {currentWorkshops.map((workshop) => (
               <div
                 key={workshop.id}
                 onClick={(e) => handleWorkshopClick(e, workshop.id)}
@@ -201,6 +231,64 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-12 flex items-center justify-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="前のページ"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                            : 'bg-white border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <span key={page} className="px-2 text-gray-400">
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="次のページ"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+          </>
         )}
       </main>
 

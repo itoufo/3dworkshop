@@ -14,6 +14,8 @@ export interface Workshop {
   stripe_price_id?: string
   is_pinned?: boolean
   pin_order?: number
+  manual_participants?: number
+  manual_participants_note?: string
   created_at: string
   updated_at: string
 }
