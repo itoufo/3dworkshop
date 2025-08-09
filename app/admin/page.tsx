@@ -548,7 +548,7 @@ export default function AdminDashboard() {
                           <Users className="w-3 h-3 inline mr-1" />
                           最大{workshop.max_participants}名 / {workshop.duration}分
                         </div>
-                        {workshop.manual_participants > 0 && (
+                        {workshop.manual_participants && workshop.manual_participants > 0 && (
                           <div className="text-xs text-orange-600 mt-1">
                             手動調整: +{workshop.manual_participants}名
                           </div>

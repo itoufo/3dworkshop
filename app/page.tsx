@@ -13,7 +13,6 @@ const ITEMS_PER_PAGE = 9
 
 export default function Home() {
   const router = useRouter()
-  const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [filteredWorkshops, setFilteredWorkshops] = useState<Workshop[]>([])
   const [loading, setLoading] = useState(true)
   const [navigating, setNavigating] = useState<string | null>(null)
@@ -43,7 +42,6 @@ export default function Home() {
           return workshopDate >= today
         })
         
-        setWorkshops(futureWorkshops)
         setFilteredWorkshops(futureWorkshops)
       }
       setLoading(false)

@@ -132,10 +132,10 @@ export default function SchoolPage() {
                 key={key}
                 className={`relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all cursor-pointer ${
                   selectedPlan === key ? 'ring-4 ring-purple-500 scale-105' : ''
-                } ${plan.recommended ? 'md:scale-105' : ''}`}
+                } ${'recommended' in plan && plan.recommended ? 'md:scale-105' : ''}`}
                 onClick={() => setSelectedPlan(key as 'basic' | 'standard' | 'premium')}
               >
-                {plan.recommended && (
+                {'recommended' in plan && plan.recommended && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
                       おすすめ

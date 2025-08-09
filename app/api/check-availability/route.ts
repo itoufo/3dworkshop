@@ -10,6 +10,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+    
     // ワークショップ情報を取得
     const { data: workshop, error: workshopError } = await supabaseAdmin
       .from('workshops')
