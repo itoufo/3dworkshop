@@ -28,7 +28,9 @@ export default function EditWorkshop() {
     location: '',
     image_url: '',
     event_date: '',
-    event_time: ''
+    event_time: '',
+    manual_participants: '',
+    manual_participants_note: ''
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -57,7 +59,9 @@ export default function EditWorkshop() {
           location: workshopData.location || '',
           image_url: workshopData.image_url || '',
           event_date: workshopData.event_date || '',
-          event_time: workshopData.event_time || ''
+          event_time: workshopData.event_time || '',
+          manual_participants: workshopData.manual_participants?.toString() || '0',
+          manual_participants_note: workshopData.manual_participants_note || ''
         })
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
@@ -126,6 +130,8 @@ export default function EditWorkshop() {
           image_url: imageUrl,
           event_date: formData.event_date || null,
           event_time: formData.event_time || null,
+          manual_participants: parseInt(formData.manual_participants) || 0,
+          manual_participants_note: formData.manual_participants_note || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -335,6 +341,55 @@ export default function EditWorkshop() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
+            </div>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">参加人数の手動調整</h3>
+              <p className="text-xs text-gray-600 mb-3">他の媒体（電話・メール・店頭など）からの予約人数を記録できます</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    手動調整人数
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.manual_participants}
+                    onChange={(e) => setFormData({ ...formData, manual_participants: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">システム外で受け付けた予約人数</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    調整理由・メモ
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.manual_participants_note}
+                    onChange={(e) => setFormData({ ...formData, manual_participants_note: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="例：電話予約3名、店頭受付2名"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">どこから予約が入ったか記録</p>
+                </div>
+              </div>
+              
+              {workshop && (
+                <div className="mt-4 p-3 bg-white rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-700">現在の予約状況：</p>
+                  <p className="text-sm text-gray-900 mt-1">
+                    最大参加人数: {workshop.max_participants}名 / 
+                    手動調整: {formData.manual_participants || 0}名
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    ※ システム上の予約と合わせて最大参加人数を超えないよう注意してください
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

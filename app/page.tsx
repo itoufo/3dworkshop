@@ -97,14 +97,14 @@ export default function Home() {
               クリエイティブな体験を
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
             <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               3Dプリンティング
             </span>
             <br />
             ワークショップ
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             初心者から上級者まで、創造性を形にする体験を。
             最新の3Dプリンターを使って、あなたのアイデアを現実に。
           </p>
@@ -113,8 +113,8 @@ export default function Home() {
 
       {/* Workshops Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">開催予定</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">開催予定</h2>
           <div className="flex items-center space-x-2 text-sm text-gray-500">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             <span>予約受付中</span>
@@ -130,7 +130,7 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {currentWorkshops.map((workshop) => (
               <div
                 key={workshop.id}

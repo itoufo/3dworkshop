@@ -36,6 +36,12 @@ export default function WorkshopDetail() {
   }>({ loading: false, valid: false })
   const [appliedCoupon, setAppliedCoupon] = useState<{id: string; code: string; description?: string; discount_type: 'percentage' | 'fixed_amount'; discount_value: number} | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [availability, setAvailability] = useState<{
+    available_spots: number
+    is_full: boolean
+    manual_participants: number
+    booked_participants: number
+  } | null>(null)
 
   useEffect(() => {
     async function fetchWorkshop() {
@@ -49,12 +55,26 @@ export default function WorkshopDetail() {
         console.error('Error fetching workshop:', error)
       } else {
         setWorkshop(data as Workshop)
+        // 残席数を取得
+        fetchAvailability(params.id as string)
       }
       setLoading(false)
     }
     
     fetchWorkshop()
   }, [params.id])
+
+  async function fetchAvailability(workshopId: string) {
+    try {
+      const response = await fetch(`/api/check-availability?workshopId=${workshopId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAvailability(data)
+      }
+    } catch (error) {
+      console.error('Error fetching availability:', error)
+    }
+  }
 
   async function validateCoupon() {
     if (!couponCode.trim() || !workshop) return
@@ -344,11 +364,35 @@ export default function WorkshopDetail() {
                   )}
                   <div className="flex items-center text-sm text-gray-700">
                     <Users className="w-4 h-4 mr-2 text-purple-600" />
-                    <span className="font-medium text-gray-900">定員 {workshop.max_participants}名</span>
+                    <span className="font-medium text-gray-900">
+                      定員 {workshop.max_participants}名
+                      {availability && (
+                        <>
+                          {availability.is_full ? (
+                            <span className="ml-2 text-red-600 font-bold">（満席）</span>
+                          ) : (
+                            <span className="ml-2 text-green-600">
+                              （残り{availability.available_spots}名）
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </span>
                   </div>
+                  {availability && availability.manual_participants > 0 && (
+                    <div className="text-xs text-orange-600 ml-6">
+                      ※ 他媒体からの予約: {availability.manual_participants}名
+                    </div>
+                  )}
                 </div>
               </div>
               
+              {availability?.is_full ? (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                  <p className="text-red-800 font-semibold mb-2">このワークショップは満席です</p>
+                  <p className="text-sm text-red-600">キャンセル待ちをご希望の場合は、お問い合わせください。</p>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Participants */}
                 <div>
@@ -361,7 +405,7 @@ export default function WorkshopDetail() {
                     value={booking.participants}
                     onChange={(e) => setBooking({ ...booking, participants: parseInt(e.target.value) })}
                   >
-                    {[...Array(Math.min(workshop.max_participants, 5))].map((_, i) => (
+                    {[...Array(Math.min(availability?.available_spots || workshop.max_participants, 5))].map((_, i) => (
                       <option key={i + 1} value={i + 1}>
                         {i + 1}名
                       </option>
@@ -557,6 +601,7 @@ export default function WorkshopDetail() {
                   </div>
                 </div>
               </form>
+              )}
             </div>
           </div>
         </div>
