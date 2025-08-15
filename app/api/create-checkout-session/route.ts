@@ -7,6 +7,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { workshop_id, booking_id, customer_email, amount, participants, coupon_id, discount_amount } = body
 
+    // リクエストから現在のホストを取得
+    const host = request.headers.get('host')
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    const baseUrl = `${protocol}://${host}`
+
     if (!supabaseAdmin) {
       throw new Error('Supabase admin client not available')
     }
@@ -40,8 +45,8 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'payment',
       customer_email: customer_email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/workshops/${workshop_id}`,
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/workshops/${workshop_id}`,
       metadata: {
         booking_id: booking_id,
         workshop_id: workshop_id,
