@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,36 +60,8 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', booking_id)
 
-    // 顧客情報を取得
-    const { data: booking } = await supabaseAdmin
-      .from('bookings')
-      .select('*, customers(*)')
-      .eq('id', booking_id)
-      .single()
-
-    if (booking && booking.customers) {
-      // 予約確認メールを送信
-      const emailContent = generateBookingConfirmationEmail(
-        workshop.title,
-        workshop.event_date ? new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          weekday: 'long'
-        }) : '未定',
-        workshop.event_time ? workshop.event_time.slice(0, 5) : '未定',
-        workshop.location || '未定',
-        booking.customers.name,
-        booking.customers.email
-      )
-
-      await sendEmail({
-        to: booking.customers.email,
-        cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
-        subject: emailContent.subject,
-        html: emailContent.html
-      })
-    }
+    // メール送信はWebhookで決済完了後に行うため、ここでは送信しない
+    // 決済完了の確認はStripe Webhookで行います
 
     return NextResponse.json({ sessionId: session.id })
   } catch (error) {
