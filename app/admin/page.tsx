@@ -275,6 +275,9 @@ export default function AdminDashboard() {
                     金額
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    予約作成日
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ステータス
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -327,6 +330,28 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-gray-900">
                         ¥{booking.total_amount.toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600">
+                        {(() => {
+                          const jstDate = new Date(new Date(booking.created_at).getTime() + 9 * 60 * 60 * 1000);
+                          return jstDate.toLocaleDateString('ja-JP', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                          });
+                        })()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        {(() => {
+                          const jstDate = new Date(new Date(booking.created_at).getTime() + 9 * 60 * 60 * 1000);
+                          return jstDate.toLocaleTimeString('ja-JP', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+                        })()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
