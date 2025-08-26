@@ -23,7 +23,7 @@ export default function AdminDashboard() {
 
   async function fetchData() {
     try {
-      // 予約情報を取得
+      // 予約情報を取得（クーポン情報も含む）
       const { data: bookingsData } = await supabase
         .from('bookings')
         .select(`
@@ -261,7 +261,10 @@ export default function AdminDashboard() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    予約日時
+                    作成日時
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ワークショップ開催日
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ワークショップ
@@ -273,7 +276,7 @@ export default function AdminDashboard() {
                     人数
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    金額
+                    金額・クーポン
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     クーポン
@@ -293,17 +296,47 @@ export default function AdminDashboard() {
                 {bookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 font-medium">
-                        {new Date(booking.booking_date).toLocaleDateString('ja-JP', {
+                      <div className="text-sm text-gray-900">
+                        {new Date(booking.created_at).toLocaleDateString('ja-JP', {
                           year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
+                          month: '2-digit',
+                          day: '2-digit'
                         })}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500">
                         <Clock className="w-3 h-3 inline mr-1" />
-                        {booking.booking_time}
+                        {new Date(booking.created_at).toLocaleTimeString('ja-JP', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {booking.workshop?.event_date ? (
+                        <div>
+                          <div className="text-sm text-gray-900 font-medium">
+                            {new Date(booking.workshop.event_date).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit'
+                            })}
+                          </div>
+                          {booking.workshop?.event_time && (
+                            <div className="text-xs text-gray-500">
+                              <Clock className="w-3 h-3 inline mr-1" />
+                              {booking.workshop.event_time.slice(0, 5)}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-900 font-medium">
+                          {new Date(booking.booking_date).toLocaleDateString('ja-JP', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                          })}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
