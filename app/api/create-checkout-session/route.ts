@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { workshop_id, booking_id, customer_email, amount, participants, coupon_id, discount_amount } = body
+
+    // リクエストから現在のホストを取得
+    const host = request.headers.get('host')
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    const baseUrl = `${protocol}://${host}`
 
     if (!supabaseAdmin) {
       throw new Error('Supabase admin client not available')
@@ -41,8 +45,8 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'payment',
       customer_email: customer_email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/workshops/${workshop_id}`,
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/workshops/${workshop_id}`,
       metadata: {
         booking_id: booking_id,
         workshop_id: workshop_id,
@@ -61,36 +65,8 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', booking_id)
 
-    // 顧客情報を取得
-    const { data: booking } = await supabaseAdmin
-      .from('bookings')
-      .select('*, customers(*)')
-      .eq('id', booking_id)
-      .single()
-
-    if (booking && booking.customers) {
-      // 予約確認メールを送信
-      const emailContent = generateBookingConfirmationEmail(
-        workshop.title,
-        workshop.event_date ? new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          weekday: 'long'
-        }) : '未定',
-        workshop.event_time ? workshop.event_time.slice(0, 5) : '未定',
-        workshop.location || '未定',
-        booking.customers.name,
-        booking.customers.email
-      )
-
-      await sendEmail({
-        to: booking.customers.email,
-        cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
-        subject: emailContent.subject,
-        html: emailContent.html
-      })
-    }
+    // メール送信はWebhookで決済完了後に行うため、ここでは送信しない
+    // 決済完了の確認はStripe Webhookで行います
 
     return NextResponse.json({ sessionId: session.id })
   } catch (error) {
