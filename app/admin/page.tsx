@@ -29,7 +29,8 @@ export default function AdminDashboard() {
         .select(`
           *,
           workshop:workshops(*),
-          customer:customers(*)
+          customer:customers(*),
+          coupon:coupons(*)
         `)
         .order('created_at', { ascending: false })
 
@@ -275,6 +276,9 @@ export default function AdminDashboard() {
                     金額
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    クーポン
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     予約作成日
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -331,6 +335,26 @@ export default function AdminDashboard() {
                       <div className="text-sm font-semibold text-gray-900">
                         ¥{booking.total_amount.toLocaleString()}
                       </div>
+                      {booking.discount_amount > 0 && (
+                        <div className="text-xs text-gray-500">
+                          (割引前: ¥{(booking.total_amount + booking.discount_amount).toLocaleString()})
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {booking.coupon_id && booking.coupon ? (
+                        <div>
+                          <div className="text-sm font-medium text-purple-600">
+                            <Tag className="w-3 h-3 inline mr-1" />
+                            {booking.coupon.code}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            -¥{booking.discount_amount.toLocaleString()}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">なし</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-600">
