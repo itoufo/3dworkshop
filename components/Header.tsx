@@ -64,12 +64,6 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/admin"
-              className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
-            >
-              会員メニュー
-            </Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -104,15 +98,6 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <div className="pt-4 border-t border-gray-200">
-            <Link
-              href="/admin"
-              className="block w-full text-center px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300"
-              onClick={closeMenu}
-            >
-              管理画面
-            </Link>
-          </div>
         </nav>
       </div>
 

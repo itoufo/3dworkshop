@@ -17,6 +17,11 @@ export default function SchoolSuccessPage() {
     email: string
     program: string
     created_at: string
+    class_name: string
+    student_name: string
+    customer?: {
+      email: string
+    }
   } | null>(null)
   const [loading, setLoading] = useState(true)
 

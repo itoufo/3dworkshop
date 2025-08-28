@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { Calendar, Clock, MapPin, Users, Check, Star, Gift, BookOpen, Monitor, Zap, Heart } from 'lucide-react'

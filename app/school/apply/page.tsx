@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Tag, X, Shield, Clock, Gift, Monitor } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Tag, X, Shield, Clock, Gift } from 'lucide-react'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -160,7 +160,7 @@ export default function SchoolApplyPage() {
           student_grade: formData.studentGrade,
           monthly_fee: selectedClass.price,
           registration_fee: selectedClass.registrationFee,
-          total_amount: selectedClass.price + selectedClass.registrationFee,
+          total_amount: totalAmount, // basicは入会金+初月月謝、freeは入会金のみ
           notes: formData.notes,
           status: 'pending',
           payment_status: 'pending',
@@ -201,7 +201,10 @@ export default function SchoolApplyPage() {
     }
   }
 
-  const totalAmount = selectedClass.price + selectedClass.registrationFee
+  // basicクラスは初月月謝も請求、freeクラスは入会金のみ
+  const totalAmount = selectedClass.id === 'basic' 
+    ? selectedClass.registrationFee + selectedClass.price 
+    : selectedClass.registrationFee
   const discountAmount = couponValidation.discount_amount || 0
   const finalAmount = totalAmount - discountAmount
 
@@ -457,11 +460,30 @@ export default function SchoolApplyPage() {
                       ¥{selectedClass.registrationFee.toLocaleString()}
                     </span>
                   </div>
+                  
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">月謝（初月分）</span>
-                    <span className="text-lg text-gray-900">
-                      ¥{selectedClass.price.toLocaleString()}
-                    </span>
+                    <div>
+                      <span className="text-gray-600">初月月謝</span>
+                      {selectedClass.id === 'free' && (
+                        <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">無料特典</span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {selectedClass.id === 'free' ? (
+                        <>
+                          <span className="text-lg text-gray-400 line-through">
+                            ¥{selectedClass.price.toLocaleString()}
+                          </span>
+                          <span className="text-lg text-green-600 font-bold ml-2">
+                            ¥0
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-lg text-gray-900 font-semibold">
+                          ¥{selectedClass.price.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   {discountAmount > 0 && (
@@ -473,7 +495,7 @@ export default function SchoolApplyPage() {
                   
                   <div className="border-t pt-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-gray-900">合計金額</span>
+                      <span className="text-lg font-semibold text-gray-900">初回お支払い金額</span>
                       <span className="text-2xl font-bold text-gray-900">
                         ¥{finalAmount.toLocaleString()}
                       </span>
@@ -481,10 +503,23 @@ export default function SchoolApplyPage() {
                   </div>
                 </div>
                 
-                <p className="text-xs text-gray-500 mt-4">
-                  ※ 入会月の月謝は無料です（翌月分を初回にお支払いいただきます）<br />
-                  ※ 翌月以降の月謝は自動引き落としとなります
-                </p>
+                <div className="bg-blue-50 rounded-lg p-3 mt-4">
+                  <p className="text-sm text-blue-900 font-medium mb-1">お支払いについて</p>
+                  <ul className="text-xs text-blue-800 space-y-1">
+                    {selectedClass.id === 'free' ? (
+                      <>
+                        <li>• 初月（入会月）の月謝は<span className="font-bold">無料</span>です</li>
+                        <li>• 本日は入会金のみをお支払いいただきます</li>
+                        <li>• 翌月から月謝¥{selectedClass.price.toLocaleString()}が自動引き落としとなります</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• 本日は入会金と初月月謝をお支払いいただきます</li>
+                        <li>• 翌月から月謝¥{selectedClass.price.toLocaleString()}が自動引き落としとなります</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
               </div>
 
               {/* Terms Agreement */}

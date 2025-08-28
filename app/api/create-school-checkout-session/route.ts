@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
+  apiVersion: '2025-07-30.basil'
 })
 
 const supabase = createClient(
@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
     // Create line items for the checkout session
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
 
-    // Add registration fee (one-time)
+    // Add registration fee
     lineItems.push({
       price_data: {
         currency: 'jpy',
         product_data: {
-          name: `スクール入会金`,
+          name: 'スクール入会金',
           description: '初回のみ・システム登録料含む'
         },
         unit_amount: registration_fee
@@ -40,20 +40,20 @@ export async function POST(request: NextRequest) {
       quantity: 1
     })
 
-    // Add first month fee
-    lineItems.push({
-      price_data: {
-        currency: 'jpy',
-        product_data: {
-          name: class_type === 'basic' 
-            ? '基本実践クラス（授業＋作品作り）月謝'
-            : '自由創作クラス（教室開放）月謝',
-          description: '初月分（入会月は無料のため、翌月分）'
+    // Add first month fee for basic class only (free class gets first month free)
+    if (class_type === 'basic') {
+      lineItems.push({
+        price_data: {
+          currency: 'jpy',
+          product_data: {
+            name: '基本実践クラス（授業＋作品作り）月謝',
+            description: '初月分'
+          },
+          unit_amount: monthly_fee
         },
-        unit_amount: monthly_fee
-      },
-      quantity: 1
-    })
+        quantity: 1
+      })
+    }
 
     // Create metadata for the session
     const metadata: Record<string, string> = {

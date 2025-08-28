@@ -82,10 +82,16 @@ export function generateBookingConfirmationEmail(
           
           <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
           <p>当日お会いできることを楽しみにしております。</p>
+          
+          <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
+            <h3>お問い合わせ先</h3>
+            <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+            <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
+          </div>
         </div>
         <div class="footer">
           <p>このメールは自動送信されています。</p>
-          <p>© 2024 3D Lab Workshop</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -143,10 +149,16 @@ export function generate3DPrintingRequestEmail(
           
           <p>制作が完了次第、ご連絡いたします。</p>
           <p>通常、3〜5営業日で完成予定です。</p>
+          
+          <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
+            <h3>お問い合わせ先</h3>
+            <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+            <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
+          </div>
         </div>
         <div class="footer">
           <p>このメールは自動送信されています。</p>
-          <p>© 2024 3D Lab</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
         </div>
       </div>
     </body>

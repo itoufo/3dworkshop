@@ -95,17 +95,18 @@ export default function Home() {
               クリエイティブな体験を
             </div>
           </div>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            <span className="text-gray-900">
-              3Dプリンタ教室
-            </span>
-            <br />
-            <span className="text-gray-900">
-              3DLab
-            </span>
-          </h1>
+          <div className="flex justify-center mb-6">
+            <Image 
+              src="/logo.png" 
+              alt="3D Lab" 
+              width={360} 
+              height={120} 
+              className="h-24 sm:h-32 md:h-40 w-auto"
+              priority
+            />
+          </div>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            3DLabで学ぶ、創造性を形にする体験。
+            創造性を形にする体験。
             最新の3Dプリンターを使って、あなたのアイデアを現実に。
           </p>
           
@@ -307,13 +308,37 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">3D</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-2xl">3D</span>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">3Dプリンタ教室 3DLab</h3>
+          </div>
+          
+          {/* Contact Information */}
+          <div className="border-t border-gray-800 pt-6 mb-6">
+            <div className="text-center space-y-2">
+              <p className="text-sm">
+                <span className="text-gray-400">お問い合わせ：</span>
+                <a href="mailto:y-sato@sunu25.com" className="text-purple-400 hover:text-purple-300 ml-2">
+                  y-sato@sunu25.com
+                </a>
+              </p>
+              <p className="text-sm">
+                <span className="text-gray-400">電話：</span>
+                <a href="tel:080-9453-0911" className="text-purple-400 hover:text-purple-300 ml-2">
+                  080-9453-0911
+                </a>
+              </p>
             </div>
           </div>
-          <p className="text-sm">© 2024 3D Workshop. All rights reserved.</p>
+          
+          <div className="text-center">
+            <p className="text-sm text-gray-500">© 2024 3DLab. All rights reserved.</p>
+          </div>
         </div>
       </footer>
       </div>
