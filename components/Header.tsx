@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Menu, X } from 'lucide-react'
 
 export default function Header() {
@@ -30,6 +31,7 @@ export default function Header() {
 
   const navLinks = [
     { href: '/', label: 'ワークショップ' },
+    { href: '/school', label: 'スクール' },
     { href: '/products', label: '商品・サービス' },
     { href: '/portfolio', label: '実績紹介' },
     { href: '/blog', label: 'ブログ' },
@@ -40,14 +42,15 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 sm:space-x-3" onClick={closeMenu}>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg sm:text-xl">3D</span>
-            </div>
-            <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              <span className="hidden sm:inline">Workshop</span>
-              <span className="sm:hidden">WS</span>
-            </span>
+          <Link href="/" className="flex items-center" onClick={closeMenu}>
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={180} 
+              height={60} 
+              className="h-12 w-auto sm:h-14"
+              priority
+            />
           </Link>
           
           {/* Desktop Navigation */}

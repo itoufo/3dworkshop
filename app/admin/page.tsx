@@ -131,8 +131,8 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">ダッシュボード</h2>
-            <p className="text-gray-600 mt-1">ワークショップの予約と顧客情報を管理</p>
+            <h2 className="text-3xl font-bold text-gray-900">3DLab 管理ダッシュボード</h2>
+            <p className="text-gray-600 mt-1">3Dプリンタ教室の予約と顧客情報を管理</p>
           </div>
           <div className="text-sm text-gray-500">
             <Clock className="w-4 h-4 inline mr-1" />

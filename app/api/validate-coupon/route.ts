@@ -3,11 +3,17 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, workshopId, amount, customerId } = await request.json()
+    const { code, workshopId, amount, customerId, type = 'workshop' } = await request.json()
 
-    if (!code || !workshopId || !amount) {
+    // スクール用クーポンの場合はworkshopId不要
+    if (type === 'workshop' && (!code || !workshopId || !amount)) {
       return NextResponse.json(
         { error: 'クーポンコード、ワークショップID、金額は必須です' },
+        { status: 400 }
+      )
+    } else if (type === 'school' && (!code || !amount)) {
+      return NextResponse.json(
+        { error: 'クーポンコード、金額は必須です' },
         { status: 400 }
       )
     }
@@ -55,14 +61,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 対象ワークショップチェック
-    if (coupon.workshop_ids && coupon.workshop_ids.length > 0) {
+    // 対象ワークショップチェック（ワークショップ用クーポンの場合）
+    if (type === 'workshop' && coupon.workshop_ids && coupon.workshop_ids.length > 0) {
       if (!coupon.workshop_ids.includes(workshopId)) {
         return NextResponse.json(
           { error: 'このクーポンは対象外のワークショップです' },
           { status: 400 }
         )
       }
+    }
+
+    // クーポンタイプのチェック（スクール用かワークショップ用か）
+    if (coupon.applicable_to && coupon.applicable_to !== type && coupon.applicable_to !== 'all') {
+      return NextResponse.json(
+        { error: `このクーポンは${type === 'school' ? 'スクール' : 'ワークショップ'}では使用できません` },
+        { status: 400 }
+      )
     }
 
     // ユーザーごとの使用回数チェック（顧客IDがある場合）

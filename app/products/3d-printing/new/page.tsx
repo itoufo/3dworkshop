@@ -235,7 +235,7 @@ export default function New3DPrintingOrder() {
                     <select
                       value={order.material_type}
                       onChange={(e) => setOrder({ ...order, material_type: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     >
                       {materials.map(material => (
                         <option 
@@ -294,7 +294,7 @@ export default function New3DPrintingOrder() {
                     <select
                       value={order.infill_percentage}
                       onChange={(e) => setOrder({ ...order, infill_percentage: parseInt(e.target.value) })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     >
                       <option value="10">10% (軽量)</option>
                       <option value="20">20% (標準)</option>
@@ -313,7 +313,7 @@ export default function New3DPrintingOrder() {
                     value={order.notes}
                     onChange={(e) => setOrder({ ...order, notes: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     placeholder="特別な要望があればご記入ください"
                   />
                 </div>
@@ -333,7 +333,7 @@ export default function New3DPrintingOrder() {
                       required
                       value={customerInfo.name}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     />
                   </div>
 
@@ -346,7 +346,7 @@ export default function New3DPrintingOrder() {
                       required
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     />
                   </div>
 
@@ -358,7 +358,7 @@ export default function New3DPrintingOrder() {
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     />
                   </div>
                 </div>

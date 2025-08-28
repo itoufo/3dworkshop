@@ -401,7 +401,7 @@ export default function WorkshopDetail() {
                   </label>
                   <select
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={booking.participants}
                     onChange={(e) => setBooking({ ...booking, participants: parseInt(e.target.value) })}
                   >
@@ -422,7 +422,7 @@ export default function WorkshopDetail() {
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={booking.name}
                     onChange={(e) => setBooking({ ...booking, name: e.target.value })}
                     placeholder="山田 太郎"
@@ -438,7 +438,7 @@ export default function WorkshopDetail() {
                   <input
                     type="email"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={booking.email}
                     onChange={(e) => setBooking({ ...booking, email: e.target.value })}
                     placeholder="example@email.com"
@@ -453,7 +453,7 @@ export default function WorkshopDetail() {
                   </label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={booking.phone}
                     onChange={(e) => setBooking({ ...booking, phone: e.target.value })}
                     placeholder="090-1234-5678"
@@ -471,7 +471,7 @@ export default function WorkshopDetail() {
                       min="1"
                       max="150"
                       required
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                       value={booking.age}
                       onChange={(e) => setBooking({ ...booking, age: e.target.value })}
                       placeholder="25"
@@ -484,7 +484,7 @@ export default function WorkshopDetail() {
                     </label>
                     <select
                       required
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                       value={booking.gender}
                       onChange={(e) => setBooking({ ...booking, gender: e.target.value })}
                     >

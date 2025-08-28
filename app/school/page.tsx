@@ -1,270 +1,302 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
+import Header from '@/components/Header'
+import { Calendar, Clock, MapPin, Users, Check, Star, Gift, BookOpen, Monitor, Zap, Heart } from 'lucide-react'
 
 export default function SchoolPage() {
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'standard' | 'premium'>('standard')
+  const [selectedClass, setSelectedClass] = useState<'free' | 'basic'>('basic')
 
-  const plans = {
-    basic: {
-      name: '体験プラン',
-      price: '月額 ¥9,800',
-      features: [
-        '月1回の講習受講（100g以内）',
-        '3Dプリンタ利用時間: 30分/回',
-        'フィラメント3色まで選択可',
-        'オンラインサポート',
-        '基礎教材アクセス',
-        '作品お持ち帰り可'
-      ],
-      color: 'from-blue-500 to-cyan-500'
-    },
-    standard: {
-      name: 'スタンダードプラン',
-      price: '月額 ¥19,800',
-      features: [
-        '100g以内なら月2回 / 300g以内なら月1回',
-        '3Dプリンタ利用時間: 1時間/回',
-        'フィラメント4色まで選択可',
-        '24時間オンラインサポート',
-        '全教材アクセス',
-        '作品保管スペース',
-        'フィラメント追加購入10%割引',
-        '特別ワークショップ優先予約'
-      ],
-      recommended: true,
-      color: 'from-purple-500 to-pink-500'
-    },
-    premium: {
-      name: 'プレミアムプラン',
-      price: '月額 ¥39,800',
-      features: [
-        '200g以内なら月4回 / 500g以内なら月2回',
-        '3Dプリンタ利用時間: 2時間/回',
-        'フィラメント4色まで選択可',
-        '専任インストラクター',
-        '全教材・アドバンスコース',
-        '専用作品保管スペース',
-        'フィラメント追加購入30%割引',
-        '特別ワークショップ50%割引',
-        '商用利用ライセンス付与'
-      ],
-      color: 'from-amber-500 to-orange-500'
-    }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    alert(`${plans[selectedPlan].name}への申し込みを受け付けました。詳細はメールでご連絡いたします。`)
-  }
+  const features = [
+    { icon: Monitor, text: '有料版AIが使い放題！' },
+    { icon: Gift, text: 'ワークショップに30％OFFで参加可能' },
+    { icon: Star, text: '作品発表会への参加券！' },
+    { icon: BookOpen, text: '未来に必要なスキルが学べるウェビナーへ無料招待' }
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      {/* ヒーローセクション */}
-      <section className="pt-24 pb-12 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-              3Dプリンタースクール
-            </span>
-          </h1>
-          <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
-            初心者から上級者まで、あなたのレベルに合わせた3Dプリンティング技術を習得。
-            創造力を形にする力を身につけましょう。
-          </p>
-          <div className="flex gap-4 justify-center">
-            <a href="#pricing" className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold hover:shadow-2xl transition-all duration-300 hover:scale-105">
-              料金プランを見る
-            </a>
-            <Link href="/admin" className="px-8 py-4 bg-white text-purple-600 rounded-full font-semibold border-2 border-purple-600 hover:bg-purple-50 transition-all duration-300">
-              会員ログイン
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full text-sm font-bold mb-6">
+              第1期生 大募集
+            </div>
+            <h1 className="text-5xl sm:text-6xl font-black mb-6">
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                3DLab
+              </span>
+              <br />
+              <span className="text-gray-900">AI×3Dプリンタ教室</span>
+            </h1>
+            <p className="text-2xl text-gray-700 mb-4">未来を創る思考力</p>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              PCスキルも身につく！プログラミング教室で一緒に作り上げる
+            </p>
+            
+            {/* 入会特典 */}
+            <div className="mt-8 inline-flex items-center bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-8 py-4 rounded-2xl shadow-lg">
+              <Zap className="w-6 h-6 mr-2" />
+              <span className="text-xl font-bold">入会月は月謝無料！</span>
+            </div>
+          </div>
+          
+          {/* Hero Image */}
+          <div className="relative max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 opacity-20"></div>
+                <div className="relative h-full flex items-center justify-center bg-white/90">
+                  <div className="text-center p-8">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-3xl font-bold">3D</span>
+                    </div>
+                    <p className="text-gray-800 font-medium">3DLabで創造力を育む</p>
+                  </div>
+                </div>
+              </div>
+              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-cyan-400 opacity-20"></div>
+                <div className="relative h-full flex items-center justify-center bg-white/90">
+                  <div className="text-center p-8">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
+                      <Monitor className="w-10 h-10 text-white" />
+                    </div>
+                    <p className="text-gray-800 font-medium">最新技術を楽しく学ぶ</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Class Selection */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            選べる2つのクラス
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 自由創作クラス */}
+            <div 
+              className={`relative bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer transition-all duration-300 ${
+                selectedClass === 'free' ? 'ring-4 ring-purple-600 scale-[1.02]' : 'hover:shadow-2xl'
+              }`}
+              onClick={() => setSelectedClass('free')}
+            >
+              <div className="absolute top-4 right-4">
+                {selectedClass === 'free' && (
+                  <div className="bg-purple-600 text-white rounded-full p-2">
+                    <Check className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-8">
+                <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-2 rounded-full inline-block mb-4">
+                  <span className="text-sm font-bold">自由創作クラス（教室開放）</span>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  作りたいを自由に、<br />
+                  いつでも質問できる安心ラボ
+                </h3>
+                
+                <p className="text-gray-600 mb-6">
+                  PCや有料版AIを自由に使いながら、自分のアイデアをとことん形にできるクラス。
+                  わからないことも講師にその場で質問できるので、初めてでも安心！
+                </p>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-start">
+                    <Calendar className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-700 font-medium">月2回</p>
+                      <p className="text-sm text-gray-500">開校日の好きな日に参加可能</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <Clock className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-700 font-medium">120分/回</p>
+                      <p className="text-sm text-gray-500">たっぷり制作時間</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <Gift className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-700 font-medium">制作し放題</p>
+                      <p className="text-sm text-gray-500">時間内で自由に創作</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-600">月謝</span>
+                    <span className="text-3xl font-bold text-gray-900">¥17,000</span>
+                  </div>
+                  <p className="text-sm text-gray-500">入会金: ¥20,000（税別）※システム登録料含む</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 基本実践クラス */}
+            <div 
+              className={`relative bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer transition-all duration-300 ${
+                selectedClass === 'basic' ? 'ring-4 ring-purple-600 scale-[1.02]' : 'hover:shadow-2xl'
+              }`}
+              onClick={() => setSelectedClass('basic')}
+            >
+              <div className="absolute top-4 right-4">
+                {selectedClass === 'basic' && (
+                  <div className="bg-purple-600 text-white rounded-full p-2">
+                    <Check className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="absolute top-4 left-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold">
+                一番人気
+              </div>
+              
+              <div className="p-8">
+                <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-4 py-2 rounded-full inline-block mb-4">
+                  <span className="text-sm font-bold">基本実践クラス（授業＋作品作り）</span>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  好きを育てる！ものづくりを通して<br />
+                  未来スキルを楽しく習得
+                </h3>
+                
+                <p className="text-gray-600 mb-6">
+                  AIの使い方や3Dプリンターの基礎を授業で学び、その場で実際に作品を制作していくクラス。
+                  学んだ内容をすぐ実践できるため、確実にスキルが身につく！
+                </p>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-start">
+                    <Calendar className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-700 font-medium">月2回</p>
+                      <p className="text-sm text-gray-500">授業日：土・日曜日</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <Clock className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-700 font-medium">90分/回</p>
+                      <p className="text-sm text-gray-500">じっくり学べる時間設定</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <Gift className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-700 font-medium">月1作品制作</p>
+                      <p className="text-sm text-gray-500">例：オリジナルフィギュア</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-600">月謝</span>
+                    <span className="text-3xl font-bold text-gray-900">¥30,000</span>
+                  </div>
+                  <p className="text-sm text-gray-500">入会金: ¥20,000（税別）※システム登録料含む</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* 申込ボタン */}
+          <div className="mt-12 text-center">
+            <Link 
+              href={`/school/apply?class=${selectedClass}`}
+              className="inline-flex items-center px-12 py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xl font-bold rounded-2xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <Heart className="w-6 h-6 mr-3" />
+              選択したクラスに申し込む
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 特徴セクション */}
-      <section className="py-16 px-4">
+      {/* Special Benefits */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-100 to-pink-100">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">スクールの特徴</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-4">体系的なカリキュラム</h3>
-              <p className="text-gray-600">基礎から応用まで、段階的に学べる充実したカリキュラムをご用意</p>
-            </div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-4">少人数制レッスン</h3>
-              <p className="text-gray-600">一人ひとりに寄り添った丁寧な指導で、確実にスキルアップ</p>
-            </div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-4">実践的なプロジェクト</h3>
-              <p className="text-gray-600">実際の制作を通じて、即戦力となる技術を身につけます</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 料金プランセクション */}
-      <section id="pricing" className="py-16 px-4 bg-white/50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">料金プラン</h2>
-          <p className="text-center text-gray-600 mb-12">あなたのニーズに合わせた最適なプランをお選びください</p>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            スクール生特典も豊富！！
+          </h2>
           
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {Object.entries(plans).map(([key, plan]) => (
-              <div
-                key={key}
-                className={`relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all cursor-pointer ${
-                  selectedPlan === key ? 'ring-4 ring-purple-500 scale-105' : ''
-                } ${'recommended' in plan && plan.recommended ? 'md:scale-105' : ''}`}
-                onClick={() => setSelectedPlan(key as 'basic' | 'standard' | 'premium')}
-              >
-                {'recommended' in plan && plan.recommended && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                      おすすめ
-                    </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {features.map((feature, index) => (
+              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <feature.icon className="w-6 h-6 text-white" />
                   </div>
-                )}
-                <div className={`w-full h-2 bg-gradient-to-r ${plan.color} rounded-full mb-6`}></div>
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <p className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {plan.price}
-                </p>
-                <ul className="space-y-3">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                  <p className="text-gray-800 font-medium flex-1">{feature.text}</p>
+                </div>
               </div>
             ))}
           </div>
-
-          {/* 申し込みフォーム */}
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl p-8 shadow-xl">
-            <h3 className="text-2xl font-bold mb-6 text-center">サブスクリプション申し込み</h3>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">選択プラン</label>
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-                  <p className="font-semibold text-lg">{plans[selectedPlan].name}</p>
-                  <p className="text-purple-600 font-bold">{plans[selectedPlan].price}</p>
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    お名前 *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    メールアドレス *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  電話番号 *
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  ご要望・ご質問（任意）
-                </label>
-                <textarea
-                  id="message"
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  required
-                  className="mt-1 mr-2"
-                />
-                <label htmlFor="terms" className="text-sm text-gray-600">
-                  <Link href="/terms" className="text-purple-600 hover:underline">利用規約</Link>と
-                  <Link href="/privacy" className="text-purple-600 hover:underline">プライバシーポリシー</Link>
-                  に同意します
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold hover:shadow-2xl transition-all duration-300 hover:scale-105"
-              >
-                申し込みを完了する
-              </button>
-            </form>
-          </div>
         </div>
       </section>
 
-      {/* CTA セクション */}
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6">今すぐ始めましょう</h2>
-          <p className="text-lg text-gray-700 mb-8">
-            無料体験レッスンも実施中。まずはお気軽にお問い合わせください。
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/contact"
-              className="px-8 py-4 bg-white text-purple-600 rounded-full font-semibold border-2 border-purple-600 hover:bg-purple-50 transition-all duration-300"
+      {/* Location Info */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-8 md:p-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">教室情報</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-start">
+                <MapPin className="w-5 h-5 text-purple-600 mt-1 mr-3" />
+                <div>
+                  <p className="font-semibold text-gray-900">所在地</p>
+                  <p className="text-gray-600">文京区湯島3-14-8 5F</p>
+                  <p className="text-sm text-gray-500">湯島駅から徒歩3分</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <Clock className="w-5 h-5 text-purple-600 mt-1 mr-3" />
+                <div>
+                  <p className="font-semibold text-gray-900">営業時間</p>
+                  <p className="text-gray-600">10:00 - 19:00</p>
+                  <p className="text-sm text-gray-500">定休日：火曜日</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-start">
+                <Users className="w-5 h-5 text-purple-600 mt-1 mr-3" />
+                <div>
+                  <p className="font-semibold text-gray-900">お問い合わせ</p>
+                  <p className="text-gray-600">080-9453-0911</p>
+                  <p className="text-gray-600">y-sato@sunu25.com</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-12 text-center">
+            <p className="text-gray-600 mb-6">詳細はお気軽にお問い合わせください</p>
+            <Link 
+              href={`/school/apply?class=${selectedClass}`}
+              className="inline-block px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
-              お問い合わせ
-            </Link>
-            <Link
-              href="/"
-              className="px-8 py-4 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition-all duration-300"
-            >
-              ワークショップ一覧へ
+              申込フォームへ進む
             </Link>
           </div>
         </div>

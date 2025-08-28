@@ -12,7 +12,8 @@
       "Bash(npm install:*)",
       "Bash(git checkout:*)",
       "Bash(npm run dev:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Read(/Users/yuho/Downloads/**)"
     ],
     "deny": []
   }

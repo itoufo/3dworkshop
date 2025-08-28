@@ -123,7 +123,7 @@ export default function NewWorkshopPage() {
       
       <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
-          <h2 className="text-2xl font-bold text-white">新規ワークショップ作成</h2>
+          <h2 className="text-2xl font-bold text-white">3DLab 新規ワークショップ作成</h2>
           <p className="text-white/80 mt-1">新しいワークショップの情報を入力してください</p>
         </div>
         
@@ -144,7 +144,7 @@ export default function NewWorkshopPage() {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                   value={workshop.title}
                   onChange={(e) => setWorkshop({ ...workshop, title: e.target.value })}
                   placeholder="3Dプリンター入門ワークショップ"
@@ -158,7 +158,7 @@ export default function NewWorkshopPage() {
                 <textarea
                   required
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none text-gray-900"
                   value={workshop.description}
                   onChange={(e) => setWorkshop({ ...workshop, description: e.target.value })}
                   placeholder="ワークショップの概要を簡潔に説明してください"
@@ -198,7 +198,7 @@ export default function NewWorkshopPage() {
                   <input
                     type="date"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.event_date}
                     onChange={(e) => setWorkshop({ ...workshop, event_date: e.target.value })}
                   />
@@ -211,7 +211,7 @@ export default function NewWorkshopPage() {
                   <input
                     type="time"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.event_time}
                     onChange={(e) => setWorkshop({ ...workshop, event_time: e.target.value })}
                   />
@@ -225,7 +225,7 @@ export default function NewWorkshopPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                   value={workshop.location}
                   onChange={(e) => setWorkshop({ ...workshop, location: e.target.value })}
                   placeholder="例: 東京都渋谷区○○ 1-2-3 ビル4F"
@@ -250,7 +250,7 @@ export default function NewWorkshopPage() {
                     type="number"
                     required
                     min="50"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.price}
                     onChange={(e) => setWorkshop({ ...workshop, price: e.target.value })}
                     placeholder="3000"
@@ -267,7 +267,7 @@ export default function NewWorkshopPage() {
                     type="number"
                     required
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.duration}
                     onChange={(e) => setWorkshop({ ...workshop, duration: e.target.value })}
                     placeholder="120"
@@ -283,7 +283,7 @@ export default function NewWorkshopPage() {
                     type="number"
                     required
                     min="1"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.max_participants}
                     onChange={(e) => setWorkshop({ ...workshop, max_participants: e.target.value })}
                     placeholder="10"
@@ -336,7 +336,7 @@ export default function NewWorkshopPage() {
                 </label>
                 <input
                   type="url"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                   value={workshop.image_url}
                   onChange={(e) => setWorkshop({ ...workshop, image_url: e.target.value })}
                   placeholder="https://example.com/image.jpg"

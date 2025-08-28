@@ -95,17 +95,32 @@ export default function Home() {
               クリエイティブな体験を
             </div>
           </div>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              3Dプリンティング
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+            <span className="text-gray-900">
+              3Dプリンタ教室
             </span>
             <br />
-            ワークショップ
+            <span className="text-gray-900">
+              3DLab
+            </span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            初心者から上級者まで、創造性を形にする体験を。
+            3DLabで学ぶ、創造性を形にする体験。
             最新の3Dプリンターを使って、あなたのアイデアを現実に。
           </p>
+          
+          {/* スクール募集バナー */}
+          <div className="mt-8">
+            <a
+              href="/school"
+              className="inline-block bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-xl font-bold">🎉 スクール生募集中！</span>
+                <span className="text-sm bg-white/20 px-3 py-1 rounded-full">第1期生 限定特典あり</span>
+              </div>
+            </a>
+          </div>
         </div>
       </section>
 

@@ -225,7 +225,7 @@ export default function NewCouponPage() {
                   <input
                     type="number"
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={coupon.minimum_amount}
                     onChange={(e) => setCoupon({ ...coupon, minimum_amount: e.target.value })}
                     placeholder="2000"
@@ -249,7 +249,7 @@ export default function NewCouponPage() {
                   <input
                     type="date"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={coupon.valid_from}
                     onChange={(e) => setCoupon({ ...coupon, valid_from: e.target.value })}
                   />
@@ -261,7 +261,7 @@ export default function NewCouponPage() {
                   </label>
                   <input
                     type="date"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={coupon.valid_until}
                     onChange={(e) => setCoupon({ ...coupon, valid_until: e.target.value })}
                   />
@@ -276,7 +276,7 @@ export default function NewCouponPage() {
                   <input
                     type="number"
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={coupon.usage_limit}
                     onChange={(e) => setCoupon({ ...coupon, usage_limit: e.target.value })}
                     placeholder="100"
@@ -292,7 +292,7 @@ export default function NewCouponPage() {
                     type="number"
                     required
                     min="1"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={coupon.user_limit}
                     onChange={(e) => setCoupon({ ...coupon, user_limit: e.target.value })}
                   />
