@@ -47,24 +47,24 @@ export default function SchoolPage() {
           
           {/* Hero Image */}
           <div className="relative max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <div className="relative h-64 rounded-2xl overflow-hidden shadow-xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 opacity-20"></div>
                 <div className="relative h-full flex items-center justify-center bg-white/90">
-                  <div className="text-center p-8">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-3xl font-bold">3D</span>
+                  <div className="text-center p-4">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">3D</span>
                     </div>
                     <p className="text-gray-800 font-medium">3DLabで創造力を育む</p>
                   </div>
                 </div>
               </div>
-              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl">
+              <div className="relative h-64 rounded-2xl overflow-hidden shadow-xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-cyan-400 opacity-20"></div>
                 <div className="relative h-full flex items-center justify-center bg-white/90">
-                  <div className="text-center p-8">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
-                      <Monitor className="w-10 h-10 text-white" />
+                  <div className="text-center p-4">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
+                      <Monitor className="w-8 h-8 text-white" />
                     </div>
                     <p className="text-gray-800 font-medium">最新技術を楽しく学ぶ</p>
                   </div>
