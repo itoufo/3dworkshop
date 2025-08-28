@@ -118,15 +118,15 @@ export async function POST(request: NextRequest) {
       .eq('id', enrollment_id)
 
     return NextResponse.json({ sessionId: session.id })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating school checkout session:', error)
     
     // More detailed error response for debugging
-    const errorMessage = error?.message || 'Failed to create checkout session'
+    const errorMessage = (error as Error)?.message || 'Failed to create checkout session'
     const errorDetails = {
       error: errorMessage,
-      type: error?.type || 'unknown_error',
-      code: error?.code || null
+      type: (error as Record<string, unknown>)?.type || 'unknown_error',
+      code: (error as Record<string, unknown>)?.code || null
     }
     
     return NextResponse.json(

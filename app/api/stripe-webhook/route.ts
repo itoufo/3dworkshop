@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
         // スクール申込の処理
         if (type === 'school_enrollment' && enrollmentId) {
           const classType = session.metadata?.class_type
-          const monthlyFee = parseInt(session.metadata?.monthly_fee || '0')
           
           if (!supabaseAdmin) {
             throw new Error('Supabase admin client not available')
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
           }
 
           // 確認メールを送信
-          if (enrollment.customer?.email) {
+          if (enrollment.customer?.email && classType) {
             const emailContent = generateSchoolEnrollmentEmail(enrollment, classType)
             await sendEmail({
               to: enrollment.customer.email,

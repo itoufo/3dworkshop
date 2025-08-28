@@ -38,7 +38,15 @@ export async function sendEmail({ to, subject, html, text, cc }: SendEmailOption
   }
 }
 
-export function generateSchoolEnrollmentEmail(enrollment: any, classType: string) {
+interface SchoolEnrollment {
+  student_name: string;
+  student_age?: number;
+  student_grade?: string;
+  monthly_fee?: number;
+  registration_fee?: number;
+}
+
+export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, classType: string) {
   const className = classType === 'basic' 
     ? '基本実践クラス（授業＋作品作り）' 
     : '自由創作クラス（教室開放）'

@@ -133,7 +133,12 @@ export default function SchoolApplyPage() {
 
     try {
       // 顧客情報を保存または更新
-      const customerData: any = {
+      const customerData: { 
+        email: string; 
+        name: string; 
+        phone: string;
+        address?: string;
+      } = {
         email: formData.email,
         name: formData.parentName,
         phone: formData.phone
@@ -218,9 +223,9 @@ export default function SchoolApplyPage() {
         throw error
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating enrollment:', error)
-      const errorMessage = error?.message || '申込の処理中にエラーが発生しました。'
+      const errorMessage = (error as Error)?.message || '申込の処理中にエラーが発生しました。'
       alert(`エラー: ${errorMessage}\n\nお手数ですが、時間をおいて再度お試しください。`)
       setSubmitting(false)
     }
