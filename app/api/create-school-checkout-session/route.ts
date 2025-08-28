@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil'
-})
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { stripe } from '@/lib/stripe'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +15,11 @@ export async function POST(request: NextRequest) {
       coupon_id,
       discount_amount = 0
     } = body
+
+    // リクエストから現在のホストを取得
+    const host = request.headers.get('host')
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    const baseUrl = `${protocol}://${host}`
 
     // Create line items for the checkout session
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
@@ -75,8 +72,8 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/school/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/school/apply?class=${class_type}`,
+      success_url: `${baseUrl}/school/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/school/apply?class=${class_type}`,
       customer_email,
       metadata,
       locale: 'ja'
@@ -100,16 +97,29 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create(sessionParams)
 
     // Update the enrollment with Stripe session ID
-    await supabase
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not available')
+    }
+    
+    await supabaseAdmin
       .from('school_enrollments')
       .update({ stripe_payment_intent_id: session.id })
       .eq('id', enrollment_id)
 
     return NextResponse.json({ sessionId: session.id })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating school checkout session:', error)
+    
+    // More detailed error response for debugging
+    const errorMessage = error?.message || 'Failed to create checkout session'
+    const errorDetails = {
+      error: errorMessage,
+      type: error?.type || 'unknown_error',
+      code: error?.code || null
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      errorDetails,
       { status: 500 }
     )
   }

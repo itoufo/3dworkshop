@@ -133,14 +133,20 @@ export default function SchoolApplyPage() {
 
     try {
       // 顧客情報を保存または更新
+      const customerData: any = {
+        email: formData.email,
+        name: formData.parentName,
+        phone: formData.phone
+      }
+      
+      // addressカラムが存在する場合のみ追加（移行中の互換性のため）
+      if (formData.address) {
+        customerData.address = formData.address
+      }
+      
       const { data: customer, error: customerError } = await supabase
         .from('customers')
-        .upsert({
-          email: formData.email,
-          name: formData.parentName,
-          phone: formData.phone,
-          address: formData.address
-        }, {
+        .upsert(customerData, {
           onConflict: 'email'
         })
         .select()
