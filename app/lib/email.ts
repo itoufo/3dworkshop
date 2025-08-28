@@ -38,6 +38,106 @@ export async function sendEmail({ to, subject, html, text, cc }: SendEmailOption
   }
 }
 
+export function generateSchoolEnrollmentEmail(enrollment: any, classType: string) {
+  const className = classType === 'basic' 
+    ? '基本実践クラス（授業＋作品作り）' 
+    : '自由創作クラス（教室開放）'
+  
+  const monthlyFee = enrollment.monthly_fee || (classType === 'basic' ? 30000 : 17000)
+  const registrationFee = enrollment.registration_fee || 22000
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 30px; text-align: center; border-radius: 10px; }
+          .content { background: #f9fafb; padding: 30px; margin: 20px 0; border-radius: 10px; }
+          .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+          .info-label { font-weight: 600; color: #6b7280; }
+          .info-value { color: #111827; }
+          .highlight { background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>スクール申込完了のお知らせ</h1>
+            <p style="margin: 0;">3DLab AI×3Dプリンター教室</p>
+          </div>
+          
+          <div class="content">
+            <p>この度は3DLabスクールにお申込みいただき、誠にありがとうございます。</p>
+            <p>以下の内容でお申込みを受け付けました。</p>
+            
+            <h3 style="color: #9333ea;">お申込み内容</h3>
+            <div class="info-row">
+              <span class="info-label">クラス：</span>
+              <span class="info-value">${className}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">生徒名：</span>
+              <span class="info-value">${enrollment.student_name}様</span>
+            </div>
+            ${enrollment.student_age ? `
+            <div class="info-row">
+              <span class="info-label">年齢：</span>
+              <span class="info-value">${enrollment.student_age}歳</span>
+            </div>
+            ` : ''}
+            ${enrollment.student_grade ? `
+            <div class="info-row">
+              <span class="info-label">学年：</span>
+              <span class="info-value">${enrollment.student_grade}</span>
+            </div>
+            ` : ''}
+            
+            <h3 style="color: #9333ea; margin-top: 30px;">料金について</h3>
+            <div class="info-row">
+              <span class="info-label">入会金：</span>
+              <span class="info-value">¥${registrationFee.toLocaleString()}（初回のみ）</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">月謝：</span>
+              <span class="info-value">¥${monthlyFee.toLocaleString()}/月</span>
+            </div>
+            
+            <div class="highlight">
+              <p style="margin: 0;"><strong>📍 教室所在地</strong></p>
+              <p style="margin: 5px 0;">文京区湯島3-14-8 5F（湯島駅から徒歩3分）</p>
+              <p style="margin: 5px 0;">営業時間：10:00-19:00（定休日：火曜日）</p>
+            </div>
+            
+            <h3 style="color: #9333ea;">今後の流れ</h3>
+            <ol>
+              <li>初回授業日について、別途メールでご案内いたします</li>
+              <li>${classType === 'basic' ? '授業は土・日曜日に開催されます' : '開校日の中からご都合の良い日をお選びいただけます'}</li>
+              <li>月謝は${classType === 'free' ? '翌月から' : '今月から'}自動引き落としとなります</li>
+            </ol>
+            
+            <p style="margin-top: 30px;">ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+            <p>
+              📧 y-sato@sunu25.com<br>
+              📞 080-9453-0911
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p>このメールは自動送信されています。</p>
+            <p>© 2024 3DLab. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+  
+  return html
+}
+
 export function generateBookingConfirmationEmail(
   workshopTitle: string,
   date: string,

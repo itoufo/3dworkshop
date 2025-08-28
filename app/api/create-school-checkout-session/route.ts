@@ -21,36 +21,40 @@ export async function POST(request: NextRequest) {
     const protocol = request.headers.get('x-forwarded-proto') || 'http'
     const baseUrl = `${protocol}://${host}`
 
-    // Create line items for the checkout session
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
-
-    // Add registration fee
-    lineItems.push({
-      price_data: {
-        currency: 'jpy',
-        product_data: {
-          name: 'スクール入会金',
-          description: '初回のみ・システム登録料含む'
-        },
-        unit_amount: registration_fee
+    // 月額サブスクリプション用の価格を作成（recurring）
+    const recurringPrice = await stripe.prices.create({
+      unit_amount: monthly_fee,
+      currency: 'jpy',
+      recurring: {
+        interval: 'month'
       },
-      quantity: 1
+      product_data: {
+        name: class_type === 'basic' 
+          ? '基本実践クラス - 月謝（月2回・90分/回）'
+          : '自由創作クラス - 月謝（月2回・120分/回）'
+      }
     })
 
-    // Add first month fee for basic class only (free class gets first month free)
-    if (class_type === 'basic') {
-      lineItems.push({
-        price_data: {
-          currency: 'jpy',
-          product_data: {
-            name: '基本実践クラス（授業＋作品作り）月謝',
-            description: '初月分'
-          },
-          unit_amount: monthly_fee
-        },
+    // 入会金用の一回限りの価格を作成（one_time）
+    const onetimePrice = await stripe.prices.create({
+      unit_amount: registration_fee,
+      currency: 'jpy',
+      product_data: {
+        name: 'スクール入会金（初回のみ・システム登録料含む）'
+      }
+    })
+
+    // Line items: サブスクリプション + 入会金
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      {
+        price: recurringPrice.id,  // 月額サブスクリプション
         quantity: 1
-      })
-    }
+      },
+      {
+        price: onetimePrice.id,    // 入会金（一回限り）
+        quantity: 1
+      }
+    ]
 
     // Create metadata for the session
     const metadata: Record<string, string> = {
@@ -67,16 +71,23 @@ export async function POST(request: NextRequest) {
       metadata.discount_amount = discount_amount.toString()
     }
 
-    // Create Checkout Session with discounts if applicable
+    // Create Checkout Session in subscription mode
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: lineItems,
-      mode: 'payment',
+      mode: 'subscription',  // サブスクリプションモード
       success_url: `${baseUrl}/school/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/school/apply?class=${class_type}`,
       customer_email,
       metadata,
-      locale: 'ja'
+      locale: 'ja',
+      subscription_data: {
+        metadata,
+        // freeクラスの場合は翌月まで無料トライアル
+        ...(class_type === 'free' && {
+          trial_end: Math.floor(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).getTime() / 1000)
+        })
+      }
     }
 
     // Apply discount if there's a coupon

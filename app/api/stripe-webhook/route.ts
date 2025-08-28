@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
+import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail } from '@/app/lib/email'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
@@ -46,11 +46,89 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ received: true })
         }
 
-        // メタデータから予約IDとクーポン情報を取得
+        // メタデータから情報を取得
+        const type = session.metadata?.type
         const bookingId = session.metadata?.booking_id
+        const enrollmentId = session.metadata?.enrollment_id
         const couponId = session.metadata?.coupon_id
         const discountAmount = parseInt(session.metadata?.discount_amount || '0')
 
+        // スクール申込の処理
+        if (type === 'school_enrollment' && enrollmentId) {
+          const classType = session.metadata?.class_type
+          const monthlyFee = parseInt(session.metadata?.monthly_fee || '0')
+          
+          if (!supabaseAdmin) {
+            throw new Error('Supabase admin client not available')
+          }
+
+          // スクール申込情報を更新
+          const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+            .from('school_enrollments')
+            .update({
+              status: 'active',
+              payment_status: 'paid',
+              stripe_payment_intent_id: session.payment_intent as string,
+              start_date: new Date().toISOString()
+            })
+            .eq('id', enrollmentId)
+            .select(`
+              *,
+              customer:customers(*)
+            `)
+            .single()
+
+          if (enrollmentError) {
+            console.error('Error updating enrollment:', enrollmentError)
+            throw enrollmentError
+          }
+
+          // Stripe Customer を作成または取得
+          let stripeCustomerId = enrollment.customer?.stripe_customer_id
+
+          if (!stripeCustomerId && session.customer_email) {
+            // 新規Stripe顧客を作成
+            const stripeCustomer = await stripe.customers.create({
+              email: session.customer_email,
+              name: enrollment.customer?.name,
+              metadata: {
+                supabase_customer_id: enrollment.customer_id,
+                student_name: enrollment.student_name
+              }
+            })
+            stripeCustomerId = stripeCustomer.id
+
+            // 顧客情報を更新
+            await supabaseAdmin
+              .from('customers')
+              .update({ stripe_customer_id: stripeCustomerId })
+              .eq('id', enrollment.customer_id)
+          }
+
+          // サブスクリプションIDを取得（checkout sessionで既に作成済み）
+          if (session.subscription) {
+            // サブスクリプションIDを保存
+            await supabaseAdmin
+              .from('school_enrollments')
+              .update({ stripe_subscription_id: session.subscription as string })
+              .eq('id', enrollmentId)
+          }
+
+          // 確認メールを送信
+          if (enrollment.customer?.email) {
+            const emailContent = generateSchoolEnrollmentEmail(enrollment, classType)
+            await sendEmail({
+              to: enrollment.customer.email,
+              cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
+              subject: '【3DLab】スクール申込完了のお知らせ',
+              html: emailContent
+            })
+          }
+
+          return NextResponse.json({ received: true })
+        }
+
+        // ワークショップ予約の処理
         if (!bookingId) {
           console.error('Booking ID not found in session metadata')
           return NextResponse.json({ received: true })

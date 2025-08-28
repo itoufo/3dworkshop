@@ -194,15 +194,34 @@ export default function SchoolApplyPage() {
         }),
       })
 
-      const { sessionId } = await response.json()
+      const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('API Error:', data)
+        throw new Error(data.error || 'Failed to create checkout session')
+      }
+
+      if (!data.sessionId) {
+        console.error('No sessionId in response:', data)
+        throw new Error('No session ID returned from server')
+      }
       
       // Stripeの決済ページへリダイレクト
       const stripe = await stripePromise
-      await stripe?.redirectToCheckout({ sessionId })
+      if (!stripe) {
+        throw new Error('Stripe not loaded')
+      }
+      
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId })
+      if (error) {
+        console.error('Stripe redirect error:', error)
+        throw error
+      }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating enrollment:', error)
-      alert('申込の処理中にエラーが発生しました。')
+      const errorMessage = error?.message || '申込の処理中にエラーが発生しました。'
+      alert(`エラー: ${errorMessage}\n\nお手数ですが、時間をおいて再度お試しください。`)
       setSubmitting(false)
     }
   }
@@ -539,7 +558,10 @@ export default function SchoolApplyPage() {
                     className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                   />
                   <span className="text-sm text-gray-700">
-                    利用規約とプライバシーポリシーに同意します *
+                    <a href="/terms" target="_blank" className="text-purple-600 hover:text-purple-700 underline">利用規約</a>
+                    と
+                    <a href="/privacy" target="_blank" className="text-purple-600 hover:text-purple-700 underline">プライバシーポリシー</a>
+                    に同意します *
                   </span>
                 </label>
               </div>

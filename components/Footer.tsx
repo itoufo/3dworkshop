@@ -29,8 +29,21 @@ export default function Footer() {
           </div>
         </div>
         
+        {/* Links */}
+        <div className="border-t border-gray-800 pt-6 mb-6">
+          <div className="flex justify-center space-x-6 text-sm">
+            <a href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
+              利用規約
+            </a>
+            <span className="text-gray-600">|</span>
+            <a href="/privacy" className="text-gray-400 hover:text-purple-400 transition-colors">
+              プライバシーポリシー
+            </a>
+          </div>
+        </div>
+        
         <div className="text-center">
-          <p className="text-sm text-gray-500">© 2024 3DLab. All rights reserved.</p>
+          <p className="text-sm text-gray-500">© 2024 株式会社sunU. All rights reserved.</p>
         </div>
       </div>
     </footer>
