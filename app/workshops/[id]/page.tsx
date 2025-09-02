@@ -9,6 +9,7 @@ import Image from 'next/image'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, Heart, Tag, X } from 'lucide-react'
+import styles from './workshop.module.css'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -276,7 +277,7 @@ export default function WorkshopDetail() {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">ワークショップの詳細</h2>
                 <div 
-                  className="prose prose-lg prose-purple max-w-none"
+                  className={styles.workshopContent}
                   dangerouslySetInnerHTML={{ __html: workshop.rich_description }}
                 />
               </div>

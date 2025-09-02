@@ -33,6 +33,7 @@ import {
   Upload,
   Code
 } from 'lucide-react'
+import styles from '@/app/workshops/[id]/workshop.module.css'
 
 const theme = {
   ltr: 'ltr',
@@ -284,7 +285,7 @@ export default function LexicalRichTextEditor({
       {showPreview ? (
         <div className="p-4 min-h-[400px] max-h-[600px] overflow-y-auto">
           <div 
-            className="prose prose-sm max-w-none"
+            className={styles.workshopContent}
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         </div>
