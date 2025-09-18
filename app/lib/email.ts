@@ -19,8 +19,18 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, text, cc }: SendEmailOptions) {
+  // 環境変数のチェック
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error('SMTP configuration missing:', {
+      host: !!process.env.SMTP_HOST,
+      user: !!process.env.SMTP_USER,
+      pass: !!process.env.SMTP_PASS
+    });
+    return { success: false, error: 'SMTP configuration missing' };
+  }
+
   const mailOptions = {
-    from: process.env.SMTP_FROM || 'noreply@3dlab.example.com',
+    from: process.env.SMTP_FROM || 'noreply@3dlab.jp',
     to,
     cc,
     subject,
@@ -28,12 +38,32 @@ export async function sendEmail({ to, subject, html, text, cc }: SendEmailOption
     text: text || html.replace(/<[^>]*>/g, ''),
   };
 
+  console.log('Attempting to send email:', {
+    to,
+    cc,
+    subject,
+    from: mailOptions.from,
+    smtpHost: process.env.SMTP_HOST
+  });
+
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
+    console.log('Email sent successfully:', {
+      messageId: info.messageId,
+      response: info.response,
+      accepted: info.accepted,
+      rejected: info.rejected
+    });
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Email sending failed:', error);
+    console.error('SMTP Config:', {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE,
+      user: process.env.SMTP_USER ? 'Set' : 'Not set',
+      pass: process.env.SMTP_PASS ? 'Set' : 'Not set'
+    });
     return { success: false, error };
   }
 }

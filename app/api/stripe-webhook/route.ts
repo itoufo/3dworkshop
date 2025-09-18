@@ -203,7 +203,13 @@ export async function POST(request: NextRequest) {
         if (booking && booking.workshops && booking.customers) {
           const workshop = booking.workshops
           const customer = booking.customers
-          
+
+          console.log('Preparing to send confirmation email for booking:', {
+            bookingId,
+            customerEmail: customer.email,
+            workshopTitle: workshop.title
+          })
+
           const emailContent = generateBookingConfirmationEmail(
             workshop.title,
             workshop.event_date ? new Date(workshop.event_date).toLocaleDateString('ja-JP', {
@@ -213,19 +219,36 @@ export async function POST(request: NextRequest) {
               weekday: 'long'
             }) : '未定',
             workshop.event_time ? workshop.event_time.slice(0, 5) : '未定',
-            workshop.location || '未定',
+            workshop.location || '東京都文京区湯島3-14-8 加田湯島ビルディング 5F',
             customer.name,
             customer.email
           )
 
-          await sendEmail({
+          const emailResult = await sendEmail({
             to: customer.email,
             cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
             subject: emailContent.subject,
             html: emailContent.html
           })
 
-          console.log(`Confirmation email sent to ${customer.email} for booking ${bookingId}`)
+          if (emailResult.success) {
+            console.log(`Confirmation email sent successfully to ${customer.email} for booking ${bookingId}`)
+          } else {
+            console.error(`Failed to send confirmation email to ${customer.email} for booking ${bookingId}:`, emailResult.error)
+            // メール送信失敗をデータベースに記録
+            await supabaseAdmin
+              .from('bookings')
+              .update({
+                notes: `メール送信失敗: ${new Date().toISOString()}`
+              })
+              .eq('id', bookingId)
+          }
+        } else {
+          console.error('Missing booking data for email:', {
+            hasBooking: !!booking,
+            hasWorkshop: !!(booking?.workshops),
+            hasCustomer: !!(booking?.customers)
+          })
         }
 
         break
