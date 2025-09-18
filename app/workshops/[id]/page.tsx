@@ -56,6 +56,10 @@ export default function WorkshopDetail() {
         console.error('Error fetching workshop:', error)
       } else {
         setWorkshop(data as Workshop)
+        // タイトルを動的に設定
+        if (data) {
+          document.title = `${data.title} | 3Dプリンタ教室 3DLab`
+        }
         // 残席数を取得
         fetchAvailability(params.id as string)
       }
