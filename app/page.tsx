@@ -92,7 +92,7 @@ export default function Home() {
           <div className="flex justify-center mb-6">
             <div className="inline-flex items-center px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
               <Sparkles className="w-4 h-4 mr-2" />
-              クリエイティブな体験を
+              東京・湯島駅から徒歩5分
             </div>
           </div>
           <div className="flex justify-center mb-6">
@@ -106,10 +106,28 @@ export default function Home() {
               quality={90}
             />
           </div>
-          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            創造性を形にする体験。
-            最新の3Dプリンターを使って、あなたのアイデアを現実に。
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            東京で3Dプリンタを体験しよう
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
+            東京都文京区湯島にある3Dプリンタ教室。<br className="hidden sm:inline" />
+            湯島駅から徒歩5分、御徒町・秋葉原・御茶ノ水からも徒歩圏内。<br className="hidden sm:inline" />
+            初心者から上級者まで、最新の3Dプリンターで創造的な体験を。
           </p>
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
+              📍 東京メトロ千代田線 湯島駅 徒歩5分
+            </span>
+            <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
+              🚃 JR御徒町駅 徒歩8分
+            </span>
+            <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
+              🚇 秋葉原駅 徒歩10分
+            </span>
+            <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
+              🚉 御茶ノ水駅 徒歩12分
+            </span>
+          </div>
           
           {/* スクール募集バナー */}
           <div className="mt-8">
@@ -319,8 +337,11 @@ export default function Home() {
               </div>
             </div>
             <h3 className="text-xl font-bold text-white mb-2">3Dプリンタ教室 3DLab</h3>
+            <p className="text-sm text-gray-400">
+              東京都文京区湯島 | 湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
+            </p>
           </div>
-          
+
           {/* Contact Information */}
           <div className="border-t border-gray-800 pt-6 mb-6">
             <div className="text-center space-y-2">
@@ -340,7 +361,9 @@ export default function Home() {
           </div>
           
           <div className="text-center">
-            <p className="text-sm text-gray-500">© 2024 3DLab. All rights reserved.</p>
+            <p className="text-sm text-gray-500">
+              © 2024 3DLab - 3Dプリンタ 東京 | 湯島・御徒町・秋葉原・御茶ノ水からアクセス
+            </p>
           </div>
         </div>
       </footer>
