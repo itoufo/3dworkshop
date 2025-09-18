@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "3Dプリンタ教室 3DLab",
   description: "3Dプリンティングを学ぶ教室 - 初心者から上級者まで楽しく学べる3Dプリンタワークショップ",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
