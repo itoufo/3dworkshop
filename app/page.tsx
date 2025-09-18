@@ -92,7 +92,7 @@ export default function Home() {
           <div className="flex justify-center mb-6">
             <div className="inline-flex items-center px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
               <Sparkles className="w-4 h-4 mr-2" />
-              東京・湯島駅から徒歩5分
+              東京・湯島駅から徒歩1分
             </div>
           </div>
           <div className="flex justify-center mb-6">
@@ -111,12 +111,12 @@ export default function Home() {
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
             東京都文京区湯島にある3Dプリンタ教室。<br className="hidden sm:inline" />
-            湯島駅から徒歩5分、御徒町・秋葉原・御茶ノ水からも徒歩圏内。<br className="hidden sm:inline" />
+            湯島駅から徒歩1分、御徒町・秋葉原・御茶ノ水からも徒歩圏内。<br className="hidden sm:inline" />
             初心者から上級者まで、最新の3Dプリンターで創造的な体験を。
           </p>
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
-              📍 東京メトロ千代田線 湯島駅 徒歩5分
+              📍 東京メトロ千代田線 湯島駅 徒歩1分
             </span>
             <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
               🚃 JR御徒町駅 徒歩8分
@@ -370,7 +370,7 @@ export default function Home() {
                     <span className="text-2xl">🚇</span>
                     <div>
                       <p className="font-medium text-gray-900">東京メトロ千代田線 湯島駅</p>
-                      <p className="text-sm text-gray-600">3番出口から徒歩5分</p>
+                      <p className="text-sm text-gray-600">3番出口から徒歩1分</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
@@ -437,6 +437,21 @@ export default function Home() {
             </div>
           </div>
           
+          <div className="border-t border-gray-800 pt-6 mb-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-400 mb-2">運営会社</p>
+              <div className="flex justify-center items-center space-x-4 flex-wrap">
+                <a href="https://sunu25.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                  株式会社sunu
+                </a>
+                <span className="text-gray-600">|</span>
+                <a href="https://walker.co.jp" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                  株式会社ウォーカー
+                </a>
+              </div>
+            </div>
+          </div>
+
           <div className="text-center">
             <p className="text-sm text-gray-500">
               © 2024 3DLab - 3Dプリンタ 東京 | 湯島・御徒町・秋葉原・御茶ノ水からアクセス

@@ -59,7 +59,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "3DLab - 3Dプリンタ教室",
-    "description": "東京都文京区湯島の3Dプリンタ教室。御徒町・秋葉原・御茶ノ水から徒歩圏内。",
+    "description": "東京都文京区湯島の3Dプリンタ教室。湯島駅から徒歩1分。御徒町・秋葉原・御茶ノ水から徒歩圏内。",
     "url": "https://3dlab.jp",
     "telephone": "080-9453-0911",
     "email": "y-sato@sunu25.com",
@@ -73,8 +73,8 @@ export default function RootLayout({
     },
     "geo": {
       "@type": "GeoCoordinates",
-      "latitude": "35.7090",
-      "longitude": "139.7718"
+      "latitude": "35.7051736",
+      "longitude": "139.7697007"
     },
     "openingHours": "Mo-Su 10:00-20:00",
     "priceRange": "¥¥",
@@ -85,6 +85,18 @@ export default function RootLayout({
       "御茶ノ水",
       "文京区",
       "東京"
+    ],
+    "parentOrganization": [
+      {
+        "@type": "Organization",
+        "name": "株式会社sunu",
+        "url": "https://sunu25.com"
+      },
+      {
+        "@type": "Organization",
+        "name": "株式会社ウォーカー",
+        "url": "https://walker.co.jp"
+      }
     ]
   };
 

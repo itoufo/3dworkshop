@@ -362,7 +362,7 @@ export default function WorkshopDetail() {
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm">
                   <span>🚇</span>
-                  <span className="text-gray-700">東京メトロ千代田線 湯島駅 3番出口から徒歩5分</span>
+                  <span className="text-gray-700">東京メトロ千代田線 湯島駅 3番出口から徒歩1分</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm">
                   <span>🚃</span>
