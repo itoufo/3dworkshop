@@ -329,6 +329,55 @@ export default function WorkshopDetail() {
                 </div>
               </div>
             </div>
+
+            {/* Access Section */}
+            <div className="bg-white rounded-2xl shadow-xl p-8 mt-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">アクセス</h3>
+
+              {/* Map */}
+              <div className="rounded-xl overflow-hidden shadow-md h-64 mb-6">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d810.0478!2d139.7718!3d35.7090!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s東京都文京区湯島3-14-8+加田湯島ビルディング5F!5e0!3m2!1sja!2sjp!4v1234567890"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="3DLabの地図"
+                />
+              </div>
+
+              {/* Address */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <h4 className="font-bold text-gray-900 mb-2">📍 3DLab</h4>
+                <address className="not-italic text-gray-700">
+                  <p className="text-sm">〒113-0034</p>
+                  <p>東京都文京区湯島3-14-8</p>
+                  <p>加田湯島ビルディング 5F</p>
+                </address>
+              </div>
+
+              {/* Station Access */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-sm">
+                  <span>🚇</span>
+                  <span className="text-gray-700">東京メトロ千代田線 湯島駅 3番出口から徒歩5分</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <span>🚃</span>
+                  <span className="text-gray-700">JR御徒町駅 南口から徒歩8分</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <span>🚇</span>
+                  <span className="text-gray-700">JR秋葉原駅 電気街口から徒歩10分</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <span>🚉</span>
+                  <span className="text-gray-700">丸ノ内線 御茶ノ水駅 聖橋口から徒歩12分</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Column - Booking Form */}

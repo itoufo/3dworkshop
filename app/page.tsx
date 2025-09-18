@@ -327,6 +327,80 @@ export default function Home() {
         )}
       </main>
 
+      {/* Access Section */}
+      <section className="bg-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+            アクセス
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Map */}
+            <div className="rounded-2xl overflow-hidden shadow-lg h-96">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d810.0478!2d139.7718!3d35.7090!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s東京都文京区湯島3-14-8+加田湯島ビルディング5F!5e0!3m2!1sja!2sjp!4v1234567890"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={true}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="3DLabの地図"
+              />
+            </div>
+
+            {/* Access Info */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl">
+                <h3 className="font-bold text-lg mb-4 text-gray-900">📍 3DLab</h3>
+                <address className="not-italic space-y-2 text-gray-700">
+                  <p className="font-medium">
+                    〒113-0034
+                  </p>
+                  <p className="text-lg">
+                    東京都文京区湯島3-14-8<br />
+                    加田湯島ビルディング 5F
+                  </p>
+                </address>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-bold text-gray-900">電車でのアクセス</h4>
+                <div className="grid gap-2">
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-2xl">🚇</span>
+                    <div>
+                      <p className="font-medium text-gray-900">東京メトロ千代田線 湯島駅</p>
+                      <p className="text-sm text-gray-600">3番出口から徒歩5分</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-2xl">🚃</span>
+                    <div>
+                      <p className="font-medium text-gray-900">JR山手線・京浜東北線 御徒町駅</p>
+                      <p className="text-sm text-gray-600">南口から徒歩8分</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-2xl">🚇</span>
+                    <div>
+                      <p className="font-medium text-gray-900">JR総武線・日比谷線 秋葉原駅</p>
+                      <p className="text-sm text-gray-600">電気街口から徒歩10分</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-2xl">🚉</span>
+                    <div>
+                      <p className="font-medium text-gray-900">丸ノ内線 御茶ノ水駅</p>
+                      <p className="text-sm text-gray-600">聖橋口から徒歩12分</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -338,7 +412,10 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold text-white mb-2">3Dプリンタ教室 3DLab</h3>
             <p className="text-sm text-gray-400">
-              東京都文京区湯島 | 湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
+              東京都文京区湯島3-14-8 加田湯島ビルディング 5F
+            </p>
+            <p className="text-sm text-gray-400">
+              湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
             </p>
           </div>
 

@@ -44,8 +44,9 @@ export default function RootLayout({
       "@type": "PostalAddress",
       "addressLocality": "文京区",
       "addressRegion": "東京都",
+      "postalCode": "113-0034",
       "addressCountry": "JP",
-      "streetAddress": "湯島"
+      "streetAddress": "湯島3-14-8 加田湯島ビルディング 5F"
     },
     "geo": {
       "@type": "GeoCoordinates",
