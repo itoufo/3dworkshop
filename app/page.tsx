@@ -96,13 +96,14 @@ export default function Home() {
             </div>
           </div>
           <div className="flex justify-center mb-6">
-            <Image 
-              src="/logo.png" 
-              alt="3D Lab" 
-              width={360} 
-              height={120} 
+            <Image
+              src="/logo.png"
+              alt="3D Lab"
+              width={360}
+              height={120}
               className="h-24 sm:h-32 md:h-40 w-auto"
               priority
+              quality={90}
             />
           </div>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
@@ -155,13 +156,16 @@ export default function Home() {
               >
                 {/* Image Section */}
                 {workshop.image_url ? (
-                  <div className="relative w-full h-56 overflow-hidden">
+                  <div className="relative w-full h-56 overflow-hidden bg-gray-100">
                     <Image
                       src={workshop.image_url}
                       alt={workshop.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      loading="lazy"
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k="
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   </div>
