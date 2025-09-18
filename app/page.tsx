@@ -111,8 +111,10 @@ export default function Home() {
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
             東京都文京区湯島にある3Dプリンタ教室。<br className="hidden sm:inline" />
-            湯島駅から徒歩1分、御徒町・秋葉原・御茶ノ水からも徒歩圏内。<br className="hidden sm:inline" />
             初心者から上級者まで、最新の3Dプリンターで創造的な体験を。
+          </p>
+          <p>
+            湯島駅から徒歩1分、御徒町・秋葉原・御茶ノ水からも徒歩圏内。<br className="hidden sm:inline" />
           </p>
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
