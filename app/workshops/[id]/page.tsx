@@ -354,7 +354,7 @@ export default function WorkshopDetail() {
                 <address className="not-italic text-gray-700">
                   <p className="text-sm">〒113-0034</p>
                   <p>東京都文京区湯島3-14-8</p>
-                  <p>加田湯島ビルディング 5F</p>
+                  <p>加田湯島ビル 5F</p>
                 </address>
               </div>
 

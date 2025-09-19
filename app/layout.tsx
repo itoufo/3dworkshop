@@ -69,7 +69,7 @@ export default function RootLayout({
       "addressRegion": "東京都",
       "postalCode": "113-0034",
       "addressCountry": "JP",
-      "streetAddress": "湯島3-14-8 加田湯島ビルディング 5F"
+      "streetAddress": "湯島3-14-8 加田湯島ビル 5F"
     },
     "geo": {
       "@type": "GeoCoordinates",

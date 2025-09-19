@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
               weekday: 'long'
             }) : '未定',
             workshop.event_time ? workshop.event_time.slice(0, 5) : '未定',
-            workshop.location || '東京都文京区湯島3-14-8 加田湯島ビルディング 5F',
+            workshop.location || '東京都文京区湯島3-14-8 加田湯島ビル 5F',
             customer.name,
             customer.email
           )

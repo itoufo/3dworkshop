@@ -360,7 +360,7 @@ export default function Home() {
                   </p>
                   <p className="text-lg">
                     東京都文京区湯島3-14-8<br />
-                    加田湯島ビルディング 5F
+                    加田湯島ビル 5F
                   </p>
                 </address>
               </div>
@@ -414,7 +414,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold text-white mb-2">3Dプリンタ教室 3DLab</h3>
             <p className="text-sm text-gray-400">
-              東京都文京区湯島3-14-8 加田湯島ビルディング 5F
+              東京都文京区湯島3-14-8 加田湯島ビル 5F
             </p>
             <p className="text-sm text-gray-400">
               湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
