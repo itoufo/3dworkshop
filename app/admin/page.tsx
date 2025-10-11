@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                             </div>
                           )}
                         </div>
-                      ) : (
+                      ) : booking.booking_date ? (
                         <div className="text-sm text-gray-900 font-medium">
                           {new Date(booking.booking_date).toLocaleDateString('ja-JP', {
                             year: 'numeric',
@@ -336,6 +336,8 @@ export default function AdminDashboard() {
                             day: '2-digit'
                           })}
                         </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">未設定</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
