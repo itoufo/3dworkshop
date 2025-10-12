@@ -19,13 +19,13 @@ export default function HomePage() {
                 東京・湯島駅から徒歩1分のクリエイティブスタジオ
               </div>
               <h1 className="mt-6 text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
-                3Dプリンティングで<br className="hidden sm:inline" />
-                アイデアを現実にする。
+                頭の中のアイデアを、<br className="hidden sm:inline" />
+                手に取れるカタチに。
               </h1>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
-                3DLabは最新の3Dプリンタと熟練のチームが揃う東京・湯島のスタジオです。
-                体験向けワークショップからプロトタイピング、モノづくりの伴走支援まで、
-                ブランドの世界観をカタチにするお手伝いをします。
+                3DLabは最新の3Dプリンタと熟練のチームが揃う、東京・湯島のクリエイティブスタジオです。
+                初めての方でも楽しめるワークショップから、企業のプロトタイプ制作、本格的なモノづくりまで。
+                あなたのアイデアを立体化する、すべてのプロセスをサポートします。
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
                 <Link
@@ -62,11 +62,11 @@ export default function HomePage() {
                     <div className="flex items-center mb-3">
                       <Sparkles className="w-5 h-5 text-purple-500 mr-3" />
                       <p className="text-sm font-semibold text-purple-600 uppercase tracking-widest">
-                        Brand Experience
+                        Creative Experience
                       </p>
                     </div>
                     <p className="text-gray-700 leading-relaxed">
-                      湯島のスタジオで、ブランドの世界観を3Dプリントで体感。観る、触れる、つくるを通じて新しい発想が生まれます。
+                      湯島のスタジオで、アイデアを立体化する楽しさを体感。観る、触れる、つくるプロセスを通じて、新しい発想と可能性が広がります。
                     </p>
                   </div>
                   <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
@@ -77,7 +77,7 @@ export default function HomePage() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">最先端の設備</h3>
                         <p className="text-sm text-gray-500">
-                          工業グレードの3Dプリンタと多彩な素材で高品質な造形を実現。
+                          業務用3Dプリンタと多彩な素材で、プロ品質の造形を実現。試作から量産まで対応可能。
                         </p>
                       </div>
                     </div>
@@ -88,9 +88,9 @@ export default function HomePage() {
                         <Users className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">伴走するチーム</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">プロが伴走</h3>
                         <p className="text-sm text-gray-500">
-                          コンセプト設計から造形まで、専門スタッフが丁寧にサポートします。
+                          3Dモデリングから造形、仕上げまで、経験豊富なスタッフが一貫してサポート。
                         </p>
                       </div>
                     </div>
@@ -106,11 +106,12 @@ export default function HomePage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            3DLabが届けたいブランド体験
+            あらゆるシーンで、3Dを活用
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            「3Dプリンタでどこまでできるの？」という疑問に、リアルな体験とプロの発想でお応えします。
-            発売前のプロトタイプ、展示会での演出、採用イベントや教育プログラムなど、ブランドの物語づくりを立体的にサポートします。
+            「3Dプリンタでどこまでできるの？」という疑問に、リアルな体験とプロの技術でお応えします。
+            新製品のプロトタイプ、展示会の装飾、採用イベントのノベルティ、教育プログラムでの実習など、
+            あらゆる場面で3Dプリンティングの可能性を最大限に引き出します。
           </p>
         </div>
 
@@ -119,7 +120,7 @@ export default function HomePage() {
             <Box className="w-12 h-12 text-purple-600 mb-6" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">体験設計</h3>
             <p className="text-gray-600 flex-1">
-              ブランドの世界観やサービスの価値を伝えるための3D体験を設計。ストーリーに沿った造形で、印象に残る接点をつくります。
+              展示会やイベントでの3D体験を企画・設計。来場者が実際に触れて、驚きと感動を味わえる、印象に残る演出を創造します。
             </p>
             <Link
               href="/portfolio"
@@ -133,7 +134,7 @@ export default function HomePage() {
             <Printer className="w-12 h-12 text-purple-600 mb-6" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">造形・プロトタイピング</h3>
             <p className="text-gray-600 flex-1">
-              小ロットの制作や試作品づくりもスピーディーに対応。素材・仕上げの提案から品質管理まで一貫してサポートします。
+              試作品から小ロット生産まで、スピーディーに対応。最適な素材選定、後処理、品質管理まで、プロ仕様の造形をワンストップでご提供します。
             </p>
             <Link
               href="/products"
@@ -147,7 +148,7 @@ export default function HomePage() {
             <Rocket className="w-12 h-12 text-purple-600 mb-6" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">共創ワークショップ</h3>
             <p className="text-gray-600 flex-1">
-              初めてでも安心の学習プログラムから、チームビルディング、企業研修まで。アイデアを形にする共創の時間をご提供します。
+              初心者向けの体験会から、企業研修、チームビルディングまで。3Dプリンティングを通じて、創造性を引き出し、新しいアイデアを生み出す場を創ります。
             </p>
             <Link
               href="/workshops"
@@ -169,16 +170,17 @@ export default function HomePage() {
                 Community
               </div>
               <h2 className="mt-5 text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
-                つくる楽しさを共有するコミュニティ
+                共につくる、共に学ぶコミュニティ
               </h2>
               <p className="mt-6 text-gray-600 leading-relaxed">
-                3DLabは造形技術を学ぶ場所であると同時に、発想を広げ合うクリエイティブコミュニティです。
-                多様なバックグラウンドのメンバーが集まり、新しいプロジェクトやコラボレーションが次々と生まれています。
+                3DLabは技術を学ぶ場所であると同時に、アイデアを交換し、刺激し合うクリエイティブコミュニティです。
+                デザイナー、エンジニア、学生、起業家など、多様なバックグラウンドを持つメンバーが集まり、
+                新しいプロジェクトやコラボレーションが日々生まれています。
               </p>
               <div className="mt-8 space-y-4">
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 to-white border border-purple-100">
                   <p className="text-sm text-purple-700 font-semibold">
-                    企業研修での導入や、教育機関との共同プログラムにも対応。オリジナルカリキュラムの設計から運営まで伴走します。
+                    企業研修や教育機関との共同プログラムも多数実績あり。御社のニーズに合わせたオリジナルカリキュラムの設計から、当日の運営まで完全サポートします。
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-gray-100 shadow-sm">
@@ -205,9 +207,9 @@ export default function HomePage() {
                   </div>
                 </div>
                 <blockquote className="mt-8 text-lg leading-relaxed text-white/90">
-                  「社員の創造性を引き出す機会としてワークショップを実施しました。
-                  3DLabのサポートで、コンセプトづくりから立体化まで一連のプロセスを体験でき、
-                  チームの新しいアイデアが生まれました。」
+                  「社員の創造性を引き出したいと考え、ワークショップを企画しました。
+                  3DLabのプロフェッショナルなサポートのおかげで、コンセプトづくりから実際の立体化まで、
+                  普段は経験できないプロセスを体験でき、チーム内で新しいアイデアや気づきが次々と生まれました。」
                 </blockquote>
                 <div className="mt-10">
                   <a
