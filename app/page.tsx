@@ -171,38 +171,22 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">
             サービスメニュー
           </h2>
-          <nav className="grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="サービスナビゲーション">
+          <nav className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto" aria-label="サービスナビゲーション">
             <Link
               href="/workshops"
-              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+              className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
             >
-              <div className="text-2xl mb-2">🎓</div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">ワークショップ</h3>
-              <p className="text-xs text-gray-500 mt-1">体験・学習</p>
+              <div className="text-3xl mb-3">🎓</div>
+              <h3 className="font-semibold text-lg text-gray-900 group-hover:text-purple-600 transition-colors">ワークショップ</h3>
+              <p className="text-sm text-gray-500 mt-2">体験・学習</p>
             </Link>
             <Link
               href="/school"
-              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+              className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
             >
-              <div className="text-2xl mb-2">🏫</div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">スクール</h3>
-              <p className="text-xs text-gray-500 mt-1">本格的に学ぶ</p>
-            </Link>
-            <Link
-              href="/portfolio"
-              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
-            >
-              <div className="text-2xl mb-2">📁</div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">制作実績</h3>
-              <p className="text-xs text-gray-500 mt-1">過去の作品</p>
-            </Link>
-            <Link
-              href="/products"
-              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
-            >
-              <div className="text-2xl mb-2">📦</div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">受託制作</h3>
-              <p className="text-xs text-gray-500 mt-1">プロトタイプ・量産</p>
+              <div className="text-3xl mb-3">🏫</div>
+              <h3 className="font-semibold text-lg text-gray-900 group-hover:text-purple-600 transition-colors">スクール</h3>
+              <p className="text-sm text-gray-500 mt-2">本格的に学ぶ</p>
             </Link>
           </nav>
         </div>
