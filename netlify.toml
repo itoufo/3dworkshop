@@ -8,3 +8,18 @@
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
   SECRETS_SCAN_ENABLED = "false"
+
+# Netlifyデフォルトドメインから3dlab.jpへリダイレクト
+[[redirects]]
+  from = "https://*.netlify.app/*"
+  to = "https://3dlab.jp/:splat"
+  status = 301
+  force = true
+  conditions = {Role = ["external"]}
+
+# wwwから非wwwへリダイレクト
+[[redirects]]
+  from = "https://www.3dlab.jp/*"
+  to = "https://3dlab.jp/:splat"
+  status = 301
+  force = true
