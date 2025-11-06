@@ -103,7 +103,7 @@ function onError(error: Error) {
 }
 
 interface LexicalRichTextEditorProps {
-  content: string
+  initialContent?: string
   onChange: (content: string) => void
   placeholder?: string
 }
@@ -149,13 +149,13 @@ async function uploadImage(file: File): Promise<string> {
   return data.imageUrl
 }
 
-export default function LexicalRichTextEditor({ 
-  content, 
-  onChange, 
+export default function LexicalRichTextEditor({
+  initialContent = '',
+  onChange,
   placeholder = 'ここに内容を入力...'
 }: LexicalRichTextEditorProps) {
   const [showPreview, setShowPreview] = useState(false)
-  const [htmlContent, setHtmlContent] = useState(content)
+  const [htmlContent, setHtmlContent] = useState(initialContent || '')
   const [showHtmlSource, setShowHtmlSource] = useState(false)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -276,7 +276,7 @@ export default function LexicalRichTextEditor({
       {showHtmlSource && (
         <div className="border-b border-gray-200 bg-gray-900 p-4">
           <pre className="text-xs text-gray-100 font-mono whitespace-pre-wrap break-all">
-            <code>{htmlContent}</code>
+            <code>{htmlContent || ''}</code>
           </pre>
         </div>
       )}
@@ -284,9 +284,9 @@ export default function LexicalRichTextEditor({
       {/* エディタ/プレビュー本体 */}
       {showPreview ? (
         <div className="p-4 min-h-[400px] max-h-[600px] overflow-y-auto">
-          <div 
+          <div
             className={styles.workshopContent}
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+            dangerouslySetInnerHTML={{ __html: htmlContent || '' }}
           />
         </div>
       ) : (
@@ -316,7 +316,7 @@ export default function LexicalRichTextEditor({
               <ImagePlugin />
               <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
               <TabIndentationPlugin />
-              <HtmlPlugin html={content} />
+              <HtmlPlugin html={initialContent || ''} />
               <EditorRefPlugin />
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function LexicalRichTextEditor({
 
       {/* ステータスバー */}
       <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 text-xs text-gray-600 flex justify-between">
-        <span>{htmlContent.length} 文字 (HTML)</span>
+        <span>{(htmlContent || '').length} 文字 (HTML)</span>
         <span>{showPreview ? 'プレビューモード' : 'エディタモード'}</span>
       </div>
 

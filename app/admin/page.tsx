@@ -5,15 +5,32 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen } from 'lucide-react'
+
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string
+  featured_image_url: string
+  category: string
+  tags: string[]
+  author_name: string
+  is_published: boolean
+  published_at: string
+  view_count: number
+  created_at: string
+}
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'coupons'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'coupons' | 'blog'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const router = useRouter()
 
@@ -58,15 +75,26 @@ export default function AdminDashboard() {
         .from('coupons')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       if (couponsError) {
         console.error('Error fetching coupons:', couponsError)
+      }
+
+      // ブログ投稿を取得
+      const { data: blogPostsData, error: blogPostsError } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (blogPostsError) {
+        console.error('Error fetching blog posts:', blogPostsError)
       }
 
       setBookings(bookingsData || [])
       setCustomers(customersData || [])
       setWorkshops(workshopsData || [])
       setCoupons(couponsData || [])
+      setBlogPosts(blogPostsData || [])
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -244,6 +272,17 @@ export default function AdminDashboard() {
             >
               <Tag className="w-4 h-4 inline mr-2" />
               クーポン管理
+            </button>
+            <button
+              onClick={() => setActiveTab('blog')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
+                activeTab === 'blog'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 inline mr-2" />
+              ブログ管理
             </button>
           </nav>
         </div>
@@ -776,6 +815,146 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleNavigate(`/admin/coupons/${coupon.id}/edit`)}
+                          className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          編集
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ブログ管理 */}
+      {activeTab === 'blog' && (
+        <div>
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">ブログ一覧</h3>
+              <p className="text-sm text-gray-600 mt-1">全{blogPosts.length}件の記事</p>
+            </div>
+            <button
+              onClick={() => handleNavigate('/admin/blog/new')}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              新規記事作成
+            </button>
+          </div>
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      記事情報
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      カテゴリー・タグ
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      公開状況
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      閲覧数
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      作成日
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      アクション
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {blogPosts.map((post) => (
+                    <tr key={post.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          {post.featured_image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={post.featured_image_url}
+                              alt={post.title}
+                              className="h-12 w-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                              <BookOpen className="w-5 h-5 text-purple-600" />
+                            </div>
+                          )}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {post.title}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {post.author_name || '作者不明'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {post.category && (
+                          <div className="mb-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              {post.category}
+                            </span>
+                          </div>
+                        )}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {post.tags.slice(0, 2).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {post.tags.length > 2 && (
+                              <span className="text-xs text-gray-500">+{post.tags.length - 2}</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {post.is_published ? (
+                          <div>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              ✓ 公開中
+                            </span>
+                            {post.published_at && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {new Date(post.published_at).toLocaleDateString('ja-JP')}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            下書き
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {post.view_count.toLocaleString()} views
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(post.created_at).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleNavigate(`/admin/blog/${post.id}/edit`)}
                           className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
                         >
                           <Edit className="w-4 h-4 mr-1" />

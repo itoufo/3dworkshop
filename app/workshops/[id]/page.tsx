@@ -382,7 +382,7 @@ export default function WorkshopDetail() {
 
           {/* Right Column - Booking Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-xl p-8 sticky top-24">
+            <div id="booking-form" className="bg-white rounded-2xl shadow-xl p-8 sticky top-24">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">予約フォーム</h2>
               
               {/* Event Info Card */}
@@ -660,6 +660,22 @@ export default function WorkshopDetail() {
           </div>
         </div>
       </main>
+
+      {/* Floating Booking Button (Mobile Only) */}
+      {!availability?.is_full && (
+        <button
+          onClick={() => {
+            const bookingForm = document.getElementById('booking-form')
+            if (bookingForm) {
+              bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          }}
+          className="lg:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"
+        >
+          <Calendar className="w-5 h-5" />
+          <span>予約する</span>
+        </button>
+      )}
       </div>
     </>
   )

@@ -175,7 +175,7 @@ export default function NewWorkshopPage() {
               </h3>
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <LexicalRichTextEditor
-                  content={workshop.rich_description}
+                  initialContent={workshop.rich_description}
                   onChange={(content) => setWorkshop({ ...workshop, rich_description: content })}
                   placeholder="ワークショップの詳細な内容を入力してください。太字、見出し、リスト、画像などが使用できます。"
                 />

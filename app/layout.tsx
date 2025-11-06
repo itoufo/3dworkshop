@@ -13,24 +13,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "3Dプリンタ教室 東京 | 3DLab 湯島・御徒町・秋葉原",
-  description: "東京都文京区湯島の3Dプリンタ教室。御徒町・秋葉原・御茶ノ水から徒歩圏内。初心者向けワークショップから本格的な3Dプリンティング技術まで学べます。3Dプリンタ 東京で体験型の学習を。",
-  keywords: "3Dプリンタ 東京,3Dプリンティング 教室,湯島,御徒町,秋葉原,御茶ノ水,文京区,ワークショップ,3D教室,体験",
+  title: {
+    default: "3Dプリンタ教室 東京 | 3DLab 湯島・御徒町・秋葉原",
+    template: "%s | 3DLab"
+  },
+  description: "東京都文京区湯島の3Dプリンタ教室・スクール。湯島駅徒歩1分、御徒町・秋葉原・御茶ノ水から徒歩圏内。初心者向け体験ワークショップから3Dモデリング、3Dプリンティング技術まで学べる実践型スクールです。企業研修・プロトタイプ制作も対応。",
+  keywords: "3Dプリンタ 東京,3Dプリンティング 教室,湯島,御徒町,秋葉原,御茶ノ水,文京区,ワークショップ,3D教室,体験,3Dモデリング,スクール,プロトタイプ,企業研修",
   metadataBase: new URL('https://3dlab.jp'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: "3Dプリンタ教室 東京 | 3DLab 湯島・御徒町・秋葉原",
-    description: "東京都文京区湯島の3Dプリンタ教室。御徒町・秋葉原・御茶ノ水から徒歩圏内。初心者歓迎の体験型ワークショップ。",
+    description: "東京都文京区湯島の3Dプリンタ教室・スクール。湯島駅徒歩1分。初心者向け体験ワークショップから実践的な3Dプリンティング技術まで学べます。企業研修・プロトタイプ制作も対応。",
     url: 'https://3dlab.jp',
-    siteName: "3DLab",
+    siteName: "3DLab - 3Dプリンタ教室",
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: '3DLab - 東京の3Dプリンタ教室',
+        alt: '3DLab - 東京都文京区湯島の3Dプリンタ教室・スクール',
       },
     ],
     locale: "ja_JP",
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "3Dプリンタ教室 東京 | 3DLab",
-    description: "東京都文京区湯島の3Dプリンタ教室。初心者歓迎のワークショップ開催中。",
+    description: "東京都文京区湯島の3Dプリンタ教室。湯島駅徒歩1分。初心者向けワークショップから実践的な技術まで学べます。",
     images: ['/og-image.jpg'],
   },
   icons: {
@@ -47,6 +50,17 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'googlef1a18aca7d0b5114',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 

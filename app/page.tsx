@@ -9,7 +9,7 @@ export default function HomePage() {
       <Header />
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-28 pb-24 px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden pt-28 pb-24 px-4 sm:px-6 lg:px-8" aria-label="メインビジュアル">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-200/60 via-transparent to-pink-200/40 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -19,12 +19,13 @@ export default function HomePage() {
                 東京・湯島駅から徒歩1分のクリエイティブスタジオ
               </div>
               <h1 className="mt-6 text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
-                頭の中のアイデアを、<br className="hidden sm:inline" />
-                手に取れるカタチに。
+                東京・湯島の3Dプリンタ教室<br className="hidden sm:inline" />
+                頭の中のアイデアを手に取れるカタチに
               </h1>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
                 3DLabは最新の3Dプリンタと熟練のチームが揃う、東京・湯島のクリエイティブスタジオです。
-                初めての方でも楽しめるワークショップから、企業のプロトタイプ制作、本格的なモノづくりまで。
+                <strong className="text-purple-700">子どもも大人も楽しめる</strong>ワークショップから、企業のプロトタイプ制作、本格的なモノづくりまで。
+                <strong className="text-purple-700">AIも3Dプリンタも一緒に学び</strong>、家族で<strong className="text-purple-700">思い出作り</strong>。
                 あなたのアイデアを立体化する、すべてのプロセスをサポートします。
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -148,7 +149,9 @@ export default function HomePage() {
             <Rocket className="w-12 h-12 text-purple-600 mb-6" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">共創ワークショップ</h3>
             <p className="text-gray-600 flex-1">
-              初心者向けの体験会から、企業研修、チームビルディングまで。3Dプリンティングを通じて、創造性を引き出し、新しいアイデアを生み出す場を創ります。
+              <span className="font-semibold text-purple-700">子どもも大人も楽しめる</span>体験会から、企業研修、チームビルディングまで。
+              <span className="font-semibold text-purple-700">AIも3Dプリンタも一緒に学び</span>、家族で<span className="font-semibold text-purple-700">思い出作り</span>。
+              3Dプリンティングを通じて、創造性を引き出し、新しいアイデアを生み出す場を創ります。
             </p>
             <Link
               href="/workshops"
@@ -161,68 +164,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonial / Community */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-600 font-semibold text-xs tracking-widest uppercase">
-                Community
-              </div>
-              <h2 className="mt-5 text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
-                共につくる、共に学ぶコミュニティ
-              </h2>
-              <p className="mt-6 text-gray-600 leading-relaxed">
-                3DLabは技術を学ぶ場所であると同時に、アイデアを交換し、刺激し合うクリエイティブコミュニティです。
-                デザイナー、エンジニア、学生、起業家など、多様なバックグラウンドを持つメンバーが集まり、
-                新しいプロジェクトやコラボレーションが日々生まれています。
-              </p>
-              <div className="mt-8 space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 to-white border border-purple-100">
-                  <p className="text-sm text-purple-700 font-semibold">
-                    企業研修や教育機関との共同プログラムも多数実績あり。御社のニーズに合わせたオリジナルカリキュラムの設計から、当日の運営まで完全サポートします。
-                  </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-white border border-gray-100 shadow-sm">
-                  <p className="text-sm text-gray-600">
-                    SNSでは最新の造形事例やイベント情報を発信中。フォローして最新情報をチェックしてください。
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/20 via-transparent to-pink-500/20 blur-2xl" />
-              <div className="relative bg-gray-900 text-white rounded-3xl p-10 shadow-2xl border border-white/10">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">
-                      Voice
-                    </p>
-                    <p className="text-sm text-white/80">
-                      Tech Startup / 研修ご担当者さま
-                    </p>
-                  </div>
-                </div>
-                <blockquote className="mt-8 text-lg leading-relaxed text-white/90">
-                  「社員の創造性を引き出したいと考え、ワークショップを企画しました。
-                  3DLabのプロフェッショナルなサポートのおかげで、コンセプトづくりから実際の立体化まで、
-                  普段は経験できないプロセスを体験でき、チーム内で新しいアイデアや気づきが次々と生まれました。」
-                </blockquote>
-                <div className="mt-10">
-                  <a
-                    href="mailto:y-sato@sunu25.com"
-                    className="inline-flex items-center text-sm font-semibold text-white border-b border-white/40 pb-1 hover:border-white transition-colors"
-                  >
-                    プログラム導入を相談する
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+
+      {/* Quick Links Section */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-50 to-pink-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">
+            サービスメニュー
+          </h2>
+          <nav className="grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="サービスナビゲーション">
+            <Link
+              href="/workshops"
+              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+            >
+              <div className="text-2xl mb-2">🎓</div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">ワークショップ</h3>
+              <p className="text-xs text-gray-500 mt-1">体験・学習</p>
+            </Link>
+            <Link
+              href="/school"
+              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+            >
+              <div className="text-2xl mb-2">🏫</div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">スクール</h3>
+              <p className="text-xs text-gray-500 mt-1">本格的に学ぶ</p>
+            </Link>
+            <Link
+              href="/portfolio"
+              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+            >
+              <div className="text-2xl mb-2">📁</div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">制作実績</h3>
+              <p className="text-xs text-gray-500 mt-1">過去の作品</p>
+            </Link>
+            <Link
+              href="/products"
+              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+            >
+              <div className="text-2xl mb-2">📦</div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">受託制作</h3>
+              <p className="text-xs text-gray-500 mt-1">プロトタイプ・量産</p>
+            </Link>
+          </nav>
         </div>
       </section>
 
@@ -332,7 +314,7 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 pt-6 mb-6">
             <div className="text-center">
               <p className="text-sm text-gray-400 mb-2">運営会社</p>
