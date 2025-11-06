@@ -16,8 +16,8 @@
 
 以下の情報を入力：
 
-- **エンドポイントURL**: 
-  - 本番環境: `https://your-domain.com/api/stripe-webhook`
+- **エンドポイントURL**:
+  - 本番環境: `https://3dlab.jp/api/stripe-webhook`
   - 開発環境: `https://your-ngrok-url.ngrok.io/api/stripe-webhook` （ngrok使用時）
 
 ### 3. リッスンするイベントの選択

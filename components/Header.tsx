@@ -30,7 +30,8 @@ export default function Header() {
   }, [isMenuOpen])
 
   const navLinks = [
-    { href: '/', label: 'ワークショップ' },
+    { href: '/', label: 'トップ' },
+    { href: '/workshops', label: 'ワークショップ' },
     { href: '/school', label: 'スクール' },
     { href: '/products', label: '商品・サービス' },
     { href: '/portfolio', label: '実績紹介' },

@@ -250,7 +250,7 @@ export default function EditWorkshop() {
                 詳細説明
               </label>
               <LexicalRichTextEditor
-                content={formData.rich_description}
+                initialContent={formData.rich_description}
                 onChange={(content) => setFormData({ ...formData, rich_description: content })}
                 placeholder="ワークショップの詳細な内容を入力してください。太字、見出し、リスト、画像などが使用できます。"
               />
