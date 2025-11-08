@@ -185,6 +185,8 @@ export default function WorkshopsPage() {
                           className="object-contain group-hover:scale-105 transition-transform duration-300"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           loading="lazy"
+                          placeholder="blur"
+                          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiLz4="
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                       </div>

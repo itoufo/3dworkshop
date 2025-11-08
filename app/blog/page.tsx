@@ -119,7 +119,7 @@ export default function BlogPage() {
                 >
                   {/* Featured Image */}
                   {post.featured_image_url ? (
-                    <div className="relative w-full aspect-video overflow-hidden">
+                    <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
                       <Image
                         src={optimizeImageUrl(post.featured_image_url, 75)}
                         alt={`${post.title} - 3Dプリンタブログ | 3DLab`}
@@ -127,6 +127,8 @@ export default function BlogPage() {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiLz4="
                       />
                     </div>
                   ) : (

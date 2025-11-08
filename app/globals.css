@@ -337,8 +337,8 @@ textarea {
 /* Responsive table wrapper */
 @media (max-width: 768px) {
   .prose table {
-    display: block;
-    overflow-x: auto;
+    display: table;
+    width: 100%;
     -webkit-overflow-scrolling: touch;
   }
 
