@@ -342,6 +342,11 @@ textarea {
     -webkit-overflow-scrolling: touch;
   }
 
+  .prose img {
+    width: 100% !important;
+    height: auto !important;
+  }
+
   .prose ol li::before {
     width: 1.5rem;
     height: 1.5rem;
