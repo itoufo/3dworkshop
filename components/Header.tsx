@@ -33,8 +33,6 @@ export default function Header() {
     { href: '/', label: 'トップ' },
     { href: '/workshops', label: 'ワークショップ' },
     { href: '/school', label: 'スクール' },
-    { href: '/products', label: '商品・サービス' },
-    { href: '/portfolio', label: '実績紹介' },
     { href: '/blog', label: 'ブログ' },
   ]
 
