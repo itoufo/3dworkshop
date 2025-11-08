@@ -8,18 +8,27 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
 
+      <main>
       {/* Hero */}
-      <section className="relative overflow-hidden pt-28 pb-24 px-4 sm:px-6 lg:px-8" aria-label="メインビジュアル">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-200/60 via-transparent to-pink-200/40 pointer-events-none" />
+      <section className="relative overflow-hidden pt-28 pb-10 md:pb-24 px-4 sm:px-6 lg:px-8" aria-label="メインビジュアル">
+        {/* 背景画像 */}
+        <div className="absolute inset-0">
+          <Image
+            src="/hero-bg.jpg"
+            alt="3Dプリンタ教室 3DLab 東京・湯島 - 最新の3Dプリンタと熟練のチームが揃うクリエイティブスタジオ"
+            fill
+            className="object-cover opacity-40"
+            priority
+            quality={90}
+          />
+        </div>
+        {/* グラデーションオーバーレイ */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/90 via-white/80 to-pink-50/90 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-flex items-center border border-purple-200 rounded-full px-4 py-1.5 bg-white/80 backdrop-blur">
-                <Star className="w-4 h-4 text-purple-500 mr-2" />
-                東京・湯島駅から徒歩1分のクリエイティブスタジオ
-              </div>
-              <h1 className="mt-6 text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
-                東京・湯島の3Dプリンタ教室<br className="hidden sm:inline" />
+              <h1 className="mt-6 text-4xl sm:text-4xl font-bold text-gray-900 leading-tight">
+                秋葉原の3Dプリンタ教室<br className="hidden sm:inline" />
                 頭の中のアイデアを手に取れるカタチに
               </h1>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
@@ -46,11 +55,11 @@ export default function HomePage() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-tr from-purple-400/40 via-white/20 to-pink-400/40 blur-3xl" />
-              <div className="relative rounded-3xl border border-white/60 bg-white/60 backdrop-blur-xl shadow-2xl p-8">
+              <div className="relative rounded-3xl border border-white/60 bg-white/60 backdrop-blur-xl shadow-2xl p-2">
                 <div className="flex justify-center mb-8">
                   <Image
                     src="/logo.png"
-                    alt="3DLab"
+                    alt="3DLab - 3Dプリンタ教室 東京・湯島"
                     width={320}
                     height={120}
                     className="h-24 w-auto"
@@ -72,11 +81,11 @@ export default function HomePage() {
                   </div>
                   <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white hidden md:block">
                         <Printer className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">最先端の設備</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 ">最先端の設備</h3>
                         <p className="text-sm text-gray-500">
                           業務用3Dプリンタと多彩な素材で、プロ品質の造形を実現。試作から量産まで対応可能。
                         </p>
@@ -85,7 +94,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-2xl bg-pink-500 flex items-center justify-center text-white">
+                      <div className="w-12 h-12 rounded-2xl bg-pink-500 flex items-center justify-center text-white hidden md:block">
                         <Users className="w-6 h-6" />
                       </div>
                       <div>
@@ -104,7 +113,7 @@ export default function HomePage() {
       </section>
 
       {/* Highlights */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section className="py-10 lg:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
             あらゆるシーンで、3Dを活用
@@ -118,7 +127,7 @@ export default function HomePage() {
 
         <div className="mt-16 grid gap-8 md:grid-cols-3">
           <div className="rounded-3xl bg-white border border-purple-100 shadow-lg p-8 flex flex-col">
-            <Box className="w-12 h-12 text-purple-600 mb-6" />
+            <Box className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">体験設計</h3>
             <p className="text-gray-600 flex-1">
               展示会やイベントでの3D体験を企画・設計。来場者が実際に触れて、驚きと感動を味わえる、印象に残る演出を創造します。
@@ -132,7 +141,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="rounded-3xl bg-white border border-purple-100 shadow-lg p-8 flex flex-col">
-            <Printer className="w-12 h-12 text-purple-600 mb-6" />
+            <Printer className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">造形・プロトタイピング</h3>
             <p className="text-gray-600 flex-1">
               試作品から小ロット生産まで、スピーディーに対応。最適な素材選定、後処理、品質管理まで、プロ仕様の造形をワンストップでご提供します。
@@ -146,7 +155,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="rounded-3xl bg-white border border-purple-100 shadow-lg p-8 flex flex-col">
-            <Rocket className="w-12 h-12 text-purple-600 mb-6" />
+            <Rocket className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">共創ワークショップ</h3>
             <p className="text-gray-600 flex-1">
               <span className="font-semibold text-purple-700">子どもも大人も楽しめる</span>体験会から、企業研修、チームビルディングまで。
@@ -174,9 +183,9 @@ export default function HomePage() {
           <nav className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto" aria-label="サービスナビゲーション">
             <Link
               href="/workshops"
-              className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+              className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group "
             >
-              <div className="text-3xl mb-3">🎓</div>
+              <div className="text-3xl mb-3 ">🎓</div>
               <h3 className="font-semibold text-lg text-gray-900 group-hover:text-purple-600 transition-colors">ワークショップ</h3>
               <p className="text-sm text-gray-500 mt-2">体験・学習</p>
             </Link>
@@ -263,6 +272,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12">

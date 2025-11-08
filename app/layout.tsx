@@ -121,6 +121,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          src="https://zqyhxtaddfruoipjrhah.supabase.co/storage/v1/object/public/heat_js/heatmap.v1.min.js"
+          data-sitekey="350a47f6-3583-4f06-acec-f54e853aaf34"
+          async
+          crossOrigin="anonymous"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

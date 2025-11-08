@@ -121,10 +121,11 @@ export default function BlogPage() {
                     <div className="relative w-full h-48 overflow-hidden">
                       <Image
                         src={post.featured_image_url}
-                        alt={post.title}
+                        alt={`${post.title} - 3Dプリンタブログ | 3DLab`}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        loading="lazy"
                       />
                     </div>
                   ) : (

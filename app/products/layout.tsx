@@ -1,19 +1,40 @@
-import { Metadata } from 'next'
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: '3Dプリント制作サービス | 3DLab 東京',
-  description: '東京都文京区湯島の3Dプリント制作サービス。STLファイルから高品質な3Dプリントを制作。PLA・PETG・ABSなど多様な素材に対応。試作品・パーツ・オリジナルグッズ制作。',
-  keywords: '3Dプリント サービス,3D印刷 東京,STL,制作依頼,試作品,文京区',
-  openGraph: {
-    title: '3Dプリント制作サービス | 3DLab 東京',
-    description: 'STLファイルから高品質な3Dプリントを制作。多様な素材に対応。',
+  title: "商品・サービス | 3Dプリント制作・ワークショップ | 3DLab",
+  description: "3Dプリンタ教室3DLabの商品・サービス一覧。ワークショップ、3Dプリント制作サービス、オリジナル商品など、様々なサービスをご用意しています。STLファイルをアップロードして3Dプリント制作を依頼できます。",
+  keywords: "3Dプリント 制作,3Dプリンタ サービス,STLファイル,プロトタイプ制作,3Dプリンティング 依頼,ワークショップ,商品",
+  alternates: {
+    canonical: '/products',
   },
-}
+  openGraph: {
+    title: "商品・サービス | 3Dプリント制作・ワークショップ | 3DLab",
+    description: "3Dプリンタ教室3DLabの商品・サービス一覧。ワークショップ、3Dプリント制作サービス、オリジナル商品など、様々なサービスをご用意しています。",
+    url: 'https://3dlab.jp/products',
+    siteName: "3DLab - 3Dプリンタ教室",
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: '3DLab 商品・サービス',
+      },
+    ],
+    locale: "ja_JP",
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "商品・サービス | 3Dプリント制作・ワークショップ",
+    description: "3Dプリンタ教室3DLabの商品・サービス一覧。ワークショップ、3Dプリント制作サービスなど。",
+    images: ['/og-image.jpg'],
+  },
+};
 
 export default function ProductsLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return <>{children}</>
+  return children;
 }

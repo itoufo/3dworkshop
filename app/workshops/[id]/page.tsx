@@ -10,6 +10,8 @@ import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, Heart, Tag, X } from 'lucide-react'
 import styles from './workshop.module.css'
+import { WorkshopEventSchema } from '@/components/StructuredData'
+import { Breadcrumb } from '@/components/Breadcrumb'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -59,6 +61,23 @@ export default function WorkshopDetail() {
         // タイトルを動的に設定
         if (data) {
           document.title = `${data.title} | 3Dプリンタ教室 3DLab`
+          
+          // 構造化データを追加
+          const structuredData = WorkshopEventSchema(data as Workshop)
+          const scriptId = 'workshop-structured-data'
+          
+          // 既存のスクリプトを削除
+          const existingScript = document.getElementById(scriptId)
+          if (existingScript) {
+            existingScript.remove()
+          }
+          
+          // 新しいスクリプトを追加
+          const script = document.createElement('script')
+          script.id = scriptId
+          script.type = 'application/ld+json'
+          script.textContent = JSON.stringify(structuredData)
+          document.head.appendChild(script)
         }
         // 残席数を取得
         fetchAvailability(params.id as string)
@@ -234,11 +253,19 @@ export default function WorkshopDetail() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
 
-      {/* Back Button */}
+      {/* Breadcrumb and Back Button */}
       <div className="pt-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
+          {workshop && (
+            <Breadcrumb 
+              items={[
+                { name: 'ワークショップ', href: '/workshops' },
+                { name: workshop.title, href: `/workshops/${workshop.id}` }
+              ]} 
+            />
+          )}
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/workshops')}
             className="flex items-center text-gray-600 hover:text-purple-600 font-medium transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -256,10 +283,11 @@ export default function WorkshopDetail() {
               <div className="relative w-full h-96 rounded-2xl overflow-hidden mb-8">
                 <Image
                   src={workshop.image_url}
-                  alt={workshop.title}
+                  alt={`${workshop.title} - 3Dプリンタワークショップ 東京・湯島 | 3DLab`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 66vw"
+                  priority
                 />
               </div>
             ) : (

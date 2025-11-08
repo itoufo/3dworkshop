@@ -1,19 +1,46 @@
-import { Metadata } from 'next'
+import type { Metadata } from "next";
+import { StructuredData, SchoolCourseSchema } from "@/components/StructuredData";
 
 export const metadata: Metadata = {
-  title: '3Dプリンタースクール | 3DLab 東京・湯島',
-  description: '東京都文京区湯島の3Dプリンタースクール。基本実践クラスと自由創作クラスで本格的な3D技術を習得。月謝制で通いやすい料金設定。湯島・御徒町・秋葉原から通学可能。',
-  keywords: '3Dプリンタースクール,3D教室 東京,月謝制,習い事,文京区,湯島',
-  openGraph: {
-    title: '3Dプリンタースクール | 3DLab 東京・湯島',
-    description: '月謝制の3Dプリンタースクール。基本から応用まで学べる2つのコース。',
+  title: "スクール・教室 | AI×3Dプリンタ教室 東京・湯島 | 3DLab",
+  description: "東京都文京区湯島のAI×3Dプリンタ教室。自由創作クラス・基本実践クラスの2つのコースをご用意。有料版AIが使い放題、ワークショップ30％OFF、作品発表会参加券など特典多数。入会月は月謝無料。湯島駅徒歩1分。",
+  keywords: "3Dプリンタ スクール,3Dプリンタ 教室,AI×3D,プログラミング教室,湯島,東京,文京区,子ども向け,月謝,入会金",
+  alternates: {
+    canonical: '/school',
   },
-}
+  openGraph: {
+    title: "スクール・教室 | AI×3Dプリンタ教室 東京・湯島 | 3DLab",
+    description: "東京都文京区湯島のAI×3Dプリンタ教室。自由創作クラス・基本実践クラスの2つのコースをご用意。有料版AIが使い放題、ワークショップ30％OFFなど特典多数。",
+    url: 'https://3dlab.jp/school',
+    siteName: "3DLab - 3Dプリンタ教室",
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: '3DLab スクール・教室',
+      },
+    ],
+    locale: "ja_JP",
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "スクール・教室 | AI×3Dプリンタ教室 東京・湯島",
+    description: "東京都文京区湯島のAI×3Dプリンタ教室。自由創作クラス・基本実践クラスの2つのコースをご用意。",
+    images: ['/og-image.jpg'],
+  },
+};
 
 export default function SchoolLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return <>{children}</>
+  return (
+    <>
+      <StructuredData data={SchoolCourseSchema()} />
+      {children}
+    </>
+  );
 }

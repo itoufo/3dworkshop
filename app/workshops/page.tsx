@@ -98,7 +98,7 @@ export default function WorkshopsPage() {
             <div className="flex justify-center mb-6">
               <Image
                 src="/logo.png"
-                alt="3D Lab"
+                alt="3DLab - 3Dプリンタ教室 東京・湯島"
                 width={360}
                 height={120}
                 className="h-24 sm:h-32 md:h-40 w-auto"
@@ -179,10 +179,10 @@ export default function WorkshopsPage() {
                       <div className="relative w-full h-56 overflow-hidden bg-gray-100">
                         <Image
                           src={`${workshop.image_url}${workshop.image_url.includes('supabase') ? '?width=400&height=300&quality=75' : ''}`}
-                          alt={workshop.title}
+                          alt={`${workshop.title} - 3Dプリンタワークショップ 東京・湯島`}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="400px"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           loading="lazy"
                           unoptimized
                         />

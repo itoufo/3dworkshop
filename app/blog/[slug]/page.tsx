@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import { Calendar, Eye, Tag, ArrowLeft, BookOpen, User } from 'lucide-react'
+import { BlogArticleSchema } from '@/components/StructuredData'
+import { Breadcrumb } from '@/components/Breadcrumb'
 
 interface BlogPost {
   id: string
@@ -87,6 +89,24 @@ export default function BlogPostPage() {
 
       if (data) {
         setBlogPost(data)
+        
+        // 構造化データを追加
+        const structuredData = BlogArticleSchema(data)
+        const scriptId = 'blog-structured-data'
+        
+        // 既存のスクリプトを削除
+        const existingScript = document.getElementById(scriptId)
+        if (existingScript) {
+          existingScript.remove()
+        }
+        
+        // 新しいスクリプトを追加
+        const script = document.createElement('script')
+        script.id = scriptId
+        script.type = 'application/ld+json'
+        script.textContent = JSON.stringify(structuredData)
+        document.head.appendChild(script)
+        
         // 閲覧数を増やす
         await incrementViewCount(data.id)
         // 関連記事を取得
@@ -142,6 +162,14 @@ export default function BlogPostPage() {
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumb */}
+          {blogPost && (
+            <Breadcrumb 
+              items={[
+                { name: 'ブログ', href: '/blog' },
+                { name: blogPost.title, href: `/blog/${blogPost.slug}` }
+              ]} 
+            />
+          )}
           <button
             onClick={() => router.push('/blog')}
             className="flex items-center text-purple-600 hover:text-purple-700 mb-8 transition-colors"
@@ -157,7 +185,7 @@ export default function BlogPostPage() {
               <div className="relative w-full h-96">
                 <Image
                   src={blogPost.featured_image_url}
-                  alt={blogPost.title}
+                  alt={`${blogPost.title} - 3Dプリンタブログ | 3DLab`}
                   fill
                   className="object-cover"
                   priority
