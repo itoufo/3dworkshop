@@ -81,7 +81,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white hidden md:block">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-600 items-center justify-center text-white hidden md:flex">
                         <Printer className="w-6 h-6" />
                       </div>
                       <div>
@@ -94,7 +94,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-2xl bg-pink-500 flex items-center justify-center text-white hidden md:block">
+                      <div className="w-12 h-12 rounded-2xl bg-pink-500  items-center justify-center text-white hidden md:flex">
                         <Users className="w-6 h-6" />
                       </div>
                       <div>
