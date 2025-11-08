@@ -7,13 +7,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   try {
+    const { slug } = await params
     const { data: blogPost } = await supabase
       .from('blog_posts')
       .select('*')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .eq('is_published', true)
       .single();
 
@@ -33,12 +34,12 @@ export async function generateMetadata(
       description,
       keywords: `3Dプリンタ,${blogPost.category || ''},${blogPost.tags?.join(',') || ''},ブログ,情報`,
       alternates: {
-        canonical: `/blog/${params.slug}`,
+        canonical: `/blog/${slug}`,
       },
       openGraph: {
         title,
         description,
-        url: `https://3dlab.jp/blog/${params.slug}`,
+        url: `https://3dlab.jp/blog/${slug}`,
         siteName: "3DLab - 3Dプリンタ教室",
         images: [
           {

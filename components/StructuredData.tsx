@@ -17,11 +17,11 @@ export function WorkshopEventSchema(workshop: {
   title: string;
   description: string;
   price: number;
-  event_date?: string;
-  event_time?: string;
+  event_date?: string | null;
+  event_time?: string | null;
   duration?: number;
-  location?: string;
-  image_url?: string;
+  location?: string | null;
+  image_url?: string | null;
   max_participants?: number;
 }) {
   const startDate = workshop.event_date 

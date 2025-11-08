@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Star } from 'lucide-react'
+import { Sparkles, Box, Printer, Users, ArrowRight, Rocket } from 'lucide-react'
 
 export default function HomePage() {
   return (

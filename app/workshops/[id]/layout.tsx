@@ -7,13 +7,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function generateMetadata(
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<Metadata> {
   try {
+    const { id } = await params
     const { data: workshop } = await supabase
       .from('workshops')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (!workshop) {
@@ -32,12 +33,12 @@ export async function generateMetadata(
       description,
       keywords: `3Dプリンタ ワークショップ,${workshop.title},湯島,東京,3D教室,体験,3Dモデリング`,
       alternates: {
-        canonical: `/workshops/${params.id}`,
+        canonical: `/workshops/${id}`,
       },
       openGraph: {
         title,
         description,
-        url: `https://3dlab.jp/workshops/${params.id}`,
+        url: `https://3dlab.jp/workshops/${id}`,
         siteName: "3DLab - 3Dプリンタ教室",
         images: [
           {

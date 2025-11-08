@@ -2,20 +2,20 @@ export interface Workshop {
   id: string
   title: string
   description: string
-  rich_description?: string
+  rich_description?: string | null
   price: number
   duration: number
   max_participants: number
-  location?: string
-  image_url?: string
-  event_date?: string
-  event_time?: string
+  location?: string | null
+  image_url?: string | null
+  event_date?: string | null
+  event_time?: string | null
   available_dates?: AvailableDate[]
-  stripe_price_id?: string
+  stripe_price_id?: string | null
   is_pinned?: boolean
-  pin_order?: number
-  manual_participants?: number
-  manual_participants_note?: string
+  pin_order?: number | null
+  manual_participants?: number | null
+  manual_participants_note?: string | null
   created_at: string
   updated_at: string
 }
