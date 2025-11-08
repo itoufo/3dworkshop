@@ -12,6 +12,7 @@ import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail
 import styles from './workshop.module.css'
 import { WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
+import { optimizeImageUrl } from '@/lib/image-optimization'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -280,9 +281,9 @@ export default function WorkshopDetail() {
           <div className="lg:col-span-2">
             {/* Image */}
             {workshop.image_url ? (
-              <div className="relative w-full h-96 rounded-2xl overflow-hidden mb-8">
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
                 <Image
-                  src={workshop.image_url}
+                  src={optimizeImageUrl(workshop.image_url)}
                   alt={`${workshop.title} - 3Dプリンタワークショップ 東京・湯島 | 3DLab`}
                   fill
                   className="object-cover"
@@ -291,8 +292,8 @@ export default function WorkshopDetail() {
                 />
               </div>
             ) : (
-              <div className="w-full h-96 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-8">
-                <div className="w-32 h-32 bg-white/50 rounded-3xl flex items-center justify-center">
+              <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-8">
+                <div className="w-32 h-32 bg-white/50 rounded-xl flex items-center justify-center">
                   <span className="text-5xl font-bold text-purple-600">3D</span>
                 </div>
               </div>
@@ -300,7 +301,7 @@ export default function WorkshopDetail() {
 
             {/* Title and Description */}
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">{workshop.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">{workshop.title}</h1>
               <p className="text-lg text-gray-600">{workshop.description}</p>
             </div>
 

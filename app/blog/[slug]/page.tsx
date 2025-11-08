@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import { Calendar, Eye, Tag, ArrowLeft, BookOpen, User } from 'lucide-react'
 import { BlogArticleSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
+import { optimizeImageUrl } from '@/lib/image-optimization'
 
 interface BlogPost {
   id: string
@@ -160,7 +161,7 @@ export default function BlogPostPage() {
       <Header />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
           {blogPost && (
             <Breadcrumb 
@@ -179,12 +180,12 @@ export default function BlogPostPage() {
           </button>
 
           {/* Article Header */}
-          <article className="bg-white rounded-3xl shadow-xl overflow-hidden">
+          <article className="bg-white rounded-xl shadow-xl overflow-hidden">
             {/* Featured Image */}
             {blogPost.featured_image_url ? (
-              <div className="relative w-full h-96">
+              <div className="relative w-full aspect-video">
                 <Image
-                  src={blogPost.featured_image_url}
+                  src={optimizeImageUrl(blogPost.featured_image_url)}
                   alt={`${blogPost.title} - 3Dプリンタブログ | 3DLab`}
                   fill
                   className="object-cover"
@@ -193,7 +194,7 @@ export default function BlogPostPage() {
                 />
               </div>
             ) : (
-              <div className="w-full h-96 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+              <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                 <BookOpen className="w-24 h-24 text-purple-300" />
               </div>
             )}
@@ -274,9 +275,9 @@ export default function BlogPostPage() {
                     className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer text-left"
                   >
                     {post.featured_image_url ? (
-                      <div className="relative w-full h-48">
+                      <div className="relative w-full aspect-video">
                         <Image
-                          src={post.featured_image_url}
+                          src={optimizeImageUrl(post.featured_image_url, 75)}
                           alt={post.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -284,7 +285,7 @@ export default function BlogPostPage() {
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-48 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                      <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                         <BookOpen className="w-12 h-12 text-purple-300" />
                       </div>
                     )}

@@ -344,12 +344,12 @@ export default function LexicalRichTextEditor({
           margin: 0 0 15px 0;
         }
         .editor-heading-h2 {
-          font-size: 1.5em;
+          font-size: 1.2rem;
           font-weight: bold;
           margin: 0 0 15px 0;
         }
         .editor-heading-h3 {
-          font-size: 1.17em;
+          font-size: 1.1rem;
           font-weight: bold;
           margin: 0 0 15px 0;
         }

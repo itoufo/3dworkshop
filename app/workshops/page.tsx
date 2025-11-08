@@ -8,6 +8,7 @@ import { Workshop } from '@/types'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, Sparkles, Pin, ChevronLeft, ChevronRight } from 'lucide-react'
+import { optimizeImageUrl } from '@/lib/image-optimization'
 
 const ITEMS_PER_PAGE = 9
 
@@ -176,20 +177,19 @@ export default function WorkshopsPage() {
                   >
                     {/* Image Section */}
                     {workshop.image_url ? (
-                      <div className="relative w-full h-56 overflow-hidden bg-gray-100">
+                      <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
                         <Image
-                          src={`${workshop.image_url}${workshop.image_url.includes('supabase') ? '?width=400&height=300&quality=75' : ''}`}
+                          src={optimizeImageUrl(workshop.image_url, 75)}
                           alt={`${workshop.title} - 3Dプリンタワークショップ 東京・湯島`}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-contain group-hover:scale-105 transition-transform duration-300"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           loading="lazy"
-                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                       </div>
                     ) : (
-                      <div className="w-full h-56 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                      <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                         <div className="w-20 h-20 bg-white/50 rounded-2xl flex items-center justify-center">
                           <span className="text-3xl font-bold text-purple-600">3D</span>
                         </div>

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Package, Printer } from 'lucide-react'
+import { optimizeImageUrl } from '@/lib/image-optimization'
 
 interface Product {
   id: string
@@ -153,9 +154,9 @@ export default function ProductsPage() {
                   >
                     {/* Image */}
                     {product.image_urls && product.image_urls[0] ? (
-                      <div className="relative w-full h-56 overflow-hidden">
+                      <div className="relative w-full aspect-video overflow-hidden">
                         <Image
-                          src={product.image_urls[0]}
+                          src={optimizeImageUrl(product.image_urls[0], 75)}
                           alt={product.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -163,7 +164,7 @@ export default function ProductsPage() {
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-56 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                      <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                         <Package className="w-12 h-12 text-purple-300" />
                       </div>
                     )}

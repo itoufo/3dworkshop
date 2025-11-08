@@ -17,13 +17,13 @@ export default function HomePage() {
             src="/hero-bg.jpg"
             alt="3Dプリンタ教室 3DLab 東京・湯島 - 最新の3Dプリンタと熟練のチームが揃うクリエイティブスタジオ"
             fill
-            className="object-cover opacity-40"
+            className="object-cover opacity-70"
             priority
             quality={90}
           />
         </div>
         {/* グラデーションオーバーレイ */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/90 via-white/80 to-pink-50/90 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/70 via-white/60 to-pink-50/70 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>

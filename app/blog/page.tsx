@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import { Calendar, Eye, Tag, BookOpen } from 'lucide-react'
+import { optimizeImageUrl } from '@/lib/image-optimization'
 
 interface BlogPost {
   id: string
@@ -118,9 +119,9 @@ export default function BlogPage() {
                 >
                   {/* Featured Image */}
                   {post.featured_image_url ? (
-                    <div className="relative w-full h-48 overflow-hidden">
+                    <div className="relative w-full aspect-video overflow-hidden">
                       <Image
-                        src={post.featured_image_url}
+                        src={optimizeImageUrl(post.featured_image_url, 75)}
                         alt={`${post.title} - 3Dプリンタブログ | 3DLab`}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -129,7 +130,7 @@ export default function BlogPage() {
                       />
                     </div>
                   ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                    <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                       <BookOpen className="w-12 h-12 text-purple-300" />
                     </div>
                   )}
