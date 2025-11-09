@@ -15,7 +15,7 @@ export default function HomePage() {
         <div className="absolute inset-0">
           <Image
             src="/hero-bg.jpg"
-            alt="3Dプリンタ教室 3DLab 東京・湯島 - 最新の3Dプリンタと熟練のチームが揃うクリエイティブスタジオ"
+            alt="東京・秋葉原の3Dプリンター体験イベント 3DLab - スリーディープリンターと熟練のチームが揃うクリエイティブスタジオ"
             fill
             className="object-cover opacity-70"
             priority
@@ -28,13 +28,13 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <h1 className="mt-6 text-4xl sm:text-4xl font-bold text-gray-900 leading-tight">
-                秋葉原の3Dプリンタ教室<br className="hidden sm:inline" />
+                東京・秋葉原の3Dプリンター体験イベント<br className="hidden sm:inline" />
                 頭の中のアイデアを手に取れるカタチに
               </h1>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
-                3DLabは最新の3Dプリンタと熟練のチームが揃う、東京・湯島のクリエイティブスタジオです。
-                <strong className="text-purple-700">子どもも大人も楽しめる</strong>ワークショップから、企業のプロトタイプ制作、本格的なモノづくりまで。
-                <strong className="text-purple-700">AIも3Dプリンタも一緒に学び</strong>、家族で<strong className="text-purple-700">思い出作り</strong>。
+                3DLabは最新の3Dプリンター（スリーディープリンター）と熟練のチームが揃う、東京・秋葉原エリアのクリエイティブスタジオです。
+                <strong className="text-purple-700">子どもも大人も楽しめる</strong>体験イベント・ワークショップから、企業のプロトタイプ制作、本格的なモノづくりまで。
+                <strong className="text-purple-700">AIも3Dプリンターも一緒に学び</strong>、家族で<strong className="text-purple-700">思い出作り</strong>。
                 あなたのアイデアを立体化する、すべてのプロセスをサポートします。
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -59,7 +59,7 @@ export default function HomePage() {
                 <div className="flex justify-center mb-8">
                   <Image
                     src="/logo.png"
-                    alt="3DLab - 3Dプリンタ教室 東京・湯島"
+                    alt="3DLab - 3Dプリンター・スリーディープリンター 東京・秋葉原の体験イベント"
                     width={320}
                     height={120}
                     className="h-24 w-auto"
@@ -119,18 +119,18 @@ export default function HomePage() {
             あらゆるシーンで、3Dを活用
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            「3Dプリンタでどこまでできるの？」という疑問に、リアルな体験とプロの技術でお応えします。
+            「3Dプリンターでどこまでできるの？」という疑問に、東京・秋葉原の体験イベントでリアルな体験とプロの技術でお応えします。
             新製品のプロトタイプ、展示会の装飾、採用イベントのノベルティ、教育プログラムでの実習など、
-            あらゆる場面で3Dプリンティングの可能性を最大限に引き出します。
+            あらゆる場面でスリーディープリンターの可能性を最大限に引き出します。
           </p>
         </div>
 
         <div className="mt-16 grid gap-8 md:grid-cols-3">
           <div className="rounded-3xl bg-white border border-purple-100 shadow-lg p-8 flex flex-col">
             <Box className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">体験設計</h3>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">体験イベント設計</h3>
             <p className="text-gray-600 flex-1">
-              展示会やイベントでの3D体験を企画・設計。来場者が実際に触れて、驚きと感動を味わえる、印象に残る演出を創造します。
+              東京・秋葉原エリアでの展示会や体験イベントでの3Dプリンター体験を企画・設計。来場者が実際に触れて、驚きと感動を味わえる、印象に残る演出を創造します。
             </p>
             <Link
               href="/portfolio"
@@ -142,9 +142,9 @@ export default function HomePage() {
           </div>
           <div className="rounded-3xl bg-white border border-purple-100 shadow-lg p-8 flex flex-col">
             <Printer className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">造形・プロトタイピング</h3>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">3Dプリンター造形・プロトタイピング</h3>
             <p className="text-gray-600 flex-1">
-              試作品から小ロット生産まで、スピーディーに対応。最適な素材選定、後処理、品質管理まで、プロ仕様の造形をワンストップでご提供します。
+              スリーディープリンターを使った試作品から小ロット生産まで、スピーディーに対応。最適な素材選定、後処理、品質管理まで、プロ仕様の造形をワンストップでご提供します。
             </p>
             <Link
               href="/products"
@@ -156,11 +156,11 @@ export default function HomePage() {
           </div>
           <div className="rounded-3xl bg-white border border-purple-100 shadow-lg p-8 flex flex-col">
             <Rocket className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">共創ワークショップ</h3>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">共創ワークショップ・体験イベント</h3>
             <p className="text-gray-600 flex-1">
-              <span className="font-semibold text-purple-700">子どもも大人も楽しめる</span>体験会から、企業研修、チームビルディングまで。
-              <span className="font-semibold text-purple-700">AIも3Dプリンタも一緒に学び</span>、家族で<span className="font-semibold text-purple-700">思い出作り</span>。
-              3Dプリンティングを通じて、創造性を引き出し、新しいアイデアを生み出す場を創ります。
+              <span className="font-semibold text-purple-700">子どもも大人も楽しめる</span>3Dプリンター体験イベントから、企業研修、チームビルディングまで。
+              <span className="font-semibold text-purple-700">AIもスリーディープリンターも一緒に学び</span>、家族で<span className="font-semibold text-purple-700">思い出作り</span>。
+              東京・秋葉原エリアで3Dプリンティングを通じて、創造性を引き出し、新しいアイデアを生み出す場を創ります。
             </p>
             <Link
               href="/workshops"
@@ -283,9 +283,9 @@ export default function HomePage() {
                 <span className="text-white font-bold text-2xl">3D</span>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">3Dプリンタ教室 3DLab</h3>
+            <h3 className="text-xl font-bold text-white mb-2">3Dプリンター教室・体験イベント 3DLab</h3>
             <p className="text-sm text-gray-400">
-              東京都文京区湯島3-14-8 加田湯島ビル 5F
+              東京・秋葉原エリア（文京区湯島3-14-8 加田湯島ビル 5F）
             </p>
             <p className="text-sm text-gray-400">
               湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
@@ -326,7 +326,7 @@ export default function HomePage() {
 
           <div className="text-center">
             <p className="text-sm text-gray-500">
-              © 2024 3DLab - 3Dプリンタ 東京 | 湯島・御徒町・秋葉原・御茶ノ水からアクセス
+              © 2024 3DLab - 3Dプリンター・スリーディープリンター 東京・秋葉原の体験イベント | 湯島・御徒町・秋葉原・御茶ノ水からアクセス
             </p>
           </div>
         </div>
