@@ -15,11 +15,17 @@
   to = "https://3dlab.jp/:splat"
   status = 301
   force = true
-  conditions = {Role = ["external"]}
 
 # wwwから非wwwへリダイレクト
 [[redirects]]
   from = "https://www.3dlab.jp/*"
+  to = "https://3dlab.jp/:splat"
+  status = 301
+  force = true
+
+# HTTPからHTTPSへリダイレクト
+[[redirects]]
+  from = "http://3dlab.jp/*"
   to = "https://3dlab.jp/:splat"
   status = 301
   force = true
