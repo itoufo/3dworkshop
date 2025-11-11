@@ -1,0 +1,8 @@
+# Netlify Redirects
+# https://docs.netlify.com/routing/redirects/
+
+# Redirect from netlify.app subdomain to custom domain
+https://3dworkshop.netlify.app/* https://3dlab.jp/:splat 301!
+
+# Redirect from www to non-www
+https://www.3dlab.jp/* https://3dlab.jp/:splat 301!
