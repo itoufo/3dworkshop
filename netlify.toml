@@ -11,21 +11,16 @@
 
 # Netlifyデフォルトドメインから3dlab.jpへリダイレクト
 [[redirects]]
-  from = "https://*.netlify.app/*"
+  from = "/*"
   to = "https://3dlab.jp/:splat"
   status = 301
   force = true
+  conditions = {Host = ["3dworkshop.netlify.app"]}
 
 # wwwから非wwwへリダイレクト
 [[redirects]]
-  from = "https://www.3dlab.jp/*"
+  from = "/*"
   to = "https://3dlab.jp/:splat"
   status = 301
   force = true
-
-# HTTPからHTTPSへリダイレクト
-[[redirects]]
-  from = "http://3dlab.jp/*"
-  to = "https://3dlab.jp/:splat"
-  status = 301
-  force = true
+  conditions = {Host = ["www.3dlab.jp"]}
