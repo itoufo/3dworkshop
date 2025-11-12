@@ -405,6 +405,55 @@ export default function WorkshopsPage() {
           </div>
         </section>
 
+        {/* SEO Content Section */}
+        <section className="bg-gradient-to-b from-gray-50 to-white py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="prose prose-lg max-w-none">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                東京・秋葉原エリアで3Dプリンター体験なら3DLab
+              </h2>
+
+              <div className="space-y-4 text-gray-700 leading-relaxed">
+                <p>
+                  <strong>3DLab（スリーディーラボ）</strong>は、東京都文京区湯島にある3Dプリンター専門の体験教室です。
+                  東京メトロ千代田線の湯島駅から徒歩1分、JR御徒町駅から徒歩8分、秋葉原駅から徒歩10分と、
+                  アクセス抜群の立地で、お仕事帰りや休日に気軽に3Dプリンティング技術を学ぶことができます。
+                </p>
+
+                <p>
+                  初心者向けの<strong>3Dプリンター体験ワークショップ</strong>から、本格的な3Dモデリング技術を習得できる
+                  <strong>スクールコース</strong>まで、幅広いプログラムをご用意。
+                  最新の3Dプリンター機材を使用し、実践的なスキルを身につけることができます。
+                </p>
+
+                <p>
+                  東京・秋葉原エリアで3Dプリンターに興味がある方、プロトタイプ制作や企業研修をお考えの方は、
+                  ぜひ3DLabの体験イベントにご参加ください。湯島・御徒町・御茶ノ水からもアクセス便利です。
+                </p>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <p className="text-sm text-gray-600">最寄駅</p>
+                  <p className="font-bold text-purple-600">湯島駅 徒歩1分</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <p className="text-sm text-gray-600">対象</p>
+                  <p className="font-bold text-purple-600">初心者〜上級者</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <p className="text-sm text-gray-600">体験時間</p>
+                  <p className="font-bold text-purple-600">60分〜</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <p className="text-sm text-gray-600">営業時間</p>
+                  <p className="font-bold text-purple-600">10:00〜20:00</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer className="bg-gray-900 text-gray-300 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
