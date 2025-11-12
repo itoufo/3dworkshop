@@ -15,7 +15,9 @@
       "Bash(curl:*)",
       "Read(/Users/yuho/Downloads/**)",
       "Bash(git pull:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "WebFetch(domain:3dworkshop.netlify.app)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
