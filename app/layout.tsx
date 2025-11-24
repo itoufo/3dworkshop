@@ -122,6 +122,20 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-HWRY2Z7G7N"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-HWRY2Z7G7N');
+            `,
+          }}
+        />
+        <script
           src="https://zqyhxtaddfruoipjrhah.supabase.co/storage/v1/object/public/heat_js/heatmap.v1.min.js"
           data-sitekey="350a47f6-3583-4f06-acec-f54e853aaf34"
           async
