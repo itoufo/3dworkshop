@@ -3,6 +3,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import Image from 'next/image'
 import { MapPin, Clock, CircleDollarSign, Heart, Sparkles, CheckCircle } from 'lucide-react'
 
 export default function RecruitPage() {
@@ -13,16 +14,28 @@ export default function RecruitPage() {
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="inline-block bg-pink-100 text-pink-600 font-bold px-4 py-2 rounded-full text-sm mb-4">
-              未経験OK！
+          <div className="relative rounded-3xl overflow-hidden mb-12">
+            <div className="absolute inset-0">
+              <Image
+                src="/hero-bg.jpg"
+                alt="3DLabワークショップの様子"
+                fill
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-900/60" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              アルバイト募集中
-            </h1>
-            <p className="text-xl text-gray-600">
-              学生さん・主婦の方、大歓迎！
-            </p>
+            <div className="relative text-center py-16 px-6">
+              <div className="inline-block bg-pink-500 text-white font-bold px-4 py-2 rounded-full text-sm mb-4">
+                未経験OK！講師デビュー
+              </div>
+              <h1 className="text-4xl font-bold text-white mb-4">
+                ワークショップ講師募集
+              </h1>
+              <p className="text-xl text-purple-100">
+                学生さん・主婦の方、大歓迎！
+              </p>
+            </div>
           </div>
 
           {/* Main Content */}
@@ -56,11 +69,27 @@ export default function RecruitPage() {
                 <Sparkles className="w-6 h-6 text-purple-600 mr-2" />
                 <h2 className="text-2xl font-bold text-gray-900">こんな職場です</h2>
               </div>
+
+              {/* Workplace Image */}
+              <div className="relative h-48 rounded-2xl overflow-hidden mb-6">
+                <Image
+                  src="/hero-bg.jpg"
+                  alt="3DLabスタジオの様子"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-4 left-4 text-white">
+                  <p className="font-bold">湯島駅すぐのスタジオ</p>
+                  <p className="text-sm opacity-90">明るく開放的な空間です</p>
+                </div>
+              </div>
+
               <p className="text-gray-700 leading-relaxed">
                 3DLabは湯島駅すぐの3Dプリンター体験スタジオ。
-                お子さん連れのご家族やものづくりが好きな方が来店されます。
-                難しい作業はありません！まずは笑顔でお客様をお迎えすることからスタート。
-                3DプリンターやAIに興味がなくても大丈夫、<strong className="text-purple-600">働きながら自然と最新技術に詳しくなれます</strong>。
+                お子さん連れのご家族やものづくりが好きな方が参加されるワークショップで、講師として活躍していただきます。
+                「教えた経験がない...」という方も大丈夫！まずは先輩講師のサポートからスタート。
+                3DプリンターやAIに興味がなくても、<strong className="text-purple-600">働きながら自然と最新技術に詳しくなれます</strong>。
                 就活や将来のキャリアに役立つ経験ができますよ！
               </p>
             </section>
@@ -74,28 +103,45 @@ export default function RecruitPage() {
                 <div className="bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
                   <h3 className="font-bold text-gray-900 mb-3 flex items-center">
                     <Heart className="w-5 h-5 text-pink-500 mr-2" />
-                    お仕事内容（カンタン！）
+                    募集職種：ワークショップ講師
                   </h3>
+                  <p className="text-gray-700 mb-4">
+                    3Dプリンターやプログラミングのワークショップで、子どもたちや参加者に教えるお仕事です。
+                  </p>
+
+                  <div className="bg-white rounded-xl p-4 mb-4">
+                    <p className="font-bold text-purple-600 mb-2">まずはサポートからスタート！</p>
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">STEP1</span>
+                      <span className="mx-2">→</span>
+                      <span>講師のサポート・準備</span>
+                      <span className="mx-2">→</span>
+                      <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full">STEP2</span>
+                      <span className="mx-2">→</span>
+                      <span>講師デビュー！</span>
+                    </div>
+                  </div>
+
                   <ul className="space-y-2 text-gray-700">
                     <li className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>お客様の受付・ご案内</span>
+                      <span>ワークショップの進行・参加者へのレクチャー</span>
                     </li>
                     <li className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>ワークショップのお手伝い（材料を渡したり、見守ったり）</span>
+                      <span>3Dプリンター・プログラミングの操作サポート</span>
                     </li>
                     <li className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>店内のお掃除・片付け</span>
+                      <span>教材・機材の準備・片付け</span>
                     </li>
                     <li className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>SNS投稿（やってみたい方だけでOK！）</span>
+                      <span>参加者の作品づくりのお手伝い</span>
                     </li>
                   </ul>
                   <p className="mt-4 text-sm text-gray-500 bg-white rounded-lg p-3">
-                    ※3Dプリンターの操作は慣れてきてからでOK。最初は簡単なお仕事からお任せします！
+                    ※経験ゼロでも大丈夫！先輩スタッフが丁寧に教えます。まずはサポートから始めて、慣れてきたら講師としてデビュー！
                   </p>
                 </div>
 
@@ -130,7 +176,7 @@ export default function RecruitPage() {
                   <CircleDollarSign className="w-5 h-5 text-purple-600 mr-3 mt-0.5" />
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">時給</h3>
-                    <p className="text-2xl font-bold text-purple-600">1,200円〜</p>
+                    <p className="text-2xl font-bold text-purple-600">1,250円〜</p>
                     <p className="text-sm text-gray-500 mt-1">交通費支給（上限あり）/ 昇給あり</p>
                   </div>
                 </div>
