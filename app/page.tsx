@@ -180,7 +180,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">
             サービスメニュー
           </h2>
-          <nav className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto" aria-label="サービスナビゲーション">
+          <nav className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto" aria-label="サービスナビゲーション">
             <Link
               href="/workshops"
               className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group "
@@ -196,6 +196,14 @@ export default function HomePage() {
               <div className="text-3xl mb-3">🏫</div>
               <h3 className="font-semibold text-lg text-gray-900 group-hover:text-purple-600 transition-colors">スクール</h3>
               <p className="text-sm text-gray-500 mt-2">本格的に学ぶ</p>
+            </Link>
+            <Link
+              href="/business"
+              className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+            >
+              <div className="text-3xl mb-3">🏢</div>
+              <h3 className="font-semibold text-lg text-gray-900 group-hover:text-purple-600 transition-colors">出張・研修</h3>
+              <p className="text-sm text-gray-500 mt-2">法人・団体向け</p>
             </Link>
           </nav>
         </div>
