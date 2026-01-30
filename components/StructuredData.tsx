@@ -119,10 +119,27 @@ export function SchoolCourseSchema() {
   };
 }
 
+// HTMLコンテンツから見出し（h2, h3）を抽出してTOC構造を生成
+function extractHeadings(html: string): Array<{ text: string; level: number }> {
+  const headingRegex = /<h([23])[^>]*>(.*?)<\/h[23]>/gi;
+  const headings: Array<{ text: string; level: number }> = [];
+  let match;
+  while ((match = headingRegex.exec(html)) !== null) {
+    const text = match[2].replace(/<[^>]*>/g, '').trim();
+    if (text) {
+      headings.push({ text, level: parseInt(match[1], 10) });
+    }
+  }
+  return headings;
+}
+
 // ブログ記事用のArticle構造化データ
 export function BlogArticleSchema(article: {
   title: string;
-  description: string;
+  slug?: string;
+  description?: string;
+  excerpt?: string;
+  content?: string;
   published_at: string;
   updated_at?: string;
   author_name?: string;
@@ -130,17 +147,38 @@ export function BlogArticleSchema(article: {
   category?: string;
   tags?: string[];
 }) {
+  const description = article.excerpt || article.description || '';
+  const articleUrl = article.slug
+    ? `https://3dlab.jp/blog/${article.slug}`
+    : 'https://3dlab.jp/blog';
+
+  // HTMLタグを除去してプレーンテキストの文字数を算出
+  const plainContent = article.content
+    ? article.content.replace(/<[^>]*>/g, '')
+    : '';
+  const wordCount = plainContent.length;
+
+  // 見出しからTOC（hasPart）を生成
+  const headings = article.content ? extractHeadings(article.content) : [];
+  const hasPart = headings.length > 0
+    ? headings.map((h) => ({
+        "@type": "WebPageElement",
+        "name": h.text,
+      }))
+    : undefined;
+
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     "headline": article.title,
-    "description": article.description,
+    "description": description,
     "image": article.featured_image_url || "https://3dlab.jp/og-image.jpg",
     "datePublished": article.published_at,
     "dateModified": article.updated_at || article.published_at,
     "author": {
       "@type": "Person",
-      "name": article.author_name || "3DLab"
+      "name": article.author_name || "3DLab",
+      "url": "https://3dlab.jp",
     },
     "publisher": {
       "@type": "Organization",
@@ -151,6 +189,13 @@ export function BlogArticleSchema(article: {
         "url": "https://3dlab.jp/logo.png"
       }
     },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": articleUrl
+    },
+    "inLanguage": "ja",
+    ...(wordCount > 0 && { "wordCount": wordCount }),
+    ...(hasPart && { "hasPart": hasPart }),
     "articleSection": article.category,
     "keywords": article.tags?.join(", ") || ""
   };

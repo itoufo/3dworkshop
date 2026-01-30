@@ -1,22 +1,28 @@
 import type { Metadata } from "next";
 import { createClient } from '@supabase/supabase-js';
+import { BlogArticleSchema } from '@/components/StructuredData';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+async function getBlogPost(slug: string) {
+  const { data } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('slug', slug)
+    .eq('is_published', true)
+    .single();
+  return data;
+}
+
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   try {
     const { slug } = await params
-    const { data: blogPost } = await supabase
-      .from('blog_posts')
-      .select('*')
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .single();
+    const blogPost = await getBlogPost(slug);
 
     if (!blogPost) {
       return {
@@ -26,7 +32,7 @@ export async function generateMetadata(
     }
 
     const title = `${blogPost.title} | 3Dプリンタブログ | 3DLab`;
-    const description = blogPost.excerpt || blogPost.description || `${blogPost.title}の記事。3Dプリンタ教室3DLabのブログ。`;
+    const description = blogPost.excerpt || `${blogPost.title}の記事。3Dプリンタ教室3DLabのブログ。`;
     const imageUrl = blogPost.featured_image_url || '/og-image.jpg';
 
     return {
@@ -72,11 +78,28 @@ export async function generateMetadata(
   }
 }
 
-export default function BlogPostLayout({
+export default async function BlogPostLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ slug: string }>;
 }) {
-  return children;
+  const { slug } = await params;
+  const blogPost = await getBlogPost(slug);
+
+  const structuredData = blogPost ? BlogArticleSchema(blogPost) : null;
+
+  return (
+    <>
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      )}
+      {children}
+    </>
+  );
 }
 
