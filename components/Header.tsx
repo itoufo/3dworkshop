@@ -34,6 +34,7 @@ export default function Header() {
     { href: '/workshops', label: 'ワークショップ' },
     { href: '/school', label: 'スクール' },
     { href: '/business', label: '出張・研修' },
+    { href: '/products/3d-printing/new', label: '3Dプリント制作' },
     { href: '/partner', label: '導入プラン' },
     { href: '/recruit', label: '採用' },
     { href: '/blog', label: 'ブログ' },

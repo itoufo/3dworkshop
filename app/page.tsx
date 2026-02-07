@@ -147,10 +147,10 @@ export default function HomePage() {
               スリーディープリンターを使った試作品から小ロット生産まで、スピーディーに対応。最適な素材選定、後処理、品質管理まで、プロ仕様の造形をワンストップでご提供します。
             </p>
             <Link
-              href="/products"
+              href="/products/3d-printing/new"
               className="mt-6 inline-flex items-center text-purple-600 font-semibold hover:text-purple-700"
             >
-              サービス詳細
+              制作を依頼する
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </div>
@@ -180,7 +180,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">
             サービスメニュー
           </h2>
-          <nav className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto" aria-label="サービスナビゲーション">
+          <nav className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl mx-auto" aria-label="サービスナビゲーション">
             <Link
               href="/workshops"
               className="p-5 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
@@ -196,6 +196,14 @@ export default function HomePage() {
               <div className="text-2xl mb-2">🏫</div>
               <h3 className="font-semibold text-base text-gray-900 group-hover:text-purple-600 transition-colors">スクール</h3>
               <p className="text-xs text-gray-500 mt-1">本格的に学ぶ</p>
+            </Link>
+            <Link
+              href="/products/3d-printing/new"
+              className="p-5 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow text-center group"
+            >
+              <div className="text-2xl mb-2">🖨️</div>
+              <h3 className="font-semibold text-base text-gray-900 group-hover:text-purple-600 transition-colors">3Dプリント制作</h3>
+              <p className="text-xs text-gray-500 mt-1">STLで発注</p>
             </Link>
             <Link
               href="/business"

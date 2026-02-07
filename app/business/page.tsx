@@ -254,12 +254,20 @@ export default function BusinessPage() {
             </a>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <Link
               href="/workshops"
               className="inline-flex items-center text-purple-600 font-semibold hover:text-purple-700"
             >
               個人向けワークショップはこちら
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+            <br />
+            <Link
+              href="/products/3d-printing/new"
+              className="inline-flex items-center text-purple-600 font-semibold hover:text-purple-700"
+            >
+              3Dプリント制作を依頼する
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </div>

@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
-import { Calendar, User, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import { Calendar, User, Sparkles, ArrowRight } from 'lucide-react'
 
 interface PortfolioItem {
   id: string
@@ -82,6 +83,13 @@ export default function PortfolioPage() {
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               ワークショップや3Dプリント制作で生まれた素敵な作品をご紹介します
             </p>
+            <Link
+              href="/products/3d-printing/new"
+              className="mt-4 inline-flex items-center text-purple-600 font-semibold hover:text-purple-700"
+            >
+              3Dプリント制作を依頼する
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
           </div>
 
           {/* Category Filter */}

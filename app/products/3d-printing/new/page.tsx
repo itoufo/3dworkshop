@@ -281,7 +281,7 @@ export default function New3DPrintingOrder() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       <Hash className="w-4 h-4 inline mr-1" />
-                      数量（1〜20個）
+                      数量（1〜1,000個）
                     </label>
                     <div className="flex items-center space-x-4">
                       <button
@@ -294,17 +294,17 @@ export default function New3DPrintingOrder() {
                       <input
                         type="number"
                         min="1"
-                        max="20"
+                        max="1000"
                         value={order.quantity}
                         onChange={(e) => {
                           const val = parseInt(e.target.value) || 1
-                          setOrder({ ...order, quantity: Math.min(20, Math.max(1, val)) })
+                          setOrder({ ...order, quantity: Math.min(1000, Math.max(1, val)) })
                         }}
                         className="w-20 text-center text-xl font-bold border-2 border-gray-200 rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       />
                       <button
                         type="button"
-                        onClick={() => setOrder({ ...order, quantity: Math.min(20, order.quantity + 1) })}
+                        onClick={() => setOrder({ ...order, quantity: Math.min(1000, order.quantity + 1) })}
                         className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-purple-600 transition-colors flex items-center justify-center text-xl font-bold"
                       >
                         +

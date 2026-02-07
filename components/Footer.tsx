@@ -31,7 +31,15 @@ export default function Footer() {
         
         {/* Links */}
         <div className="border-t border-gray-800 pt-6 mb-6">
-          <div className="flex justify-center space-x-6 text-sm">
+          <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-sm">
+            <a href="/workshops" className="text-gray-400 hover:text-purple-400 transition-colors">
+              ワークショップ
+            </a>
+            <span className="text-gray-600">|</span>
+            <a href="/products/3d-printing/new" className="text-gray-400 hover:text-purple-400 transition-colors">
+              3Dプリント制作
+            </a>
+            <span className="text-gray-600">|</span>
             <a href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
               利用規約
             </a>
