@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import { Sparkles, Box, Printer, Users, ArrowRight, Rocket } from 'lucide-react'
+import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -173,6 +173,66 @@ export default function HomePage() {
         </div>
       </section>
 
+
+      {/* 1点から制作依頼 CTA */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-4 right-8 text-white text-[120px] font-black leading-none select-none">3D</div>
+            </div>
+            <div className="relative px-8 py-10 md:px-12 md:py-12">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1 text-white">
+                  <div className="inline-flex items-center bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-sm font-bold mb-4">
+                    <Package className="w-4 h-4 mr-2" />
+                    1点からOK
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
+                    3Dプリント制作、<br />
+                    1点からお受けします
+                  </h2>
+                  <p className="text-white/90 leading-relaxed mb-6">
+                    「こんなもの作れる？」そんなご相談から大歓迎。
+                    オリジナルフィギュア、試作品、記念品、ノベルティ、建築模型など、
+                    アイデア段階でもお気軽にどうぞ。3Dモデリングからプリント・仕上げまで一貫対応します。
+                  </p>
+                  <ul className="space-y-2 text-white/90 text-sm mb-6">
+                    <li className="flex items-center gap-2">
+                      <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
+                      個人のアイデアを形に &#8212; 趣味・プレゼント・作品づくり
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
+                      法人の試作・小ロット &#8212; プロトタイプ・展示用モデル
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
+                      データがなくてもOK &#8212; スケッチや写真からモデリング可能
+                    </li>
+                  </ul>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Link
+                      href="/products/3d-printing/new"
+                      className="inline-flex items-center justify-center gap-2 bg-white text-purple-700 font-bold px-8 py-4 rounded-xl hover:bg-purple-50 transition-colors"
+                    >
+                      制作依頼・料金を見る
+                      <ArrowRight className="w-5 h-5" />
+                    </Link>
+                    <a
+                      href="mailto:y-sato@sunu25.com?subject=3Dプリント制作のご相談"
+                      className="inline-flex items-center justify-center gap-2 bg-white/20 backdrop-blur text-white font-bold px-8 py-4 rounded-xl hover:bg-white/30 transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      まずは相談する
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Quick Links Section */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-50 to-pink-50">

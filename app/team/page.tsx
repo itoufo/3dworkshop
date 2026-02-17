@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import Image from 'next/image'
 import { StructuredData } from '@/components/StructuredData'
-import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, MessageCircle, Pen, Shield, Users, Wrench, Building2, Heart, ArrowRight, Package } from 'lucide-react'
+import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, Pen, Shield, Users, Wrench, Building2, Heart } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '講師・スタッフ紹介 | 3DLab 東京・湯島の3Dプリンター教室',
@@ -107,84 +107,6 @@ export default function TeamPage() {
             </div>
           </div>
 
-          {/* ===== チーム写真 ===== */}
-          <section className="mb-16">
-            <div className="relative rounded-3xl overflow-hidden shadow-xl">
-              <Image
-                src="/staff-both.jpg"
-                alt="3DLab講師陣 - 伊東雄歩と伊東優"
-                width={1200}
-                height={600}
-                className="w-full h-64 md:h-80 object-cover object-top"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-8 text-white">
-                <p className="text-sm font-medium text-white/80 mb-1">3DLab 講師チーム</p>
-                <p className="text-xl font-bold">テクノロジー × ホスピタリティで「作りたい」を形に</p>
-              </div>
-              <p className="absolute bottom-2 right-4 text-white/50 text-xs">撮影：シェアラボ編集部</p>
-            </div>
-          </section>
-
-          {/* ===== 1点から制作依頼 CTA ===== */}
-          <section className="mb-16">
-            <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-3xl overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-4 right-8 text-white text-[120px] font-black leading-none select-none">3D</div>
-              </div>
-              <div className="relative px-8 py-10 md:px-12 md:py-12">
-                <div className="flex flex-col md:flex-row items-center gap-8">
-                  <div className="flex-1 text-white">
-                    <div className="inline-flex items-center bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-sm font-bold mb-4">
-                      <Package className="w-4 h-4 mr-2" />
-                      1点からOK
-                    </div>
-                    <h2 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
-                      3Dプリント制作、<br />
-                      1点からお受けします
-                    </h2>
-                    <p className="text-white/90 leading-relaxed mb-6">
-                      「こんなもの作れる？」そんなご相談から大歓迎。
-                      オリジナルフィギュア、試作品、記念品、ノベルティ、建築模型など、
-                      アイデア段階でもお気軽にどうぞ。3Dモデリングからプリント・仕上げまで一貫対応します。
-                    </p>
-                    <ul className="space-y-2 text-white/90 text-sm mb-6">
-                      <li className="flex items-center gap-2">
-                        <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
-                        個人のアイデアを形に &#8212; 趣味・プレゼント・作品づくり
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
-                        法人の試作・小ロット &#8212; プロトタイプ・展示用モデル
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
-                        データがなくてもOK &#8212; スケッチや写真からモデリング可能
-                      </li>
-                    </ul>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Link
-                        href="/products/3d-printing/new"
-                        className="inline-flex items-center justify-center gap-2 bg-white text-purple-700 font-bold px-8 py-4 rounded-xl hover:bg-purple-50 transition-colors"
-                      >
-                        制作依頼・料金を見る
-                        <ArrowRight className="w-5 h-5" />
-                      </Link>
-                      <a
-                        href="mailto:y-sato@sunu25.com?subject=3Dプリント制作のご相談"
-                        className="inline-flex items-center justify-center gap-2 bg-white/20 backdrop-blur text-white font-bold px-8 py-4 rounded-xl hover:bg-white/30 transition-colors"
-                      >
-                        <MessageCircle className="w-5 h-5" />
-                        まずは相談する
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* ===== 伊東雄歩 ===== */}
           <section className="mb-16">
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
@@ -217,17 +139,52 @@ export default function TeamPage() {
               </div>
 
               <div className="p-8 md:p-10">
-                {/* Tagline */}
-                <div className="mb-6">
-                  <p className="text-xl font-bold text-gray-900 mb-1">AIプロフェッショナル</p>
-                  <p className="text-gray-600 leading-relaxed">
-                    IQ130超・MENSA会員。2015年に株式会社ウォーカーを創業し、AI開発・セキュリティ・教育事業を展開。
-                    10年以上の起業経験と、セキュリティからAI製品開発まで全領域をカバーするフルスタックエンジニア。
-                    何億円規模のシステム構築実績を持つ。
-                  </p>
+                {/* Photo + Bio Grid */}
+                <div className="flex flex-col md:flex-row gap-8 mb-8">
+                  {/* Photo */}
+                  <div className="md:w-64 flex-shrink-0">
+                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[3/4]">
+                      <Image
+                        src="/staff-ito-yuho-workshop.jpg"
+                        alt="伊東 雄歩 - 3Dプリンターワークショップで指導中"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 256px"
+                      />
+                    </div>
+                  </div>
+                  {/* Bio */}
+                  <div className="flex-1">
+                    <p className="text-xl font-bold text-gray-900 mb-1">AIプロフェッショナル</p>
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                      IQ130超・MENSA会員。2015年に株式会社ウォーカーを創業し、AI開発・セキュリティ・教育事業を展開。
+                      10年以上の起業経験と、セキュリティからAI製品開発まで全領域をカバーするフルスタックエンジニア。
+                      何億円規模のシステム構築実績を持つ。
+                    </p>
+
+                    {/* Stats inline */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-purple-600">50+</p>
+                        <p className="text-xs text-gray-600">システム構築</p>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-purple-600">200+</p>
+                        <p className="text-xs text-gray-600">セミナー・WS</p>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-purple-600">3,000+</p>
+                        <p className="text-xs text-gray-600">受講者数</p>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-purple-600">90%</p>
+                        <p className="text-xs text-gray-600">3ヶ月内AI成果物</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Stats */}
+                {/* Credentials */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-4 text-center">
                     <p className="text-2xl font-bold text-purple-600">50+</p>
