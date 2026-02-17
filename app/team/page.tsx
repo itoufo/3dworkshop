@@ -1,14 +1,81 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, Pen, Shield, Users, Wrench, Building2, Heart } from 'lucide-react'
+import Image from 'next/image'
+import { StructuredData } from '@/components/StructuredData'
+import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, MessageCircle, Pen, Shield, Users, Wrench, Building2, Heart, ArrowRight, Package } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: '講師・スタッフ紹介 | 3DLab 東京・湯島の3Dプリンター教室',
+  description: '3DLab（東京・湯島）の講師・制作スタッフ紹介。AI×3Dプリンターの専門家チームが、ワークショップ・スクール・1点からの制作依頼まで対応。初心者から法人まで、あなたのものづくりを全力サポートします。',
+  keywords: '3DLab,講師紹介,スタッフ,3Dプリンター,東京,湯島,AI教育,ワークショップ,制作依頼,3Dプリント,オーダーメイド',
+  alternates: {
+    canonical: '/team',
+  },
+  openGraph: {
+    title: '講師・スタッフ紹介 | 3DLab 東京・湯島の3Dプリンター教室',
+    description: 'AI×3Dプリンターの専門家チームが、ワークショップ・スクール・1点からの制作依頼まで対応。初心者から法人まで全力サポート。',
+    url: 'https://3dlab.jp/team',
+    type: 'website',
+  },
+}
+
+function teamStructuredData() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "講師・スタッフ紹介 | 3DLab",
+    "description": "3DLab（東京・湯島）の講師・制作スタッフ紹介。AI×3Dプリンターの専門家チーム。",
+    "url": "https://3dlab.jp/team",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "3DLab - 3Dプリンタ教室",
+      "url": "https://3dlab.jp",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "文京区",
+        "addressRegion": "東京都",
+        "postalCode": "113-0034",
+        "addressCountry": "JP",
+        "streetAddress": "湯島3-14-8 加田湯島ビル 5F"
+      },
+      "member": [
+        {
+          "@type": "Person",
+          "name": "伊東雄歩",
+          "jobTitle": "技術監修 / AI講師",
+          "description": "MENSA会員・JDLA認定講座講師。株式会社ウォーカー代表取締役。AI開発・セキュリティ・教育事業を展開するフルスタックエンジニア。",
+          "sameAs": [
+            "https://x.com/itoWalker",
+            "https://www.instagram.com/itoyuho.0703/",
+            "https://note.com/yuho_walker",
+            "https://walker.co.jp/"
+          ]
+        },
+        {
+          "@type": "Person",
+          "name": "伊東優",
+          "jobTitle": "運営統括 / ワークショップ講師",
+          "image": "https://3dlab.jp/staff-ito-yu.jpg",
+          "description": "株式会社sunU代表取締役。東洋大学国際観光学科卒。宿泊業DX・AI活用から教育事業まで幅広く手掛ける。",
+          "sameAs": [
+            "https://x.com/ryokansunu",
+            "https://www.instagram.com/yuryokanai/",
+            "https://www.facebook.com/share/1813ZTYwPv/",
+            "https://sunu25.com/"
+          ]
+        }
+      ]
+    }
+  }
+}
 
 export default function TeamPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
+      <StructuredData data={teamStructuredData()} />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
@@ -39,6 +106,64 @@ export default function TeamPage() {
               </a>
             </div>
           </div>
+
+          {/* ===== 1点から制作依頼 CTA ===== */}
+          <section className="mb-16">
+            <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-4 right-8 text-white text-[120px] font-black leading-none select-none">3D</div>
+              </div>
+              <div className="relative px-8 py-10 md:px-12 md:py-12">
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <div className="flex-1 text-white">
+                    <div className="inline-flex items-center bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-sm font-bold mb-4">
+                      <Package className="w-4 h-4 mr-2" />
+                      1点からOK
+                    </div>
+                    <h2 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
+                      3Dプリント制作、<br />
+                      1点からお受けします
+                    </h2>
+                    <p className="text-white/90 leading-relaxed mb-6">
+                      「こんなもの作れる？」そんなご相談から大歓迎。
+                      オリジナルフィギュア、試作品、記念品、ノベルティ、建築模型など、
+                      アイデア段階でもお気軽にどうぞ。3Dモデリングからプリント・仕上げまで一貫対応します。
+                    </p>
+                    <ul className="space-y-2 text-white/90 text-sm mb-6">
+                      <li className="flex items-center gap-2">
+                        <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
+                        個人のアイデアを形に &#8212; 趣味・プレゼント・作品づくり
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
+                        法人の試作・小ロット &#8212; プロトタイプ・展示用モデル
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
+                        データがなくてもOK &#8212; スケッチや写真からモデリング可能
+                      </li>
+                    </ul>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Link
+                        href="/products/3d-printing/new"
+                        className="inline-flex items-center justify-center gap-2 bg-white text-purple-700 font-bold px-8 py-4 rounded-xl hover:bg-purple-50 transition-colors"
+                      >
+                        制作依頼・料金を見る
+                        <ArrowRight className="w-5 h-5" />
+                      </Link>
+                      <a
+                        href="mailto:y-sato@sunu25.com?subject=3Dプリント制作のご相談"
+                        className="inline-flex items-center justify-center gap-2 bg-white/20 backdrop-blur text-white font-bold px-8 py-4 rounded-xl hover:bg-white/30 transition-colors"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        まずは相談する
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* ===== 伊東雄歩 ===== */}
           <section className="mb-16">
@@ -231,11 +356,17 @@ export default function TeamPage() {
           {/* ===== 伊東優 ===== */}
           <section className="mb-16">
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-              {/* Profile Header */}
+              {/* Profile Header with Photo */}
               <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-8 py-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-3xl font-bold">Y.I</span>
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30">
+                    <Image
+                      src="/staff-ito-yu.jpg"
+                      alt="伊東 優"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="text-white">
                     <p className="text-sm font-medium text-blue-200 mb-1">運営統括 / ワークショップ講師</p>
@@ -251,53 +382,66 @@ export default function TeamPage() {
               </div>
 
               <div className="p-8 md:p-10">
-                {/* Bio */}
-                <div className="mb-6">
-                  <p className="text-xl font-bold text-gray-900 mb-1">宿泊業×教育×テクノロジー</p>
-                  <p className="text-gray-600 leading-relaxed">
-                    東洋大学 国際観光学科卒。外資系リゾートホテル（1,000室規模）や老舗高級旅館など、
-                    多様な宿泊施設で現場経験を積み、2023年に株式会社sunUを設立。
-                    「提案だけで終わらない、現場に入る支援」をモットーに、
-                    宿泊業のDX・AI活用から教育事業まで幅広く手掛ける。
-                  </p>
-                </div>
+                {/* Photo + Bio Grid */}
+                <div className="flex flex-col md:flex-row gap-8 mb-8">
+                  {/* Photo */}
+                  <div className="md:w-64 flex-shrink-0">
+                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[3/4]">
+                      <Image
+                        src="/staff-ito-yu.jpg"
+                        alt="伊東 優 - 株式会社sunU 代表取締役"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 256px"
+                      />
+                    </div>
+                  </div>
+                  {/* Bio */}
+                  <div className="flex-1">
+                    <p className="text-xl font-bold text-gray-900 mb-2">宿泊業×教育×テクノロジー</p>
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                      東洋大学 国際観光学科卒。外資系リゾートホテル（1,000室規模）や老舗高級旅館など、
+                      多様な宿泊施設で現場経験を積み、2023年に株式会社sunUを設立。
+                      「提案だけで終わらない、現場に入る支援」をモットーに、
+                      宿泊業のDX・AI活用から教育事業まで幅広く手掛ける。
+                    </p>
 
-                {/* Story Highlights */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                    <BookOpen className="w-5 h-5 text-blue-600 mr-2" />
-                    経歴ハイライト
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <p className="text-gray-700 text-sm">
-                        外資系大型リゾートホテルでフロント・レストラン・ベル・レクリエーション等を経験
-                      </p>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <p className="text-gray-700 text-sm">
-                        老舗高級旅館でフロント・予約・人材育成・メディア対応・集客まで一通り経験
-                      </p>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <p className="text-gray-700 text-sm">
-                        グランピング専門コンサル会社の創業メンバーとして、日本製ドームテント開発・開業支援を担当
-                      </p>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <p className="text-gray-700 text-sm">
-                        タイ古式マッサージ施術者（延べ400名以上）。リラクゼーション×経営改善モデルを確立
-                      </p>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <p className="text-gray-700 text-sm">
-                        学生×宿泊業DXイベント「DigiTech Quest」の課題提供企業として参画
-                      </p>
+                    {/* Story Highlights */}
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                      <BookOpen className="w-5 h-5 text-blue-600 mr-2" />
+                      経歴ハイライト
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex items-start">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
+                        <p className="text-gray-700 text-sm">
+                          外資系大型リゾートホテルでフロント・レストラン・ベル・レクリエーション等を経験
+                        </p>
+                      </div>
+                      <div className="flex items-start">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
+                        <p className="text-gray-700 text-sm">
+                          老舗高級旅館でフロント・予約・人材育成・メディア対応・集客まで一通り経験
+                        </p>
+                      </div>
+                      <div className="flex items-start">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
+                        <p className="text-gray-700 text-sm">
+                          グランピング専門コンサル会社の創業メンバーとして、日本製ドームテント開発・開業支援を担当
+                        </p>
+                      </div>
+                      <div className="flex items-start">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
+                        <p className="text-gray-700 text-sm">
+                          タイ古式マッサージ施術者（延べ400名以上）。リラクゼーション×経営改善モデルを確立
+                        </p>
+                      </div>
+                      <div className="flex items-start">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0" />
+                        <p className="text-gray-700 text-sm">
+                          学生×宿泊業DXイベント「DigiTech Quest」の課題提供企業として参画
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
