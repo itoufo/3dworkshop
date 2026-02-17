@@ -9,8 +9,11 @@
   NEXT_USE_NETLIFY_EDGE = "true"
   SECRETS_SCAN_ENABLED = "false"
 
+# 本番環境のみリダイレクトルール適用（プレビューデプロイには適用しない）
+[context.production]
+
 # Netlifyデフォルトドメインから3dlab.jpへリダイレクト
-[[redirects]]
+[[context.production.redirects]]
   from = "/*"
   to = "https://3dlab.jp/:splat"
   status = 301
@@ -18,7 +21,7 @@
   conditions = {Host = ["3dworkshop.netlify.app"]}
 
 # wwwから非wwwへリダイレクト
-[[redirects]]
+[[context.production.redirects]]
   from = "/*"
   to = "https://3dlab.jp/:splat"
   status = 301
