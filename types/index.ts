@@ -1,3 +1,14 @@
+export interface WorkshopCategory {
+  id: string
+  name: string
+  slug: string
+  description?: string | null
+  image_url?: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Workshop {
   id: string
   title: string
@@ -16,6 +27,8 @@ export interface Workshop {
   pin_order?: number | null
   manual_participants?: number | null
   manual_participants_note?: string | null
+  category_id?: string | null
+  category?: WorkshopCategory | null
   created_at: string
   updated_at: string
 }

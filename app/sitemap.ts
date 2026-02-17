@@ -93,6 +93,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }))
 
+    // カテゴリピラーページを動的に追加
+    const { data: categories } = await supabase
+      .from('workshop_categories')
+      .select('slug, updated_at')
+      .order('sort_order', { ascending: true })
+
+    const categoryPages: MetadataRoute.Sitemap = (categories || []).map((category) => ({
+      url: `${baseUrl}/workshops/category/${category.slug}`,
+      lastModified: category.updated_at ? new Date(category.updated_at) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
     // ブログ記事を動的に追加
     const { data: blogPosts } = await supabase
       .from('blog_posts')
@@ -111,7 +124,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-    return [...staticPages, ...workshopPages, ...blogPages]
+    return [...staticPages, ...workshopPages, ...categoryPages, ...blogPages]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return staticPages

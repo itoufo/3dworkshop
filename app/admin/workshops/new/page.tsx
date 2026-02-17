@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save } from 'lucide-react'
+import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -14,6 +15,9 @@ const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichText
 
 export default function NewWorkshopPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const fromCategory = searchParams.get('from_category')
+
   const [workshop, setWorkshop] = useState({
     title: '',
     description: '',
@@ -24,12 +28,64 @@ export default function NewWorkshopPage() {
     location: '',
     image_url: '',
     event_date: '',
-    event_time: ''
+    event_time: '',
+    category_id: ''
   })
+  const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [navigating, setNavigating] = useState(false)
+  const [copyingFromCategory, setCopyingFromCategory] = useState(false)
+
+  useEffect(() => {
+    async function init() {
+      // カテゴリ一覧を取得
+      const { data: cats } = await supabase
+        .from('workshop_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (cats) setCategories(cats)
+
+      // from_categoryが指定されている場合、直近WSの内容をコピー
+      if (fromCategory) {
+        setCopyingFromCategory(true)
+        const { data: latestWs } = await supabase
+          .from('workshops')
+          .select('*')
+          .eq('category_id', fromCategory)
+          .order('event_date', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (latestWs) {
+          setWorkshop({
+            title: latestWs.title || '',
+            description: latestWs.description || '',
+            rich_description: latestWs.rich_description || '',
+            price: latestWs.price?.toString() || '',
+            duration: latestWs.duration?.toString() || '',
+            max_participants: latestWs.max_participants?.toString() || '',
+            location: latestWs.location || '',
+            image_url: latestWs.image_url || '',
+            event_date: '',
+            event_time: '',
+            category_id: fromCategory
+          })
+          if (latestWs.image_url) {
+            setImagePreview(latestWs.image_url)
+          }
+        } else {
+          // WSがなくてもカテゴリはセット
+          setWorkshop(prev => ({ ...prev, category_id: fromCategory }))
+        }
+        setCopyingFromCategory(false)
+      }
+    }
+
+    init()
+  }, [fromCategory])
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -45,19 +101,17 @@ export default function NewWorkshopPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
-    // 価格のバリデーション
+
     if (parseInt(workshop.price) < 50) {
       alert('価格は50円以上で設定してください')
       return
     }
-    
+
     setUploading(true)
 
     try {
       let imageUrl = workshop.image_url
 
-      // 画像ファイルがある場合はアップロード
       if (imageFile) {
         const formData = new FormData()
         formData.append('file', imageFile)
@@ -87,7 +141,8 @@ export default function NewWorkshopPage() {
           location: workshop.location || null,
           image_url: imageUrl || null,
           event_date: workshop.event_date || null,
-          event_time: workshop.event_time || null
+          event_time: workshop.event_time || null,
+          category_id: workshop.category_id || null
         })
 
       if (error) throw error
@@ -112,6 +167,7 @@ export default function NewWorkshopPage() {
     <>
       {navigating && <LoadingOverlay message="管理画面へ戻っています..." />}
       {uploading && <LoadingOverlay message="ワークショップを作成しています..." />}
+      {copyingFromCategory && <LoadingOverlay message="カテゴリから内容をコピーしています..." />}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
         onClick={handleBack}
@@ -120,23 +176,49 @@ export default function NewWorkshopPage() {
         <ArrowLeft className="w-4 h-4 mr-2" />
         管理画面に戻る
       </button>
-      
+
       <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
           <h2 className="text-2xl font-bold text-white">3DLab 新規ワークショップ作成</h2>
-          <p className="text-white/80 mt-1">新しいワークショップの情報を入力してください</p>
+          <p className="text-white/80 mt-1">
+            {fromCategory ? '日程追加：日時を設定して保存してください' : '新しいワークショップの情報を入力してください'}
+          </p>
         </div>
-        
+
         <div className="p-8">
-        
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* カテゴリ選択 */}
+            <div className="bg-green-50 rounded-xl p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                <FolderOpen className="w-5 h-5 mr-2 text-green-600" />
+                カテゴリ
+              </h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ワークショップカテゴリ
+                </label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                  value={workshop.category_id}
+                  onChange={(e) => setWorkshop({ ...workshop, category_id: e.target.value })}
+                >
+                  <option value="">カテゴリなし</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">カテゴリに紐付けるとピラーページに表示されます</p>
+              </div>
+            </div>
+
             {/* 基本情報 */}
             <div className="bg-purple-50 rounded-xl p-6 space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
                 <Type className="w-5 h-5 mr-2 text-purple-600" />
                 基本情報
               </h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   タイトル *
@@ -188,7 +270,13 @@ export default function NewWorkshopPage() {
                 <Calendar className="w-5 h-5 mr-2 text-pink-600" />
                 開催情報
               </h3>
-              
+
+              {fromCategory && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">日程追加モード：開催日と開始時刻を設定してください。他の内容は前回のワークショップからコピーされています。</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -217,7 +305,7 @@ export default function NewWorkshopPage() {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />
@@ -239,7 +327,7 @@ export default function NewWorkshopPage() {
                 <CreditCard className="w-5 h-5 mr-2 text-indigo-600" />
                 価格・人数設定
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -298,7 +386,7 @@ export default function NewWorkshopPage() {
                 <Upload className="w-5 h-5 mr-2 text-purple-600" />
                 メイン画像
               </h3>
-              
+
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-purple-400 transition-colors">
                 <input
                   type="file"
@@ -314,7 +402,7 @@ export default function NewWorkshopPage() {
                     <p className="text-xs text-gray-500 mt-1">JPEG, PNG, WebP (最大5MB)</p>
                   </div>
                 </label>
-                
+
                 {imagePreview && (
                   <div className="mt-4">
                     <p className="text-sm font-medium text-gray-700 mb-2">プレビュー:</p>
@@ -324,12 +412,13 @@ export default function NewWorkshopPage() {
                         alt="プレビュー"
                         fill
                         className="object-cover"
+                        unoptimized={imagePreview.startsWith('data:') || imagePreview.startsWith('http')}
                       />
                     </div>
                   </div>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   または画像URLを入力
