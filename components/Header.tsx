@@ -37,8 +37,8 @@ export default function Header() {
     { href: '/products/3d-printing/new', label: '3Dプリント制作' },
     { href: '/partner', label: '導入プラン' },
     { href: '/team', label: 'スタッフ紹介' },
-    { href: '/recruit', label: '採用' },
     { href: '/blog', label: 'ブログ' },
+    { href: '/recruit', label: '採用' },
   ]
 
   return (
@@ -87,7 +87,7 @@ export default function Header() {
 
       {/* Mobile Navigation Menu */}
       <div
-        className={`md:hidden fixed inset-x-0 top-16 bg-white border-t border-gray-200 shadow-lg transition-all duration-300 ease-in-out transform z-50 ${
+        className={`md:hidden fixed inset-x-0 top-16 bottom-0 bg-white border-t border-gray-200 shadow-lg transition-all duration-300 ease-in-out transform z-50 overflow-y-auto ${
           isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}
       >
