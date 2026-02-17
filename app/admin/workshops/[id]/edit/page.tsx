@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Workshop } from '@/types'
+import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
+import { FolderOpen } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -30,14 +31,24 @@ export default function EditWorkshop() {
     event_date: '',
     event_time: '',
     manual_participants: '',
-    manual_participants_note: ''
+    manual_participants_note: '',
+    category_id: ''
   })
+  const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [navigating, setNavigating] = useState(false)
 
   useEffect(() => {
-    async function fetchWorkshop() {
+    async function fetchData() {
+      // カテゴリ一覧を取得
+      const { data: cats } = await supabase
+        .from('workshop_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (cats) setCategories(cats)
+
       const { data, error } = await supabase
         .from('workshops')
         .select('*')
@@ -61,7 +72,8 @@ export default function EditWorkshop() {
           event_date: workshopData.event_date || '',
           event_time: workshopData.event_time || '',
           manual_participants: workshopData.manual_participants?.toString() || '0',
-          manual_participants_note: workshopData.manual_participants_note || ''
+          manual_participants_note: workshopData.manual_participants_note || '',
+          category_id: workshopData.category_id || ''
         })
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
@@ -69,8 +81,8 @@ export default function EditWorkshop() {
       }
       setLoading(false)
     }
-    
-    fetchWorkshop()
+
+    fetchData()
   }, [params.id])
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -132,6 +144,7 @@ export default function EditWorkshop() {
           event_time: formData.event_time || null,
           manual_participants: parseInt(formData.manual_participants) || 0,
           manual_participants_note: formData.manual_participants_note || null,
+          category_id: formData.category_id || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -218,6 +231,23 @@ export default function EditWorkshop() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <FolderOpen className="w-4 h-4 inline mr-1" />
+                カテゴリ
+              </label>
+              <select
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">カテゴリなし</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 タイトル *

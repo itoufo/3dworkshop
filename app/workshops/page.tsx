@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Workshop } from '@/types'
+import { Workshop, WorkshopCategory } from '@/types'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, Sparkles, Pin, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -14,19 +14,27 @@ const ITEMS_PER_PAGE = 9
 
 export default function WorkshopsPage() {
   const router = useRouter()
-  const [filteredWorkshops, setFilteredWorkshops] = useState<Workshop[]>([])
+  const [allWorkshops, setAllWorkshops] = useState<Workshop[]>([])
+  const [categories, setCategories] = useState<WorkshopCategory[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [navigating, setNavigating] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    async function fetchWorkshops() {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
+    async function fetchData() {
+      // カテゴリを取得
+      const { data: catsData } = await supabase
+        .from('workshop_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (catsData) setCategories(catsData)
+
+      // 全WS取得（カテゴリJOIN）
       const { data, error } = await supabase
         .from('workshops')
-        .select('*')
+        .select('*, category:workshop_categories(*)')
         .order('is_pinned', { ascending: false })
         .order('pin_order', { ascending: true })
         .order('event_date', { ascending: true })
@@ -35,42 +43,56 @@ export default function WorkshopsPage() {
       if (error) {
         console.error('Error fetching workshops:', error)
       } else {
-        const allWorkshops = data as Workshop[]
-        
-        const futureWorkshops = allWorkshops.filter(workshop => {
-          if (!workshop.event_date) return true
-          const workshopDate = new Date(workshop.event_date)
-          return workshopDate >= today
-        })
-        
-        setFilteredWorkshops(futureWorkshops)
+        setAllWorkshops(data as Workshop[])
       }
       setLoading(false)
     }
 
-    fetchWorkshops()
+    fetchData()
   }, [])
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // カテゴリフィルタ適用
+  const filteredByCategory = selectedCategory
+    ? allWorkshops.filter(w => w.category_id === selectedCategory)
+    : allWorkshops
+
+  // 開催予定と過去に分割
+  const upcomingWorkshops = filteredByCategory.filter(w => {
+    if (!w.event_date) return true
+    return new Date(w.event_date) >= today
+  })
+
+  const pastWorkshops = filteredByCategory.filter(w => {
+    if (!w.event_date) return false
+    return new Date(w.event_date) < today
+  }).reverse()
 
   const handleWorkshopClick = (e: React.MouseEvent, workshopId: string) => {
     e.preventDefault()
-    
-    // 既に遷移中の場合は何もしない
     if (navigating) return
-    
     setNavigating(workshopId)
     router.push(`/workshops/${workshopId}`)
   }
 
-  const totalPages = Math.ceil(filteredWorkshops.length / ITEMS_PER_PAGE)
+  // Pagination for upcoming workshops
+  const totalPages = Math.ceil(upcomingWorkshops.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
-  const currentWorkshops = filteredWorkshops.slice(startIndex, endIndex)
+  const currentWorkshops = upcomingWorkshops.slice(startIndex, endIndex)
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }
+
+  const handleCategoryChange = (categoryId: string | null) => {
+    setSelectedCategory(categoryId)
+    setCurrentPage(1)
   }
 
   if (loading) {
@@ -86,7 +108,7 @@ export default function WorkshopsPage() {
       {navigating && <LoadingOverlay message="ワークショップ詳細を読み込んでいます..." />}
       <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
         <Header />
-        
+
         {/* Hero Section */}
         <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto text-center">
@@ -131,7 +153,7 @@ export default function WorkshopsPage() {
                 🚉 御茶ノ水駅 徒歩12分
               </span>
             </div>
-            
+
             {/* スクール募集バナー */}
             <div className="mt-8">
               <a
@@ -147,7 +169,38 @@ export default function WorkshopsPage() {
           </div>
         </section>
 
-        {/* Workshops Grid */}
+        {/* Category Filter Bar */}
+        {categories.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button
+                onClick={() => handleCategoryChange(null)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  selectedCategory === null
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                全て
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    selectedCategory === cat.id
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming Workshops Grid */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">開催予定</h2>
@@ -156,8 +209,8 @@ export default function WorkshopsPage() {
               <span>予約受付中</span>
             </div>
           </div>
-          
-          {filteredWorkshops.length === 0 ? (
+
+          {upcomingWorkshops.length === 0 ? (
             <div className="text-center py-20">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-12 h-12 text-gray-400" />
@@ -195,6 +248,13 @@ export default function WorkshopsPage() {
                         <div className="w-20 h-20 bg-white/50 rounded-2xl flex items-center justify-center">
                           <span className="text-3xl font-bold text-purple-600">3D</span>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Category Badge */}
+                    {workshop.category && (
+                      <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur text-purple-700 text-xs font-medium rounded-full">
+                        {workshop.category.name}
                       </div>
                     )}
 
@@ -282,7 +342,7 @@ export default function WorkshopsPage() {
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
-                  
+
                   <div className="flex items-center space-x-1">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
                       if (
@@ -316,7 +376,7 @@ export default function WorkshopsPage() {
                       return null
                     })}
                   </div>
-                  
+
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
@@ -328,6 +388,63 @@ export default function WorkshopsPage() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Past Workshops Section */}
+          {pastWorkshops.length > 0 && (
+            <section className="mt-20">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">過去の開催</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                {pastWorkshops.map((workshop) => (
+                  <div
+                    key={workshop.id}
+                    onClick={(e) => handleWorkshopClick(e, workshop.id)}
+                    className={`group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden opacity-75 hover:opacity-100 cursor-pointer ${
+                      navigating === workshop.id ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                  >
+                    <div className="relative">
+                      {workshop.image_url ? (
+                        <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
+                          <Image
+                            src={optimizeImageUrl(workshop.image_url, 75)}
+                            alt={`${workshop.title} - 3Dプリンタワークショップ`}
+                            fill
+                            className="object-contain"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <span className="text-3xl font-bold text-gray-400">3D</span>
+                        </div>
+                      )}
+                      <div className="absolute top-4 right-4 px-3 py-1 bg-gray-700 text-white text-xs font-medium rounded-full">
+                        終了
+                      </div>
+                      {workshop.category && (
+                        <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur text-gray-600 text-xs font-medium rounded-full">
+                          {workshop.category.name}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{workshop.title}</h3>
+                      <p className="text-gray-500 text-sm mb-3 line-clamp-2">{workshop.description}</p>
+                      {workshop.event_date && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </main>
 
@@ -489,7 +606,7 @@ export default function WorkshopsPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="border-t border-gray-800 pt-6 mb-6">
               <div className="text-center">
                 <p className="text-sm text-gray-400 mb-2">運営会社</p>

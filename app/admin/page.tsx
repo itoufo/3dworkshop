@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Booking, Customer, Workshop, Coupon } from '@/types'
+import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus } from 'lucide-react'
 
 interface BlogPost {
   id: string
@@ -29,10 +29,19 @@ export default function AdminDashboard() {
   const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [categories, setCategories] = useState<(WorkshopCategory & { workshop_count: number })[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'coupons' | 'blog'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog'].includes(tab)) {
+      setActiveTab(tab as typeof activeTab)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchData()
@@ -90,11 +99,29 @@ export default function AdminDashboard() {
         console.error('Error fetching blog posts:', blogPostsError)
       }
 
+      // カテゴリ情報を取得
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('workshop_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true })
+
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError)
+      }
+
+      // カテゴリごとのWS数を計算
+      const categoriesWithCount = (categoriesData || []).map(cat => ({
+        ...cat,
+        workshop_count: (workshopsData || []).filter(w => w.category_id === cat.id).length
+      }))
+
       setBookings(bookingsData || [])
       setCustomers(customersData || [])
       setWorkshops(workshopsData || [])
       setCoupons(couponsData || [])
       setBlogPosts(blogPostsData || [])
+      setCategories(categoriesWithCount)
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -261,6 +288,17 @@ export default function AdminDashboard() {
             >
               <CreditCard className="w-4 h-4 inline mr-2" />
               ワークショップ管理
+            </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
+                activeTab === 'categories'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <FolderOpen className="w-4 h-4 inline mr-2" />
+              カテゴリ管理
             </button>
             <button
               onClick={() => setActiveTab('coupons')}
@@ -701,6 +739,115 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* カテゴリ管理 */}
+      {activeTab === 'categories' && (
+        <div>
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">カテゴリ一覧</h3>
+              <p className="text-sm text-gray-600 mt-1">全{categories.length}件のカテゴリ</p>
+            </div>
+            <button
+              onClick={() => handleNavigate('/admin/categories/new')}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              新規カテゴリ作成
+            </button>
+          </div>
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      カテゴリ
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      スラッグ
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ワークショップ数
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      並び順
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      アクション
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {categories.map((category) => (
+                    <tr key={category.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          {category.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={category.image_url}
+                              alt={category.name}
+                              className="h-10 w-10 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                              <FolderOpen className="w-5 h-5 text-purple-600" />
+                            </div>
+                          )}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                            {category.description && (
+                              <div className="text-xs text-gray-500 line-clamp-1">{category.description}</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-600 font-mono">{category.slug}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {category.workshop_count}件
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {category.sort_order}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleNavigate(`/admin/workshops/new?from_category=${category.id}`)}
+                            className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                            title="このカテゴリの日程を追加"
+                          >
+                            <CalendarPlus className="w-4 h-4 mr-1" />
+                            日程追加
+                          </button>
+                          <button
+                            onClick={() => handleNavigate(`/admin/categories/${category.id}/edit`)}
+                            className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            編集
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {categories.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        カテゴリがまだありません
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

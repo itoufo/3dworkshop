@@ -8,7 +8,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, Heart, Tag, X } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, ArrowLeft, Shield, Sparkles, User, Mail, Phone, Heart, Tag, X, ArrowRight, FolderOpen } from 'lucide-react'
 import styles from './workshop.module.css'
 import { WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
@@ -20,6 +20,8 @@ export default function WorkshopDetail() {
   const params = useParams()
   const router = useRouter()
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
+  const [relatedWorkshops, setRelatedWorkshops] = useState<Workshop[]>([])
+  const [isPastWorkshop, setIsPastWorkshop] = useState(false)
   const [loading, setLoading] = useState(true)
   const [booking, setBooking] = useState({
     participants: 1,
@@ -51,28 +53,38 @@ export default function WorkshopDetail() {
     async function fetchWorkshop() {
       const { data, error } = await supabase
         .from('workshops')
-        .select('*')
+        .select('*, category:workshop_categories(*)')
         .eq('id', params.id)
         .single()
 
       if (error) {
         console.error('Error fetching workshop:', error)
       } else {
-        setWorkshop(data as Workshop)
+        const ws = data as Workshop
+        setWorkshop(ws)
+
+        // 過去WSかどうか判定
+        if (ws.event_date) {
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const eventDate = new Date(ws.event_date)
+          setIsPastWorkshop(eventDate < today)
+        }
+
         // タイトルを動的に設定
         if (data) {
           document.title = `${data.title} | 3Dプリンタ教室 3DLab`
-          
+
           // 構造化データを追加
           const structuredData = WorkshopEventSchema(data as Workshop)
           const scriptId = 'workshop-structured-data'
-          
+
           // 既存のスクリプトを削除
           const existingScript = document.getElementById(scriptId)
           if (existingScript) {
             existingScript.remove()
           }
-          
+
           // 新しいスクリプトを追加
           const script = document.createElement('script')
           script.id = scriptId
@@ -80,12 +92,36 @@ export default function WorkshopDetail() {
           script.textContent = JSON.stringify(structuredData)
           document.head.appendChild(script)
         }
-        // 残席数を取得
-        fetchAvailability(params.id as string)
+
+        // 同カテゴリの関連WS取得
+        if (ws.category_id) {
+          const today = new Date().toISOString().split('T')[0]
+          const { data: related } = await supabase
+            .from('workshops')
+            .select('*, category:workshop_categories(*)')
+            .eq('category_id', ws.category_id)
+            .neq('id', ws.id)
+            .gte('event_date', today)
+            .order('event_date', { ascending: true })
+            .limit(3)
+
+          if (related) setRelatedWorkshops(related as Workshop[])
+        }
+
+        // 残席数を取得（過去WSでなければ）
+        if (ws.event_date) {
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          if (new Date(ws.event_date) >= today) {
+            fetchAvailability(params.id as string)
+          }
+        } else {
+          fetchAvailability(params.id as string)
+        }
       }
       setLoading(false)
     }
-    
+
     fetchWorkshop()
   }, [params.id])
 
@@ -258,12 +294,25 @@ export default function WorkshopDetail() {
       <div className="pt-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {workshop && (
-            <Breadcrumb 
+            <Breadcrumb
               items={[
                 { name: 'ワークショップ', href: '/workshops' },
+                ...(workshop.category ? [{ name: workshop.category.name, href: `/workshops/category/${workshop.category.slug}` }] : []),
                 { name: workshop.title, href: `/workshops/${workshop.id}` }
-              ]} 
+              ]}
             />
+          )}
+          {/* Category Tag */}
+          {workshop?.category && (
+            <div className="mb-4">
+              <a
+                href={`/workshops/category/${workshop.category.slug}`}
+                className="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-200 transition-colors"
+              >
+                <FolderOpen className="w-3 h-3 mr-1" />
+                {workshop.category.name}
+              </a>
+            </div>
           )}
           <button
             onClick={() => router.push('/workshops')}
@@ -409,8 +458,66 @@ export default function WorkshopDetail() {
             </div>
           </div>
 
-          {/* Right Column - Booking Form */}
+          {/* Right Column - Booking Form or Past WS Banner */}
           <div className="lg:col-span-1">
+            {isPastWorkshop ? (
+              <div className="bg-white rounded-2xl shadow-xl p-8 sticky top-24">
+                <div className="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center mb-6">
+                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="w-8 h-8 text-gray-500" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-700 mb-2">このワークショップは終了しました</h2>
+                  <p className="text-sm text-gray-500">
+                    {workshop?.event_date && new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+                      year: 'numeric', month: 'long', day: 'numeric'
+                    })}に開催されました
+                  </p>
+                </div>
+
+                {/* Related Upcoming Workshops */}
+                {relatedWorkshops.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">次回の開催予定</h3>
+                    <div className="space-y-3">
+                      {relatedWorkshops.map((rw) => (
+                        <a
+                          key={rw.id}
+                          href={`/workshops/${rw.id}`}
+                          className="block p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                        >
+                          <p className="font-medium text-gray-900 text-sm mb-1">{rw.title}</p>
+                          {rw.event_date && (
+                            <p className="text-sm text-purple-600 flex items-center">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {new Date(rw.event_date).toLocaleDateString('ja-JP', {
+                                month: 'long', day: 'numeric', weekday: 'short'
+                              })}
+                              {rw.event_time && ` ${rw.event_time.slice(0, 5)}〜`}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 mt-1 flex items-center">
+                            詳細を見る <ArrowRight className="w-3 h-3 ml-1" />
+                          </p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Link to category page */}
+                {workshop?.category && (
+                  <div className="mt-6 text-center">
+                    <a
+                      href={`/workshops/category/${workshop.category.slug}`}
+                      className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium text-sm"
+                    >
+                      「{workshop.category.name}」の全日程を見る
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
             <div id="booking-form" className="bg-white rounded-2xl shadow-xl p-8 sticky top-24">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">予約フォーム</h2>
               
@@ -686,12 +793,58 @@ export default function WorkshopDetail() {
               </form>
               )}
             </div>
+            )}
           </div>
         </div>
+
+        {/* Related Workshops Section (for non-past workshops too) */}
+        {!isPastWorkshop && relatedWorkshops.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">関連ワークショップ</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {relatedWorkshops.map((rw) => (
+                <a
+                  key={rw.id}
+                  href={`/workshops/${rw.id}`}
+                  className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+                >
+                  {rw.image_url ? (
+                    <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
+                      <Image
+                        src={optimizeImageUrl(rw.image_url, 75)}
+                        alt={rw.title}
+                        fill
+                        className="object-contain group-hover:scale-105 transition-transform duration-300"
+                        sizes="33vw"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-purple-600">3D</span>
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1">{rw.title}</h3>
+                    {rw.event_date && (
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <Calendar className="w-3 h-3 mr-1 text-purple-500" />
+                        {new Date(rw.event_date).toLocaleDateString('ja-JP', {
+                          month: 'long', day: 'numeric', weekday: 'short'
+                        })}
+                      </p>
+                    )}
+                    <p className="text-lg font-bold text-gray-900 mt-2">¥{rw.price.toLocaleString()}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Floating Booking Button (Mobile Only) */}
-      {!availability?.is_full && (
+      {!isPastWorkshop && !availability?.is_full && (
         <button
           onClick={() => {
             const bookingForm = document.getElementById('booking-form')
