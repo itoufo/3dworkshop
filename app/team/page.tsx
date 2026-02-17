@@ -107,6 +107,26 @@ export default function TeamPage() {
             </div>
           </div>
 
+          {/* ===== チーム写真 ===== */}
+          <section className="mb-16">
+            <div className="relative rounded-3xl overflow-hidden shadow-xl">
+              <Image
+                src="/staff-both.jpg"
+                alt="3DLab講師陣 - 伊東雄歩と伊東優"
+                width={1200}
+                height={600}
+                className="w-full h-64 md:h-80 object-cover object-top"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-8 text-white">
+                <p className="text-sm font-medium text-white/80 mb-1">3DLab 講師チーム</p>
+                <p className="text-xl font-bold">テクノロジー × ホスピタリティで「作りたい」を形に</p>
+              </div>
+              <p className="absolute bottom-2 right-4 text-white/50 text-xs">撮影：シェアラボ編集部</p>
+            </div>
+          </section>
+
           {/* ===== 1点から制作依頼 CTA ===== */}
           <section className="mb-16">
             <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-3xl overflow-hidden shadow-2xl">
@@ -171,8 +191,14 @@ export default function TeamPage() {
               {/* Profile Header */}
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-3xl font-bold">Y.I</span>
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30">
+                    <Image
+                      src="/staff-ito-yuho.jpg"
+                      alt="伊東 雄歩"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="text-white">
                     <p className="text-sm font-medium text-purple-200 mb-1">技術監修 / AI講師</p>
@@ -361,7 +387,7 @@ export default function TeamPage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30">
                     <Image
-                      src="/staff-ito-yu.jpg"
+                      src="/staff-ito-yu-workshop.jpg"
                       alt="伊東 優"
                       width={80}
                       height={80}
@@ -386,10 +412,10 @@ export default function TeamPage() {
                 <div className="flex flex-col md:flex-row gap-8 mb-8">
                   {/* Photo */}
                   <div className="md:w-64 flex-shrink-0">
-                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[3/4]">
+                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[4/3]">
                       <Image
-                        src="/staff-ito-yu.jpg"
-                        alt="伊東 優 - 株式会社sunU 代表取締役"
+                        src="/staff-ito-yu-workshop.jpg"
+                        alt="伊東 優 - 3Dプリンターワークショップで指導中"
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 256px"
