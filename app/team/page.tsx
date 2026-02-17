@@ -325,7 +325,7 @@ export default function TeamPage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30">
                     <Image
-                      src="/staff-ito-yu-workshop.jpg"
+                      src="/staff-ito-yu-headshot.jpg"
                       alt="伊東 優"
                       width={80}
                       height={80}
