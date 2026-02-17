@@ -115,7 +115,7 @@ export default function TeamPage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30">
                     <Image
-                      src="/staff-ito-yuho.jpg"
+                      src="/staff-ito-yuho-headshot.webp"
                       alt="伊東 雄歩"
                       width={80}
                       height={80}
@@ -162,25 +162,6 @@ export default function TeamPage() {
                       何億円規模のシステム構築実績を持つ。
                     </p>
 
-                    {/* Stats inline */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
-                        <p className="text-xl font-bold text-purple-600">50+</p>
-                        <p className="text-xs text-gray-600">システム構築</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
-                        <p className="text-xl font-bold text-purple-600">200+</p>
-                        <p className="text-xs text-gray-600">セミナー・WS</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
-                        <p className="text-xl font-bold text-purple-600">3,000+</p>
-                        <p className="text-xs text-gray-600">受講者数</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3 text-center">
-                        <p className="text-xl font-bold text-purple-600">90%</p>
-                        <p className="text-xs text-gray-600">3ヶ月内AI成果物</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
