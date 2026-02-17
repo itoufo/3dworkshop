@@ -3,7 +3,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Award, BookOpen, Briefcase, ExternalLink, Globe, GraduationCap, Instagram, Mail, Shield, Users, Wrench, Building2, Heart } from 'lucide-react'
+import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, Pen, Shield, Users, Wrench, Building2, Heart } from 'lucide-react'
 
 export default function TeamPage() {
   return (
@@ -179,13 +179,31 @@ export default function TeamPage() {
                     ポートフォリオ
                   </a>
                   <a
-                    href="https://yuhoito.netlify.app/profile"
+                    href="https://x.com/itoWalker"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-gray-100 hover:bg-purple-100 text-gray-700 hover:text-purple-700 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                    className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
                   >
-                    <Globe className="w-4 h-4" />
-                    プロフィール
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                    @itoWalker
+                  </a>
+                  <a
+                    href="https://www.instagram.com/itoyuho.0703/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition-all"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    @itoyuho.0703
+                  </a>
+                  <a
+                    href="https://note.com/yuho_walker"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                  >
+                    <Pen className="w-4 h-4" />
+                    note
                   </a>
                   <a
                     href="https://www.taolis.net/"
