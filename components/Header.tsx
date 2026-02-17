@@ -36,6 +36,7 @@ export default function Header() {
     { href: '/business', label: '出張・研修' },
     { href: '/products/3d-printing/new', label: '3Dプリント制作' },
     { href: '/partner', label: '導入プラン' },
+    { href: '/team', label: 'スタッフ紹介' },
     { href: '/recruit', label: '採用' },
     { href: '/blog', label: 'ブログ' },
   ]
