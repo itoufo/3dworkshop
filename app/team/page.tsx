@@ -143,12 +143,12 @@ export default function TeamPage() {
                 <div className="flex flex-col md:flex-row gap-8 mb-8">
                   {/* Photo */}
                   <div className="md:w-64 flex-shrink-0">
-                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[3/4]">
+                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[4/3]">
                       <Image
                         src="/staff-ito-yuho-workshop.jpg"
                         alt="伊東 雄歩 - 3Dプリンターワークショップで指導中"
                         fill
-                        className="object-cover"
+                        className="object-cover object-[center_30%]"
                         sizes="(max-width: 768px) 100vw, 256px"
                       />
                     </div>
