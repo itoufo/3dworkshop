@@ -42,50 +42,52 @@ export default function Header() {
   ]
 
   return (
-    <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-sm z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center" onClick={closeMenu}>
-            <Image 
-              src="/logo.png" 
-              alt="Logo" 
-              width={180} 
-              height={60} 
-              className="h-12 w-auto sm:h-14"
-              priority
-            />
-          </Link>
-          
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+    <>
+      <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-sm z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center" onClick={closeMenu}>
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={180}
+                height={60}
+                className="h-12 w-auto sm:h-14"
+                priority
+              />
+            </Link>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={toggleMenu}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="メニューを開く"
-          >
-            {isMenuOpen ? (
-              <X className="w-6 h-6 text-gray-700" />
-            ) : (
-              <Menu className="w-6 h-6 text-gray-700" />
-            )}
-          </button>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={toggleMenu}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="メニューを開く"
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-700" />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile Navigation Menu - headerの外に配置（backdrop-filterによるfixed位置ずれを回避） */}
       <div
         className={`md:hidden fixed inset-x-0 top-16 bottom-0 bg-white border-t border-gray-200 shadow-lg transition-all duration-300 ease-in-out transform z-50 overflow-y-auto ${
           isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
@@ -113,6 +115,6 @@ export default function Header() {
           style={{ top: '64px' }}
         />
       )}
-    </header>
+    </>
   )
 }
