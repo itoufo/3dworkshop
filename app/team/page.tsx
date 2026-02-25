@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import Image from 'next/image'
 import { StructuredData } from '@/components/StructuredData'
-import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, Pen, Shield, Users, Wrench, Building2, Heart } from 'lucide-react'
+import { Award, BookOpen, Briefcase, ExternalLink, GraduationCap, Instagram, Mail, Pen, Shield, Users, Wrench, Building2, Heart, Youtube } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '講師・スタッフ紹介 | 3DLab 東京・湯島の3Dプリンター教室',
@@ -65,6 +65,21 @@ function teamStructuredData() {
             "https://www.facebook.com/share/1813ZTYwPv/",
             "https://sunu25.com/"
           ]
+        },
+        {
+          "@type": "Person",
+          "name": "岡崎将馬",
+          "jobTitle": "3Dプリンター講師",
+          "description": "3Dプリンター歴8年。FDM造形のスペシャリスト。レースカー用エンジンの砂型造形のために3Dプリンターを導入・立ち上げた経歴を持つ。",
+          "sameAs": [
+            "https://www.youtube.com/@oripra_japan"
+          ]
+        },
+        {
+          "@type": "Person",
+          "name": "中脇啓太",
+          "jobTitle": "CAD設計講師",
+          "description": "CAD歴11年。CAD・CAM学科の専門学校卒業後、試作アルミ鋳造部品、プレス部品の設計に従事。車業界で培った精密設計が強み。"
         }
       ]
     }
@@ -498,6 +513,165 @@ export default function TeamPage() {
                     <Mail className="w-4 h-4" />
                     メール
                   </a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ===== 岡崎将馬 ===== */}
+          <section className="mb-16">
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+              {/* Profile Header */}
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30 bg-white/20 flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">岡崎</span>
+                  </div>
+                  <div className="text-white">
+                    <p className="text-sm font-medium text-emerald-200 mb-1">3Dプリンター講師</p>
+                    <h2 className="text-3xl font-bold">岡崎 将馬</h2>
+                    <p className="text-emerald-200 text-sm mt-1">Shoma Okazaki</p>
+                  </div>
+                  <div className="sm:ml-auto flex flex-wrap gap-2">
+                    <span className="bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full">
+                      3Dプリンター歴8年
+                    </span>
+                    <span className="bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full">
+                      FDM専門
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 md:p-10">
+                {/* Bio */}
+                <div className="mb-8">
+                  <p className="text-xl font-bold text-gray-900 mb-2">FDM造形のスペシャリスト</p>
+                  <p className="text-gray-600 leading-relaxed">
+                    普通科高校卒業後、試作アルミ鋳造部品の製作現場に入り、レースカー用エンジンの砂型造形のために3Dプリンターを導入・立ち上げた経歴を持つ。
+                    3Dプリンター歴8年、FDM一筋で培った造形ノウハウは本物。造形条件の最適化、マシンメンテナンス、高精度プリントの追求を得意とし、
+                    「出力がうまくいかない」を「思い通りに出せる」に変える実践的な指導が持ち味。
+                  </p>
+                </div>
+
+                {/* Expertise Areas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <div className="border border-emerald-100 rounded-2xl p-5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center mb-3">
+                      <Wrench className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">FDM造形技術</h4>
+                    <p className="text-sm text-gray-600">
+                      FDM歴100%。造形条件の最適化から
+                      トラブルシューティングまで幅広く対応。
+                    </p>
+                  </div>
+                  <div className="border border-emerald-100 rounded-2xl p-5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center mb-3">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">メンテナンス</h4>
+                    <p className="text-sm text-gray-600">
+                      3Dプリンターの保守・調整のプロ。
+                      マシンの状態を見極め、最高のパフォーマンスを引き出す。
+                    </p>
+                  </div>
+                  <div className="border border-emerald-100 rounded-2xl p-5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center mb-3">
+                      <GraduationCap className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">高精度プリント</h4>
+                    <p className="text-sm text-gray-600">
+                      レースカー部品の砂型造形で培った精度へのこだわり。
+                      より高度な印刷を分析・実現する。
+                    </p>
+                  </div>
+                </div>
+
+                {/* Links */}
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href="https://www.youtube.com/@oripra_japan?si=JeK1aQejFHRETk85"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                  >
+                    <Youtube className="w-4 h-4" />
+                    @oripra_japan
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ===== 中脇啓太 ===== */}
+          <section className="mb-16">
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+              {/* Profile Header */}
+              <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-8 py-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-2 ring-white/30 bg-white/20 flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">中脇</span>
+                  </div>
+                  <div className="text-white">
+                    <p className="text-sm font-medium text-amber-200 mb-1">CAD設計講師</p>
+                    <h2 className="text-3xl font-bold">中脇 啓太</h2>
+                    <p className="text-amber-200 text-sm mt-1">Keita Nakawaki</p>
+                  </div>
+                  <div className="sm:ml-auto flex flex-wrap gap-2">
+                    <span className="bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full">
+                      CAD歴11年
+                    </span>
+                    <span className="bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full">
+                      CAD・CAM学科卒
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 md:p-10">
+                {/* Bio */}
+                <div className="mb-8">
+                  <p className="text-xl font-bold text-gray-900 mb-2">精密設計のプロフェッショナル</p>
+                  <p className="text-gray-600 leading-relaxed">
+                    CAD歴11年。CAD・CAM学科の専門学校卒業後、試作アルミ鋳造部品の製作に携わり、砂型設計・ジグ設計を担当。
+                    その後プレス部品の製作にも携わり、金型設計を経験。車業界でのキャリアを持ち、
+                    寸法に厳しい世界で培った精密設計を得意とする。
+                  </p>
+                </div>
+
+                {/* Expertise Areas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="border border-amber-100 rounded-2xl p-5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl flex items-center justify-center mb-3">
+                      <Wrench className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">CAD設計</h4>
+                    <p className="text-sm text-gray-600">
+                      砂型設計、ジグ設計、金型設計と多彩なCAD設計経験。
+                      11年の実務で磨いた確かな設計力。
+                    </p>
+                  </div>
+                  <div className="border border-amber-100 rounded-2xl p-5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl flex items-center justify-center mb-3">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">精密加工</h4>
+                    <p className="text-sm text-gray-600">
+                      車業界で求められる厳しい寸法公差の世界。
+                      ミクロン単位の精度にこだわる設計が強み。
+                    </p>
+                  </div>
+                  <div className="border border-amber-100 rounded-2xl p-5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl flex items-center justify-center mb-3">
+                      <Briefcase className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">製造業経験</h4>
+                    <p className="text-sm text-gray-600">
+                      試作アルミ鋳造・プレス部品と幅広い製造現場を経験。
+                      設計から製造まで一貫した知見を持つ。
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
