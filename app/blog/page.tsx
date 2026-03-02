@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import Header from '@/components/Header'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Sparkles, ArrowRight } from 'lucide-react'
 import BlogPostGrid from '@/components/BlogPostGrid'
 import Link from 'next/link'
 
@@ -105,6 +105,30 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
               )}
             </nav>
           )}
+
+          {/* Workshop CTA Banner */}
+          <div className="mt-16">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 md:p-12 text-white shadow-xl">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Sparkles className="w-6 h-6" />
+                    <h2 className="text-2xl font-bold">ワークショップに参加しよう</h2>
+                  </div>
+                  <p className="text-purple-100 leading-relaxed max-w-xl">
+                    記事を読んで興味が湧いたら、実際に3Dプリンターを体験してみませんか？初心者大歓迎のワークショップを開催中です。
+                  </p>
+                </div>
+                <Link
+                  href="/workshops"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-purple-700 rounded-xl font-bold hover:bg-purple-50 transition-colors text-base shrink-0"
+                >
+                  ワークショップを見る
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
