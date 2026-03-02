@@ -324,7 +324,7 @@ export default function BlogPostPage() {
         className="lg:hidden fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-3.5 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"
       >
         <Sparkles className="w-5 h-5" />
-        <span>ワークショップ</span>
+        <span>3Dプリンター体験</span>
       </Link>
     </div>
   )
