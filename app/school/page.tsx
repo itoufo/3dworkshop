@@ -283,6 +283,7 @@ export default function SchoolPage() {
                 <div>
                   <p className="font-semibold text-gray-900">お問い合わせ</p>
                   <p className="text-gray-600">080-9453-0911</p>
+                  <p className="text-gray-500 text-xs">※「3DLabを見た」とお伝えください</p>
                   <p className="text-gray-600">y-sato@sunu25.com</p>
                 </div>
               </div>

@@ -312,6 +312,7 @@ export default function PartnerPage() {
               <div>
                 <p className="text-sm text-gray-500">お電話</p>
                 <p className="text-lg font-bold text-purple-700">080-9453-0911</p>
+                <p className="text-xs text-gray-400">※「3DLabを見た」とお伝えください</p>
               </div>
             </a>
 

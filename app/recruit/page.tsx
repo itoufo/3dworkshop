@@ -284,7 +284,7 @@ export default function RecruitPage() {
                   </a>
                 </div>
                 <p className="mt-4 text-purple-200 text-sm">
-                  ※電話受付：10:00〜18:00
+                  ※電話受付：10:00〜18:00 /「3DLabを見た」とお伝えください
                 </p>
               </div>
             </section>
