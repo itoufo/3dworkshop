@@ -1,166 +1,53 @@
-'use client'
-
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import Link from 'next/link'
 import { Calendar, Eye, Tag, ArrowLeft, BookOpen, User, Sparkles, ArrowRight } from 'lucide-react'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
+import { getBlogPost, getRelatedPosts } from '@/lib/blog'
+import ViewCountIncrementer from '@/components/ViewCountIncrementer'
 
-interface BlogPost {
-  id: string
-  title: string
-  slug: string
-  content: string
-  excerpt: string
-  featured_image_url: string
-  category: string
-  tags: string[]
-  author_name: string
-  is_published: boolean
-  published_at: string
-  view_count: number
-  created_at: string
+interface BlogPostPageProps {
+  params: Promise<{ slug: string }>
 }
 
-export default function BlogPostPage() {
-  const params = useParams()
-  const router = useRouter()
-  const [blogPost, setBlogPost] = useState<BlogPost | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
-
-  const incrementViewCount = useCallback(async (postId: string) => {
-    try {
-      const { error } = await supabase.rpc('increment_blog_view_count', {
-        post_id: postId
-      })
-
-      if (error) {
-        // RPCが存在しない場合は、通常のUPDATEで対応
-        const { data: currentPost } = await supabase
-          .from('blog_posts')
-          .select('view_count')
-          .eq('id', postId)
-          .single()
-
-        if (currentPost) {
-          await supabase
-            .from('blog_posts')
-            .update({ view_count: (currentPost.view_count || 0) + 1 })
-            .eq('id', postId)
-        }
-      }
-    } catch (error) {
-      console.error('Error incrementing view count:', error)
-    }
-  }, [])
-
-  const fetchRelatedPosts = useCallback(async (currentPostId: string, category: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('is_published', true)
-        .eq('category', category)
-        .neq('id', currentPostId)
-        .order('published_at', { ascending: false })
-        .limit(3)
-
-      if (error) throw error
-      setRelatedPosts(data || [])
-    } catch (error) {
-      console.error('Error fetching related posts:', error)
-    }
-  }, [])
-
-  const fetchBlogPost = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('slug', params.slug)
-        .eq('is_published', true)
-        .single()
-
-      if (error) throw error
-
-      if (data) {
-        setBlogPost(data)
-
-        // 閲覧数を増やす
-        await incrementViewCount(data.id)
-        // 関連記事を取得
-        if (data.category) {
-          await fetchRelatedPosts(data.id, data.category)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching blog post:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [params.slug, incrementViewCount, fetchRelatedPosts])
-
-  useEffect(() => {
-    fetchBlogPost()
-  }, [fetchBlogPost])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 via-white to-pink-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    )
-  }
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params
+  const blogPost = await getBlogPost(slug)
 
   if (!blogPost) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
-        <Header />
-        <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">記事が見つかりません</h1>
-            <p className="text-gray-600 mb-8">お探しの記事は存在しないか、削除された可能性があります。</p>
-            <button
-              onClick={() => router.push('/blog')}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              ブログ一覧に戻る
-            </button>
-          </div>
-        </main>
-      </div>
-    )
+    notFound()
   }
+
+  // Fetch related posts (non-blocking for the main content)
+  const relatedPosts = blogPost.category
+    ? await getRelatedPosts(blogPost.id, blogPost.category)
+    : []
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
+      {/* Fire-and-forget view count increment */}
+      <ViewCountIncrementer postId={blogPost.id} />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
-          {blogPost && (
-            <Breadcrumb 
-              items={[
-                { name: 'ブログ', href: '/blog' },
-                { name: blogPost.title, href: `/blog/${blogPost.slug}` }
-              ]} 
-            />
-          )}
-          <button
-            onClick={() => router.push('/blog')}
+          <Breadcrumb
+            items={[
+              { name: 'ブログ', href: '/blog' },
+              { name: blogPost.title, href: `/blog/${blogPost.slug}` }
+            ]}
+          />
+          <Link
+            href="/blog"
             className="flex items-center text-purple-600 hover:text-purple-700 mb-8 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             ブログ一覧に戻る
-          </button>
+          </Link>
 
           <div className="lg:flex lg:gap-8">
             {/* Article */}
@@ -276,10 +163,10 @@ export default function BlogPostPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-8">関連記事</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {relatedPosts.map((post) => (
-                  <button
+                  <Link
                     key={post.id}
-                    onClick={() => router.push(`/blog/${post.slug}`)}
-                    className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer text-left"
+                    href={`/blog/${post.slug}`}
+                    className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
                   >
                     {post.featured_image_url ? (
                       <div className="relative w-full aspect-video">
@@ -310,7 +197,7 @@ export default function BlogPostPage() {
                         {new Date(post.published_at).toLocaleDateString('ja-JP')}
                       </div>
                     </div>
-                  </button>
+                  </Link>
                 ))}
               </div>
             </div>

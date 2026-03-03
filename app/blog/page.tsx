@@ -3,6 +3,7 @@ import Header from '@/components/Header'
 import { BookOpen, Sparkles, ArrowRight } from 'lucide-react'
 import BlogPostGrid from '@/components/BlogPostGrid'
 import Link from 'next/link'
+import { getAllCategories } from '@/lib/blog'
 
 const POSTS_PER_PAGE = 12
 
@@ -19,28 +20,23 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const currentPage = Math.max(1, parseInt(page || '1', 10))
   const offset = (currentPage - 1) * POSTS_PER_PAGE
 
-  // 総件数取得
-  const { count } = await supabase
-    .from('blog_posts')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_published', true)
+  // 総件数・記事・全カテゴリを並列取得
+  const [countResult, postsResult, categories] = await Promise.all([
+    supabase
+      .from('blog_posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_published', true),
+    supabase
+      .from('blog_posts')
+      .select('id, title, slug, excerpt, featured_image_url, category, tags, author_name, published_at, view_count')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .range(offset, offset + POSTS_PER_PAGE - 1),
+    getAllCategories(),
+  ])
 
-  const totalPages = Math.ceil((count || 0) / POSTS_PER_PAGE)
-
-  // 該当ページの記事取得
-  const { data: posts } = await supabase
-    .from('blog_posts')
-    .select('id, title, slug, excerpt, featured_image_url, category, tags, author_name, published_at, view_count')
-    .eq('is_published', true)
-    .order('published_at', { ascending: false })
-    .range(offset, offset + POSTS_PER_PAGE - 1)
-
-  const blogPosts = posts || []
-
-  // カテゴリ一覧を取得
-  const categories = Array.from(
-    new Set(blogPosts.map(post => post.category).filter(Boolean))
-  )
+  const totalPages = Math.ceil((countResult.count || 0) / POSTS_PER_PAGE)
+  const blogPosts = postsResult.data || []
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">

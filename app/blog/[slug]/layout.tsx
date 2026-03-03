@@ -1,21 +1,6 @@
 import type { Metadata } from "next";
-import { createClient } from '@supabase/supabase-js';
 import { BlogArticleSchema } from '@/components/StructuredData';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-async function getBlogPost(slug: string) {
-  const { data } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .single();
-  return data;
-}
+import { getBlogPost } from '@/lib/blog';
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -86,6 +71,7 @@ export default async function BlogPostLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  // Uses React cache() - same request as generateMetadata, no duplicate query
   const blogPost = await getBlogPost(slug);
 
   const structuredData = blogPost ? BlogArticleSchema(blogPost) : null;
@@ -102,4 +88,3 @@ export default async function BlogPostLayout({
     </>
   );
 }
-
