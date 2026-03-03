@@ -309,10 +309,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Participants */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="booking-participants" className="block text-sm font-medium text-gray-700 mb-2">
               参加人数
             </label>
             <select
+              id="booking-participants"
               required
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
               value={booking.participants}
@@ -328,11 +329,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="booking-name" className="block text-sm font-medium text-gray-700 mb-2">
               <User className="w-4 h-4 inline mr-1" />
               お名前
             </label>
             <input
+              id="booking-name"
               type="text"
               required
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
@@ -344,11 +346,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="booking-email" className="block text-sm font-medium text-gray-700 mb-2">
               <Mail className="w-4 h-4 inline mr-1" />
               メールアドレス
             </label>
             <input
+              id="booking-email"
               type="email"
               required
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
@@ -360,11 +363,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
           {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="booking-phone" className="block text-sm font-medium text-gray-700 mb-2">
               <Phone className="w-4 h-4 inline mr-1" />
               電話番号
             </label>
             <input
+              id="booking-phone"
               type="tel"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
               value={booking.phone}
@@ -376,10 +380,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           {/* Age and Gender */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="booking-age" className="block text-sm font-medium text-gray-700 mb-2">
                 年齢 *
               </label>
               <input
+                id="booking-age"
                 type="number"
                 min="1"
                 max="150"
@@ -392,10 +397,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="booking-gender" className="block text-sm font-medium text-gray-700 mb-2">
                 性別 *
               </label>
               <select
+                id="booking-gender"
                 required
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                 value={booking.gender}
@@ -412,10 +418,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="booking-notes" className="block text-sm font-medium text-gray-700 mb-2">
               備考・質問など
             </label>
             <textarea
+              id="booking-notes"
               rows={3}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
               value={booking.notes}
@@ -426,13 +433,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
           {/* Coupon Code */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="booking-coupon" className="block text-sm font-medium text-gray-700 mb-2">
               <Tag className="w-4 h-4 inline mr-1" />
               クーポンコード
             </label>
             {!appliedCoupon ? (
               <div className="flex space-x-2">
                 <input
+                  id="booking-coupon"
                   type="text"
                   className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all uppercase"
                   value={couponCode}

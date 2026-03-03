@@ -117,6 +117,8 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
+        <link rel="preconnect" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
+        <link rel="dns-prefetch" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

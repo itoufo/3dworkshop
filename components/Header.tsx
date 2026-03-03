@@ -50,10 +50,11 @@ export default function Header() {
             <Link href="/" className="flex items-center" onClick={closeMenu}>
               <Image
                 src="/logo.png"
-                alt="Logo"
+                alt="3DLab"
                 width={180}
                 height={60}
                 className="h-12 w-auto sm:h-14"
+                sizes="168px"
                 priority
               />
             </Link>
