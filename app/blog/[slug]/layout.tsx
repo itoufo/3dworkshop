@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { BlogArticleSchema } from '@/components/StructuredData';
 import { getBlogPost } from '@/lib/blog';
 
+// ISR: cache page for 1 hour, regenerate in background after that
+export const revalidate = 3600;
+
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {

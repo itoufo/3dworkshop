@@ -5,6 +5,9 @@ import BlogPostGrid from '@/components/BlogPostGrid'
 import Link from 'next/link'
 import { getAllCategories } from '@/lib/blog'
 
+// ISR: cache for 1 hour (listing updates when new posts are added)
+export const revalidate = 3600
+
 const POSTS_PER_PAGE = 12
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
