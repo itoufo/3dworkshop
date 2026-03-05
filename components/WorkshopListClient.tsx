@@ -8,6 +8,7 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, Pin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { useRouter } from 'next/navigation'
+import PastWorkshopsAccordion from '@/components/PastWorkshopsAccordion'
 
 const ITEMS_PER_PAGE = 9
 
@@ -282,61 +283,7 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
         )}
 
         {/* Past Workshops Section */}
-        {pastWorkshops.length > 0 && (
-          <section className="mt-20">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">過去の開催</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {pastWorkshops.map((workshop) => (
-                <div
-                  key={workshop.id}
-                  onClick={(e) => handleWorkshopClick(e, workshop.id)}
-                  className={`group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden opacity-75 hover:opacity-100 cursor-pointer ${
-                    navigating === workshop.id ? 'opacity-50 pointer-events-none' : ''
-                  }`}
-                >
-                  <div className="relative">
-                    {workshop.image_url ? (
-                      <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                        <Image
-                          src={optimizeImageUrl(workshop.image_url, 75)}
-                          alt={`${workshop.title} - 3Dプリンタワークショップ`}
-                          fill
-                          className="object-contain"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          loading="lazy"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                        <span className="text-3xl font-bold text-gray-400">3D</span>
-                      </div>
-                    )}
-                    <div className="absolute top-4 right-4 px-3 py-1 bg-gray-700 text-white text-xs font-medium rounded-full">
-                      終了
-                    </div>
-                    {workshop.category && (
-                      <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur text-gray-600 text-xs font-medium rounded-full">
-                        {workshop.category.name}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{workshop.title}</h3>
-                    <p className="text-gray-500 text-sm mb-3 line-clamp-2">{workshop.description}</p>
-                    {workshop.event_date && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-                          year: 'numeric', month: 'long', day: 'numeric'
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <PastWorkshopsAccordion workshops={pastWorkshops} showCategory />
       </main>
     </>
   )
