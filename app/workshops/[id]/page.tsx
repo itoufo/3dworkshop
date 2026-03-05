@@ -114,6 +114,7 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
               )}
 
               {/* Features */}
+              {workshop.show_features !== false && (
               <div className="bg-purple-50 rounded-2xl p-8 mb-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">このワークショップの特徴</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -155,6 +156,7 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Access Section */}
               <div className="bg-white rounded-2xl shadow-xl p-8 mt-8">

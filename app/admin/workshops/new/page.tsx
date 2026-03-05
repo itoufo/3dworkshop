@@ -29,7 +29,8 @@ export default function NewWorkshopPage() {
     image_url: '',
     event_date: '',
     event_time: '',
-    category_id: ''
+    category_id: '',
+    show_features: true
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -71,7 +72,8 @@ export default function NewWorkshopPage() {
             image_url: latestWs.image_url || '',
             event_date: '',
             event_time: '',
-            category_id: fromCategory
+            category_id: fromCategory,
+            show_features: latestWs.show_features !== false
           })
           if (latestWs.image_url) {
             setImagePreview(latestWs.image_url)
@@ -142,7 +144,8 @@ export default function NewWorkshopPage() {
           image_url: imageUrl || null,
           event_date: workshop.event_date || null,
           event_time: workshop.event_time || null,
-          category_id: workshop.category_id || null
+          category_id: workshop.category_id || null,
+          show_features: workshop.show_features
         })
 
       if (error) throw error
@@ -210,6 +213,29 @@ export default function NewWorkshopPage() {
                 </select>
                 <p className="text-xs text-gray-500 mt-1">カテゴリに紐付けるとピラーページに表示されます</p>
               </div>
+            </div>
+
+            {/* 表示設定 */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  「このワークショップの特徴」セクションを表示
+                </label>
+                <p className="text-xs text-gray-500">オフにすると初心者歓迎・安全対策等の特徴セクションが非表示になります</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWorkshop({ ...workshop, show_features: !workshop.show_features })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  workshop.show_features ? 'bg-indigo-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    workshop.show_features ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
 
             {/* 基本情報 */}

@@ -25,6 +25,7 @@ export interface Workshop {
   price: number
   is_pinned: boolean
   pin_order: number | null
+  show_features?: boolean
   category_id?: string | null
   category?: WorkshopCategory | null
   created_at?: string

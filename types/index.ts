@@ -27,6 +27,7 @@ export interface Workshop {
   pin_order?: number | null
   manual_participants?: number | null
   manual_participants_note?: string | null
+  show_features?: boolean
   category_id?: string | null
   category?: WorkshopCategory | null
   created_at: string

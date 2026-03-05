@@ -32,7 +32,8 @@ export default function EditWorkshop() {
     event_time: '',
     manual_participants: '',
     manual_participants_note: '',
-    category_id: ''
+    category_id: '',
+    show_features: true
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -73,7 +74,8 @@ export default function EditWorkshop() {
           event_time: workshopData.event_time || '',
           manual_participants: workshopData.manual_participants?.toString() || '0',
           manual_participants_note: workshopData.manual_participants_note || '',
-          category_id: workshopData.category_id || ''
+          category_id: workshopData.category_id || '',
+          show_features: workshopData.show_features !== false
         })
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
@@ -145,6 +147,7 @@ export default function EditWorkshop() {
           manual_participants: parseInt(formData.manual_participants) || 0,
           manual_participants_note: formData.manual_participants_note || null,
           category_id: formData.category_id || null,
+          show_features: formData.show_features,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -246,6 +249,28 @@ export default function EditWorkshop() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  「このワークショップの特徴」セクションを表示
+                </label>
+                <p className="text-xs text-gray-500">オフにすると初心者歓迎・安全対策等の特徴セクションが非表示になります</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, show_features: !formData.show_features })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  formData.show_features ? 'bg-indigo-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    formData.show_features ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
 
             <div>
