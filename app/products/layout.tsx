@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "商品・サービス | 3Dプリント制作・ワークショップ | 3DLab",
-  description: "3Dプリンタ教室3DLabの商品・サービス一覧。ワークショップ、3Dプリント制作サービス、オリジナル商品など、様々なサービスをご用意しています。STLファイルをアップロードして3Dプリント制作を依頼できます。",
-  keywords: "3Dプリント 制作,3Dプリンタ サービス,STLファイル,プロトタイプ制作,3Dプリンティング 依頼,ワークショップ,商品",
+  title: "3Dプリント制作・オーダーメイド | 3DLab",
+  description: "3Dプリンタ教室3DLabの3Dプリント制作サービス。STLファイルをアップロードして高品質な3Dプリント制作を依頼できます。オリジナル商品のオーダーメイドも承ります。",
+  keywords: "3Dプリント 制作,3Dプリンタ サービス,STLファイル,プロトタイプ制作,3Dプリンティング 依頼,オーダーメイド",
   alternates: {
     canonical: '/products',
   },
   openGraph: {
-    title: "商品・サービス | 3Dプリント制作・ワークショップ | 3DLab",
-    description: "3Dプリンタ教室3DLabの商品・サービス一覧。ワークショップ、3Dプリント制作サービス、オリジナル商品など、様々なサービスをご用意しています。",
+    title: "3Dプリント制作・オーダーメイド | 3DLab",
+    description: "3Dプリンタ教室3DLabの3Dプリント制作サービス。STLファイルをアップロードして高品質な3Dプリント制作を依頼できます。",
     url: 'https://3dlab.jp/products',
     siteName: "3DLab - 3Dプリンタ教室",
     images: [
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: '3DLab 商品・サービス',
+        alt: '3DLab 3Dプリント制作',
       },
     ],
     locale: "ja_JP",
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "商品・サービス | 3Dプリント制作・ワークショップ",
-    description: "3Dプリンタ教室3DLabの商品・サービス一覧。ワークショップ、3Dプリント制作サービスなど。",
+    title: "3Dプリント制作・オーダーメイド | 3DLab",
+    description: "3Dプリンタ教室3DLabの3Dプリント制作サービス。STLファイルから高品質な3Dプリント制作を依頼できます。",
     images: ['/og-image.jpg'],
   },
 };

@@ -56,6 +56,17 @@
       ],
       "disabled": false,
       "description": "Miyabi CLI統合 - プロジェクト作成、Agent実行、自動化機能"
+    },
+    "workshop-api": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/workshop-api.js"
+      ],
+      "env": {
+        "WORKSHOP_API_URL": "https://3dlab.jp"
+      },
+      "disabled": false,
+      "description": "Workshop data API - query workshops, categories, and details"
     }
   }
 }

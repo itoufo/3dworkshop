@@ -52,13 +52,11 @@ export default function ProductsPage() {
 
   const handleProductClick = (productId: string, category: string) => {
     if (navigating) return
-    
+
     setNavigating(productId)
-    
+
     if (category === '3d_printing') {
       router.push('/products/3d-printing/new')
-    } else if (category === 'workshop') {
-      router.push(`/workshops/${productId}`)
     } else {
       router.push(`/products/${productId}`)
     }
@@ -66,7 +64,6 @@ export default function ProductsPage() {
 
   const categories = [
     { key: 'all', label: '全て' },
-    { key: 'workshop', label: 'ワークショップ' },
     { key: '3d_printing', label: '3Dプリント' },
     { key: 'product', label: '商品' },
   ]
@@ -95,11 +92,11 @@ export default function ProductsPage() {
             <div className="text-center mb-12">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  商品・サービス
+                  3Dプリント制作・オーダーメイド
                 </span>
               </h1>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                ワークショップ、3Dプリント制作、オリジナル商品など、様々なサービスをご用意しています
+                STLファイルから高品質な3Dプリント制作を承ります。オリジナル商品のオーダーメイドもお気軽にご相談ください
               </p>
             </div>
 
@@ -173,7 +170,6 @@ export default function ProductsPage() {
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-2">
                         <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                          {product.category === 'workshop' && 'ワークショップ'}
                           {product.category === '3d_printing' && '3Dプリント'}
                           {product.category === 'product' && '商品'}
                         </span>
