@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
             const emailContent = generateSchoolEnrollmentEmail(enrollment, classType)
             await sendEmail({
               to: enrollment.customer.email,
-              cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
+              cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com', 'nanzinaniwa6@gmail.com'],
               subject: '【3DLab】スクール申込完了のお知らせ',
               html: emailContent
             })
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
 
           const emailResult = await sendEmail({
             to: customer.email,
-            cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
+            cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com', 'nanzinaniwa6@gmail.com'],
             subject: emailContent.subject,
             html: emailContent.html
           })

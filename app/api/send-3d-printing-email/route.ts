@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     // メール送信
     await sendEmail({
       to: customer.email,
-      cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],
+      cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com', 'nanzinaniwa6@gmail.com'],
       subject: emailContent.subject,
       html: emailContent.html
     })
