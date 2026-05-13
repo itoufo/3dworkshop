@@ -74,6 +74,24 @@ const staticPages: SitemapUrl[] = [
     changefreq: 'weekly',
     priority: 0.7,
   },
+  {
+    loc: '/business',
+    lastmod: new Date().toISOString(),
+    changefreq: 'monthly',
+    priority: 0.7,
+  },
+  {
+    loc: '/business/event',
+    lastmod: new Date().toISOString(),
+    changefreq: 'monthly',
+    priority: 0.75,
+  },
+  {
+    loc: '/business/training',
+    lastmod: new Date().toISOString(),
+    changefreq: 'monthly',
+    priority: 0.75,
+  },
 ]
 
 /**
