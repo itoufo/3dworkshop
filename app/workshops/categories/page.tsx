@@ -28,8 +28,9 @@ interface CategoryWithStats {
   description: string | null
   image_url: string | null
   sort_order: number
-  upcoming_count: number
-  total_count: number
+  upcoming_count: number      // upcoming session を持つ workshop 数
+  total_count: number         // 配下 workshop 総数
+  held_count: number          // 過去 session の総数 (= 累計開催回数)
 }
 
 export default async function WorkshopCategoriesIndex() {
@@ -49,24 +50,35 @@ export default async function WorkshopCategoriesIndex() {
   today.setHours(0, 0, 0, 0)
   const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-  const stats = new Map<string, { upcoming: number; total: number }>()
+  const stats = new Map<string, { upcoming: number; total: number; held: number }>()
   for (const w of workshops || []) {
     if (!w.category_id) continue
     const sessions = w.sessions || []
     const hasUpcoming = sessions.some(
       (s) => s.status === 'scheduled' && s.event_date >= todayIso
     )
-    const entry = stats.get(w.category_id) || { upcoming: 0, total: 0 }
+    // 過去 session の数 = 累計開催回数
+    const pastCount = sessions.filter((s) => s.event_date < todayIso).length
+    const entry = stats.get(w.category_id) || { upcoming: 0, total: 0, held: 0 }
     entry.total += 1
+    entry.held += pastCount
     if (hasUpcoming) entry.upcoming += 1
     stats.set(w.category_id, entry)
   }
 
-  const categoriesWithStats: CategoryWithStats[] = (categories || []).map((c) => ({
-    ...c,
-    upcoming_count: stats.get(c.id)?.upcoming || 0,
-    total_count: stats.get(c.id)?.total || 0,
-  }))
+  const categoriesWithStats: CategoryWithStats[] = (categories || [])
+    .map((c) => ({
+      ...c,
+      upcoming_count: stats.get(c.id)?.upcoming || 0,
+      total_count: stats.get(c.id)?.total || 0,
+      held_count: stats.get(c.id)?.held || 0,
+    }))
+    // 累計開催回数 desc → upcoming desc → sort_order asc
+    .sort((a, b) => {
+      if (b.held_count !== a.held_count) return b.held_count - a.held_count
+      if (b.upcoming_count !== a.upcoming_count) return b.upcoming_count - a.upcoming_count
+      return a.sort_order - b.sort_order
+    })
 
   // 構造化データ
   const breadcrumbData = {
@@ -184,7 +196,7 @@ export default async function WorkshopCategoriesIndex() {
                   )}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div className="text-xs text-gray-500">
-                      累計 {cat.total_count}回 開催
+                      累計 {cat.held_count}回 開催
                     </div>
                     <div className="text-purple-600 group-hover:text-purple-700 flex items-center text-sm font-medium transition-colors">
                       詳細を見る
