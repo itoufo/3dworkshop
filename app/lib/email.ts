@@ -306,6 +306,88 @@ export function generate3DPrintingRequestEmail(
   return { subject, html };
 }
 
+export function generateServiceOrderConfirmationEmail(input: {
+  customerName: string;
+  serviceTitle: string;
+  serviceType: 'custom_made' | 'reprint';
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  notes?: string | null;
+  orderId: string;
+}) {
+  const typeLabel = input.serviceType === 'reprint' ? '追加印刷' : 'オーダーメイド';
+  const subject = `【3DLab】${typeLabel}ご注文ありがとうございます (${input.serviceTitle})`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #f9fafb; border-left: 4px solid #9333ea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .cost-box { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px 12px; }
+        td.label { color: #6b7280; width: 120px; vertical-align: top; }
+        td.value { color: #111827; }
+        .total { font-size: 20px; font-weight: bold; color: #9333ea; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">ご注文ありがとうございます</h2>
+        </div>
+        <p>${input.customerName} 様</p>
+        <p>${typeLabel}サービスのご注文を承りました。決済が正常に完了しています。</p>
+
+        <div class="info-box">
+          <h3 style="margin-top:0;">ご注文内容</h3>
+          <table>
+            <tr><td class="label">注文番号</td><td class="value">${input.orderId}</td></tr>
+            <tr><td class="label">種別</td><td class="value">${typeLabel}</td></tr>
+            <tr><td class="label">商品</td><td class="value">${input.serviceTitle}</td></tr>
+            <tr><td class="label">単価</td><td class="value">¥${input.unitPrice.toLocaleString()}</td></tr>
+            <tr><td class="label">数量</td><td class="value">${input.quantity} 個</td></tr>
+            ${input.notes ? `<tr><td class="label">ご要望</td><td class="value">${input.notes.replace(/\n/g, '<br>')}</td></tr>` : ''}
+          </table>
+        </div>
+
+        <div class="cost-box">
+          <table>
+            <tr>
+              <td class="label">合計金額</td>
+              <td class="value total">¥${input.totalAmount.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p>担当者が内容確認の上、3営業日以内に詳細をご連絡いたします。</p>
+        <p>ご要望の内容によっては、追加料金や仕様変更のご相談をさせていただく場合があります。</p>
+
+        <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
+          <h3 style="margin-top:0;">お問い合わせ先</h3>
+          <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+          <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
+        </div>
+
+        <div class="footer">
+          <p>このメールは自動送信されています。</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
+
 export function generateServiceRequestEmail(input: {
   serviceTitle: string;
   serviceType: 'custom_made' | 'reprint';

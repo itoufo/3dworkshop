@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail } from '@/app/lib/email'
+import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail, generateServiceOrderConfirmationEmail } from '@/app/lib/email'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
@@ -122,6 +122,67 @@ export async function POST(request: NextRequest) {
               subject: '【3DLab】スクール申込完了のお知らせ',
               html: emailContent
             })
+          }
+
+          return NextResponse.json({ received: true })
+        }
+
+        // サービス注文 (オーダーメイド/追加印刷) の処理
+        if (type === 'service_order') {
+          const orderId = session.metadata?.order_id
+          if (!orderId) {
+            console.error('Service order: order_id not in metadata')
+            return NextResponse.json({ received: true })
+          }
+          if (!supabaseAdmin) {
+            throw new Error('Supabase admin client not available')
+          }
+
+          const { data: order, error: orderError } = await supabaseAdmin
+            .from('service_orders')
+            .update({
+              status: 'paid',
+              payment_status: 'paid',
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent as string,
+            })
+            .eq('id', orderId)
+            .select(`
+              *,
+              service:services(*),
+              customer:customers(*)
+            `)
+            .single()
+
+          if (orderError) {
+            console.error('Error updating service_order:', orderError)
+            throw orderError
+          }
+
+          if (order?.customer?.email && order?.service?.title) {
+            try {
+              const { subject, html } = generateServiceOrderConfirmationEmail({
+                customerName: order.customer.name || 'お客様',
+                serviceTitle: order.service.title,
+                serviceType: order.service.type,
+                quantity: order.quantity,
+                unitPrice: order.unit_price,
+                totalAmount: order.total_amount,
+                notes: order.notes,
+                orderId: order.id,
+              })
+              const emailResult = await sendEmail({
+                to: order.customer.email,
+                cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com', 'nanzinaniwa6@gmail.com'],
+                subject,
+                html,
+              })
+              if (!emailResult.success) {
+                console.error('Service order email failed:', emailResult.error)
+              }
+            } catch (mailErr) {
+              console.error('Service order email send error:', mailErr)
+            }
           }
 
           return NextResponse.json({ received: true })

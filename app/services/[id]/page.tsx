@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import ServiceRequestForm from '@/components/ServiceRequestForm'
+import ServicePurchaseForm from '@/components/ServicePurchaseForm'
 import { getService } from '@/lib/services'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { Sparkles, RotateCw } from 'lucide-react'
@@ -69,12 +69,12 @@ export default async function ServicePage({ params }: PageProps) {
                 <p className="text-gray-700 whitespace-pre-line mb-6">{service.description}</p>
               )}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-4">
-                <p className="text-sm text-gray-600 mb-1">参考価格</p>
+                <p className="text-sm text-gray-600 mb-1">単価（税込）</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  ¥{service.price.toLocaleString()}<span className="text-base font-normal">〜</span>
+                  ¥{service.price.toLocaleString()}<span className="text-base font-normal"> / 個</span>
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                  数量や仕様により金額が変動します。お見積もりをお出しします。
+                  ご要望内容によっては別途追加料金のご相談をさせていただく場合があります。
                 </p>
               </div>
             </div>
@@ -88,11 +88,15 @@ export default async function ServicePage({ params }: PageProps) {
           )}
 
           <div className="bg-white rounded-2xl shadow-sm p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{typeLabel}のリクエスト</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{typeLabel}を注文する</h2>
             <p className="text-gray-600 mb-6">
-              フォームを送信いただくと、担当者が内容確認の上、お見積もりをご連絡いたします。
+              数量を選択し、ご要望を入力の上、決済画面にお進みください。
             </p>
-            <ServiceRequestForm serviceId={service.id} serviceType={service.type} />
+            <ServicePurchaseForm
+              serviceId={service.id}
+              serviceType={service.type}
+              unitPrice={service.price}
+            />
           </div>
         </div>
       </main>

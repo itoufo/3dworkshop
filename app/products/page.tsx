@@ -214,13 +214,13 @@ export default function ProductsPage() {
                         )}
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm text-gray-500">参考価格</p>
+                            <p className="text-sm text-gray-500">単価</p>
                             <p className="text-xl font-bold text-gray-900">
-                              ¥{service.price.toLocaleString()}<span className="text-sm font-normal">〜</span>
+                              ¥{service.price.toLocaleString()}<span className="text-sm font-normal"> / 個</span>
                             </p>
                           </div>
                           <div className="text-purple-600 group-hover:text-purple-700 transition-colors">
-                            相談する →
+                            購入する →
                           </div>
                         </div>
                       </div>
