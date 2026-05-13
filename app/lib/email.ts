@@ -388,6 +388,72 @@ export function generateServiceOrderConfirmationEmail(input: {
   return { subject, html };
 }
 
+export function generateWorkshopRequestEmail(input: {
+  workshopTitle: string;
+  workshopId: string;
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+  participants?: number | null;
+  preferredDates?: string | null;
+  message?: string | null;
+}) {
+  const subject = `[開催リクエスト] ${input.workshopTitle}`;
+
+  const rows: Array<[string, string]> = [
+    ['ワークショップ', input.workshopTitle],
+    ['メール', input.email],
+  ];
+  if (input.name) rows.push(['お名前', input.name]);
+  if (input.phone) rows.push(['電話番号', input.phone]);
+  if (input.participants != null) rows.push(['希望人数', `${input.participants} 名`]);
+  if (input.preferredDates) rows.push(['希望日程', input.preferredDates.replace(/\n/g, '<br>')]);
+  if (input.message) rows.push(['ご要望', input.message.replace(/\n/g, '<br>')]);
+
+  const rowsHtml = rows
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:8px 12px;color:#6b7280;width:110px;vertical-align:top;">${k}</td><td style="padding:8px 12px;color:#111827;">${v}</td></tr>`
+    )
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #f59e0b, #f97316); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">開催リクエストが届きました</h2>
+        </div>
+        <div class="info-box">
+          <h3 style="margin-top:0;">${input.workshopTitle}</h3>
+          <table>${rowsHtml}</table>
+        </div>
+        <p>お客様にご連絡の上、開催日程をご検討ください。</p>
+        <p><a href="https://3dlab.jp/workshops/${input.workshopId}">ワークショップ詳細</a></p>
+        <div class="footer">
+          <p>このメールは自動送信されています。</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
+
 export function generateServiceRequestEmail(input: {
   serviceTitle: string;
   serviceType: 'custom_made' | 'reprint';

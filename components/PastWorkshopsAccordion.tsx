@@ -69,7 +69,16 @@ export default function PastWorkshopsAccordion({
   )
 }
 
+function getLatestPastSessionDate(workshop: Workshop): string | null {
+  const sessions = workshop.sessions ?? []
+  if (sessions.length === 0) return workshop.event_date ?? null
+  // status を問わず最大の event_date を返す (過去なので scheduled/cancelled どちらもありうる)
+  const sorted = [...sessions].sort((a, b) => b.event_date.localeCompare(a.event_date))
+  return sorted[0]?.event_date ?? workshop.event_date ?? null
+}
+
 function WorkshopCard({ workshop, showCategory }: { workshop: Workshop; showCategory: boolean }) {
+  const lastDate = getLatestPastSessionDate(workshop)
   return (
     <Link
       href={`/workshops/${workshop.id}`}
@@ -103,10 +112,10 @@ function WorkshopCard({ workshop, showCategory }: { workshop: Workshop; showCate
       </div>
       <div className="p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{workshop.title}</h3>
-        {workshop.event_date && (
+        {lastDate && (
           <div className="flex items-center text-sm text-gray-500 mb-2">
             <Calendar className="w-4 h-4 mr-2" />
-            {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+            {new Date(lastDate).toLocaleDateString('ja-JP', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',

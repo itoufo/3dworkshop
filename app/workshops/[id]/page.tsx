@@ -2,11 +2,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar } from 'lucide-react'
-import { getWorkshop, getRelatedWorkshops } from '@/lib/workshops'
+import { getWorkshop, getRelatedWorkshops, getNearestUpcomingSession, hasUpcomingSession, isOpenForRequest } from '@/lib/workshops'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import WorkshopBookingSection from '@/components/WorkshopBookingSection'
+import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import { notFound } from 'next/navigation'
 import styles from './workshop.module.css'
 
@@ -20,13 +21,9 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
     notFound()
   }
 
-  // Check if past workshop
-  let isPastWorkshop = false
-  if (workshop.event_date) {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    isPastWorkshop = new Date(workshop.event_date) < today
-  }
+  // 3分岐: request-only (sessions 0件) / past (全 sessions 過去) / 通常 (upcoming あり)
+  const isRequestOnly = isOpenForRequest(workshop)
+  const isPastWorkshop = !isRequestOnly && !hasUpcomingSession(workshop)
 
   // Fetch related workshops
   const relatedWorkshops = workshop.category_id
@@ -208,57 +205,76 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
               </div>
             </div>
 
-            {/* Right Column - Booking (Client Component) */}
+            {/* Right Column - Booking / Request (Client Component) */}
             <div className="lg:col-span-1">
-              <WorkshopBookingSection
-                workshop={workshop}
-                relatedWorkshops={relatedWorkshops}
-                isPastWorkshop={isPastWorkshop}
-              />
+              {isRequestOnly ? (
+                <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
+                  <div className="mb-4">
+                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full mb-3">
+                      開催リクエスト受付中
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">開催日程をリクエスト</h3>
+                    <p className="text-sm text-gray-600">
+                      ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。
+                    </p>
+                  </div>
+                  <WorkshopRequestForm workshopId={workshop.id} />
+                </div>
+              ) : (
+                <WorkshopBookingSection
+                  workshop={workshop}
+                  relatedWorkshops={relatedWorkshops}
+                  isPastWorkshop={isPastWorkshop}
+                />
+              )}
             </div>
           </div>
 
-          {/* Related Workshops Section (for non-past workshops) */}
-          {!isPastWorkshop && relatedWorkshops.length > 0 && (
+          {/* Related Workshops Section (for non-past, non-request workshops) */}
+          {!isPastWorkshop && !isRequestOnly && relatedWorkshops.length > 0 && (
             <div className="mt-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">関連ワークショップ</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {relatedWorkshops.map((rw) => (
-                  <Link
-                    key={rw.id}
-                    href={`/workshops/${rw.id}`}
-                    className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
-                  >
-                    {rw.image_url ? (
-                      <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                        <Image
-                          src={optimizeImageUrl(rw.image_url, 75)}
-                          alt={rw.title}
-                          fill
-                          className="object-contain group-hover:scale-105 transition-transform duration-300"
-                          sizes="33vw"
-                          loading="lazy"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-purple-600">3D</span>
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1">{rw.title}</h3>
-                      {rw.event_date && (
-                        <p className="text-sm text-gray-600 flex items-center">
-                          <Calendar className="w-3 h-3 mr-1 text-purple-500" />
-                          {new Date(rw.event_date).toLocaleDateString('ja-JP', {
-                            month: 'long', day: 'numeric', weekday: 'short'
-                          })}
-                        </p>
+                {relatedWorkshops.map((rw) => {
+                  const rwNearest = getNearestUpcomingSession(rw)
+                  const rwDate = rwNearest?.event_date || rw.event_date
+                  return (
+                    <Link
+                      key={rw.id}
+                      href={`/workshops/${rw.id}`}
+                      className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+                    >
+                      {rw.image_url ? (
+                        <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
+                          <Image
+                            src={optimizeImageUrl(rw.image_url, 75)}
+                            alt={rw.title}
+                            fill
+                            className="object-contain group-hover:scale-105 transition-transform duration-300"
+                            sizes="33vw"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                          <span className="text-2xl font-bold text-purple-600">3D</span>
+                        </div>
                       )}
-                      <p className="text-lg font-bold text-gray-900 mt-2">¥{rw.price.toLocaleString()}</p>
-                    </div>
-                  </Link>
-                ))}
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1">{rw.title}</h3>
+                        {rwDate && (
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <Calendar className="w-3 h-3 mr-1 text-purple-500" />
+                            {new Date(rwDate).toLocaleDateString('ja-JP', {
+                              month: 'long', day: 'numeric', weekday: 'short'
+                            })}
+                          </p>
+                        )}
+                        <p className="text-lg font-bold text-gray-900 mt-2">¥{rw.price.toLocaleString()}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
           )}

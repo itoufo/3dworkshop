@@ -1,11 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Workshop } from '@/types'
+import { useState, useEffect, useMemo } from 'react'
+import { Workshop, WorkshopSession } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight } from 'lucide-react'
+
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function getUpcomingSessions(w: Workshop): WorkshopSession[] {
+  const today = todayIso()
+  return (w.sessions ?? [])
+    .filter(s => s.status === 'scheduled' && s.event_date >= today)
+    .sort((a, b) => {
+      if (a.event_date !== b.event_date) return a.event_date.localeCompare(b.event_date)
+      return (a.event_time || '').localeCompare(b.event_time || '')
+    })
+}
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -16,6 +31,15 @@ interface WorkshopBookingSectionProps {
 }
 
 export default function WorkshopBookingSection({ workshop, relatedWorkshops, isPastWorkshop }: WorkshopBookingSectionProps) {
+  const upcomingSessions = useMemo(() => getUpcomingSessions(workshop), [workshop])
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
+    upcomingSessions[0]?.id ?? null
+  )
+  const selectedSession = useMemo(
+    () => upcomingSessions.find(s => s.id === selectedSessionId) ?? upcomingSessions[0] ?? null,
+    [upcomingSessions, selectedSessionId]
+  )
+
   const [booking, setBooking] = useState({
     participants: 1,
     name: '',
@@ -133,13 +157,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
       if (customerError) throw customerError
 
+      const bookingDate = selectedSession?.event_date || workshop.event_date || new Date().toISOString().split('T')[0]
+      const bookingTime = selectedSession?.event_time || workshop.event_time || '10:00'
+
       const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           workshop_id: workshop.id,
+          session_id: selectedSession?.id || null,
           customer_id: customer.id,
-          booking_date: workshop.event_date || new Date().toISOString().split('T')[0],
-          booking_time: workshop.event_time || '10:00',
+          booking_date: bookingDate,
+          booking_time: bookingTime,
           participants: booking.participants,
           total_amount: workshop.price * booking.participants,
           notes: booking.notes,
@@ -187,11 +215,19 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <Calendar className="w-8 h-8 text-gray-500" />
           </div>
           <h2 className="text-xl font-bold text-gray-700 mb-2">このワークショップは終了しました</h2>
-          <p className="text-sm text-gray-500">
-            {workshop.event_date && new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-              year: 'numeric', month: 'long', day: 'numeric'
-            })}に開催されました
-          </p>
+          {(() => {
+            const sessions = workshop.sessions ?? []
+            const lastDate = sessions.length > 0
+              ? sessions.map(s => s.event_date).sort().reverse()[0]
+              : workshop.event_date || null
+            return lastDate ? (
+              <p className="text-sm text-gray-500">
+                {new Date(`${lastDate}T00:00:00`).toLocaleDateString('ja-JP', {
+                  year: 'numeric', month: 'long', day: 'numeric'
+                })}に開催されました
+              </p>
+            ) : null
+          })()}
         </div>
 
         {relatedWorkshops.length > 0 && (
@@ -248,27 +284,71 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-6 mb-6">
           <h3 className="font-semibold text-gray-900 mb-3">開催情報</h3>
           <div className="space-y-3">
-            {workshop.event_date && (
+            {upcomingSessions.length >= 2 ? (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">開催日程を選択</p>
+                <div className="space-y-2">
+                  {upcomingSessions.map((s) => {
+                    const dateLabel = new Date(`${s.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
+                      month: 'long', day: 'numeric', weekday: 'short'
+                    })
+                    const timeLabel = s.event_time ? `${s.event_time.slice(0, 5)} 開始` : ''
+                    const selected = s.id === selectedSession?.id
+                    return (
+                      <label
+                        key={s.id}
+                        className={`flex items-center p-3 rounded-lg cursor-pointer transition-all ${
+                          selected
+                            ? 'bg-white border-2 border-purple-500 shadow-sm'
+                            : 'bg-white/60 border-2 border-transparent hover:bg-white'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="workshop-session"
+                          value={s.id}
+                          checked={selected}
+                          onChange={() => setSelectedSessionId(s.id)}
+                          className="mr-3 accent-purple-600"
+                        />
+                        <div className="flex-1 text-sm">
+                          <div className="font-medium text-gray-900">{dateLabel}</div>
+                          {timeLabel && <div className="text-gray-600 text-xs">{timeLabel}</div>}
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : selectedSession ? (
+              <>
+                <div className="flex items-center text-sm text-gray-700">
+                  <Calendar className="w-4 h-4 mr-2 text-purple-600" />
+                  <span className="font-medium text-gray-900">
+                    {new Date(`${selectedSession.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
+                      year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+                    })}
+                  </span>
+                </div>
+                {selectedSession.event_time && (
+                  <div className="flex items-center text-sm text-gray-700">
+                    <Clock className="w-4 h-4 mr-2 text-purple-600" />
+                    <span className="font-medium text-gray-900">
+                      {selectedSession.event_time.slice(0, 5)} 開始{workshop.duration ? `（${workshop.duration}分間）` : ''}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : workshop.event_date ? (
               <div className="flex items-center text-sm text-gray-700">
                 <Calendar className="w-4 h-4 mr-2 text-purple-600" />
                 <span className="font-medium text-gray-900">
                   {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'long'
+                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
                   })}
                 </span>
               </div>
-            )}
-            {workshop.event_time && (
-              <div className="flex items-center text-sm text-gray-700">
-                <Clock className="w-4 h-4 mr-2 text-purple-600" />
-                <span className="font-medium text-gray-900">
-                  {workshop.event_time.slice(0, 5)} 開始（{workshop.duration}分間）
-                </span>
-              </div>
-            )}
+            ) : null}
             {workshop.location && (
               <div className="flex items-center text-sm text-gray-700">
                 <MapPin className="w-4 h-4 mr-2 text-purple-600" />
