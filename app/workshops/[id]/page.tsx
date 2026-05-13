@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar } from 'lucide-react'
-import { getWorkshop, isOpenForRequest, getLatestPastSession } from '@/lib/workshops'
+import { getWorkshop, isOpenForRequest, getLatestPastSession, getNearestUpcomingSession } from '@/lib/workshops'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
@@ -27,6 +27,18 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
   const isPastWorkshop = false
   const latestPastSession = isRequestOnly ? getLatestPastSession(workshop) : null
 
+  // パンくず leaf 用日程ラベル: 直近upcoming → 過去最新 → workshop.event_date → title
+  const upcomingSessionForBreadcrumb = getNearestUpcomingSession(workshop)
+  const pastSessionForBreadcrumb = getLatestPastSession(workshop)
+  const breadcrumbDate = upcomingSessionForBreadcrumb?.event_date
+    || pastSessionForBreadcrumb?.event_date
+    || workshop.event_date
+  const breadcrumbLeaf = breadcrumbDate
+    ? new Date(`${breadcrumbDate}T00:00:00`).toLocaleDateString('ja-JP', {
+        year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short'
+      })
+    : workshop.title
+
   // 関連ワークショップ・予約 (availability) は client lazy fetch で SSR コストを削減
 
   return (
@@ -41,8 +53,10 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
             <Breadcrumb
               items={[
                 { name: 'ワークショップ', href: '/workshops' },
-                ...(workshop.category ? [{ name: workshop.category.name, href: `/workshops/category/${workshop.category.slug}` }] : []),
-                { name: workshop.title, href: `/workshops/${workshop.id}` }
+                ...(workshop.category
+                  ? [{ name: workshop.category.name, href: `/workshops/category/${workshop.category.slug}` }]
+                  : []),
+                { name: breadcrumbLeaf, href: `/workshops/${workshop.id}` }
               ]}
             />
             {/* Category Tag */}
