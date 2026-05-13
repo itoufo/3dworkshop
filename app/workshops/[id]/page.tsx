@@ -2,12 +2,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar } from 'lucide-react'
-import { getWorkshop, getRelatedWorkshops, getNearestUpcomingSession, isOpenForRequest, getLatestPastSession } from '@/lib/workshops'
+import { getWorkshop, isOpenForRequest, getLatestPastSession } from '@/lib/workshops'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
-import WorkshopBookingSection from '@/components/WorkshopBookingSection'
+import WorkshopBookingSectionLazy from '@/components/WorkshopBookingSectionLazy'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
+import RelatedWorkshopsLazy from '@/components/RelatedWorkshopsLazy'
 import { notFound } from 'next/navigation'
 import styles from './workshop.module.css'
 
@@ -22,15 +23,11 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
   }
 
   // 2分岐: request (upcoming 無し → リクエスト受付) / 通常予約
-  // 過去開催があるかどうかで詳細メッセージを切り替える
   const isRequestOnly = isOpenForRequest(workshop)
   const isPastWorkshop = false
   const latestPastSession = isRequestOnly ? getLatestPastSession(workshop) : null
 
-  // Fetch related workshops
-  const relatedWorkshops = workshop.category_id
-    ? await getRelatedWorkshops(workshop.id, workshop.category_id)
-    : []
+  // 関連ワークショップ・予約 (availability) は client lazy fetch で SSR コストを削減
 
   return (
     <>
@@ -233,62 +230,18 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
                   <WorkshopRequestForm workshopId={workshop.id} />
                 </div>
               ) : (
-                <WorkshopBookingSection
+                <WorkshopBookingSectionLazy
                   workshop={workshop}
-                  relatedWorkshops={relatedWorkshops}
+                  relatedWorkshops={[]}
                   isPastWorkshop={isPastWorkshop}
                 />
               )}
             </div>
           </div>
 
-          {/* Related Workshops Section (for non-past, non-request workshops) */}
-          {!isPastWorkshop && !isRequestOnly && relatedWorkshops.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">関連ワークショップ</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {relatedWorkshops.map((rw) => {
-                  const rwNearest = getNearestUpcomingSession(rw)
-                  const rwDate = rwNearest?.event_date || rw.event_date
-                  return (
-                    <Link
-                      key={rw.id}
-                      href={`/workshops/${rw.id}`}
-                      className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
-                    >
-                      {rw.image_url ? (
-                        <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                          <Image
-                            src={optimizeImageUrl(rw.image_url, 75)}
-                            alt={rw.title}
-                            fill
-                            className="object-contain group-hover:scale-105 transition-transform duration-300"
-                            sizes="33vw"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-purple-600">3D</span>
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1">{rw.title}</h3>
-                        {rwDate && (
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <Calendar className="w-3 h-3 mr-1 text-purple-500" />
-                            {new Date(rwDate).toLocaleDateString('ja-JP', {
-                              month: 'long', day: 'numeric', weekday: 'short'
-                            })}
-                          </p>
-                        )}
-                        <p className="text-lg font-bold text-gray-900 mt-2">¥{rw.price.toLocaleString()}</p>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
+          {/* Related Workshops Section - クライアントで遅延ロード */}
+          {!isPastWorkshop && !isRequestOnly && workshop.category_id && (
+            <RelatedWorkshopsLazy workshopId={workshop.id} categoryId={workshop.category_id} />
           )}
         </main>
       </div>
