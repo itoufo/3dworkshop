@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw } from 'lucide-react'
 
 interface BlogPost {
   id: string
@@ -252,14 +252,17 @@ export default function AdminDashboard() {
             <h2 className="text-3xl font-bold text-gray-900">3DLab 管理ダッシュボード</h2>
             <p className="text-gray-600 mt-1">3Dプリンタ教室の予約と顧客情報を管理</p>
           </div>
-          <div className="text-sm text-gray-500">
-            <Clock className="w-4 h-4 inline mr-1" />
-            {new Date().toLocaleDateString('ja-JP', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric',
-              weekday: 'long'
-            })}
+          <div className="flex items-center space-x-3">
+            <RevalidateButton />
+            <div className="text-sm text-gray-500">
+              <Clock className="w-4 h-4 inline mr-1" />
+              {new Date().toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+              })}
+            </div>
           </div>
         </div>
         
@@ -1332,5 +1335,50 @@ export default function AdminDashboard() {
       )}
       </div>
     </>
+  )
+}
+
+function RevalidateButton() {
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  async function handleClick() {
+    if (busy) return
+    setBusy(true)
+    setMsg(null)
+    try {
+      const res = await fetch('/api/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setMsg(`失敗: ${data.error || res.status}`)
+      } else {
+        setMsg('✓ キャッシュ更新完了')
+        setTimeout(() => setMsg(null), 3000)
+      }
+    } catch {
+      setMsg('失敗: 通信エラー')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center space-x-2">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={busy}
+        className="inline-flex items-center px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+        title="公開ページの ISR キャッシュを今すぐ更新"
+      >
+        <RefreshCw className={`w-4 h-4 mr-1.5 ${busy ? 'animate-spin' : ''}`} />
+        {busy ? '更新中...' : 'キャッシュ更新'}
+      </button>
+      {msg && <span className="text-xs text-gray-600">{msg}</span>}
+    </div>
   )
 }
