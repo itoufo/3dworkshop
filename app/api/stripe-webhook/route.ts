@@ -211,7 +211,8 @@ export async function POST(request: NextRequest) {
           .select(`
             *,
             workshops(*),
-            customers(*)
+            customers(*),
+            workshop_session:workshop_sessions(*)
           `)
           .single()
 
@@ -271,15 +272,23 @@ export async function POST(request: NextRequest) {
             workshopTitle: workshop.title
           })
 
+          // session 日時を優先、なければ workshop 側 / booking_date にフォールバック
+          const eventDate = booking.workshop_session?.event_date
+            || workshop.event_date
+            || booking.booking_date
+          const eventTime = booking.workshop_session?.event_time
+            || workshop.event_time
+            || booking.booking_time
+
           const emailContent = generateBookingConfirmationEmail(
             workshop.title,
-            workshop.event_date ? new Date(workshop.event_date).toLocaleDateString('ja-JP', {
+            eventDate ? new Date(`${eventDate}T00:00:00`).toLocaleDateString('ja-JP', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
               weekday: 'long'
             }) : '未定',
-            workshop.event_time ? workshop.event_time.slice(0, 5) : '未定',
+            eventTime ? eventTime.slice(0, 5) : '未定',
             workshop.location || '東京都文京区湯島3-14-8 加田湯島ビル 5F',
             customer.name,
             customer.email

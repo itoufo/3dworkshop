@@ -68,13 +68,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
   useEffect(() => {
     if (!isPastWorkshop) {
-      fetchAvailability(workshop.id)
+      fetchAvailability(workshop.id, selectedSession?.id ?? null)
     }
-  }, [workshop.id, isPastWorkshop])
+  }, [workshop.id, isPastWorkshop, selectedSession?.id])
 
-  async function fetchAvailability(workshopId: string) {
+  async function fetchAvailability(workshopId: string, sessionId: string | null) {
     try {
-      const response = await fetch(`/api/check-availability?workshopId=${workshopId}`)
+      const params = new URLSearchParams({ workshopId })
+      if (sessionId) params.set('sessionId', sessionId)
+      const response = await fetch(`/api/check-availability?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
         setAvailability(data)
