@@ -39,7 +39,7 @@ export default function Footer() {
               ワークショップ
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/products/3d-printing/new" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href="/products" className="text-gray-400 hover:text-purple-400 transition-colors">
               3Dプリント制作
             </Link>
             <span className="text-gray-600">|</span>
