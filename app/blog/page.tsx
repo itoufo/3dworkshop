@@ -23,16 +23,19 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const currentPage = Math.max(1, parseInt(page || '1', 10))
   const offset = (currentPage - 1) * POSTS_PER_PAGE
 
-  // 総件数・記事・全カテゴリを並列取得
+  // 総件数・記事・全カテゴリを並列取得（予約公開: 未来日付は除外）
+  const nowIso = new Date().toISOString()
   const [countResult, postsResult, categories] = await Promise.all([
     supabase
       .from('blog_posts')
       .select('*', { count: 'exact', head: true })
-      .eq('is_published', true),
+      .eq('is_published', true)
+      .lte('published_at', nowIso),
     supabase
       .from('blog_posts')
       .select('id, title, slug, excerpt, featured_image_url, category, tags, author_name, published_at, view_count')
       .eq('is_published', true)
+      .lte('published_at', nowIso)
       .order('published_at', { ascending: false })
       .range(offset, offset + POSTS_PER_PAGE - 1),
     getAllCategories(),

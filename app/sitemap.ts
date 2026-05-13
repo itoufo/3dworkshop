@@ -106,11 +106,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }))
 
-    // ブログ記事を動的に追加
+    // ブログ記事を動的に追加（予約公開: 未来日付は除外）
     const { data: blogPosts } = await supabase
       .from('blog_posts')
       .select('slug, updated_at, published_at, is_published')
       .eq('is_published', true)
+      .lte('published_at', new Date().toISOString())
       .order('published_at', { ascending: false })
 
     const blogPages: MetadataRoute.Sitemap = (blogPosts || []).map((post) => ({

@@ -22,6 +22,7 @@ export default async function Image({
     .select('title, category, author_name, published_at')
     .eq('slug', slug)
     .eq('is_published', true)
+    .lte('published_at', new Date().toISOString())
     .single()
 
   const title = blogPost?.title || 'ブログ記事'

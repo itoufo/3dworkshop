@@ -23,6 +23,9 @@ export interface BlogPost {
   created_at: string
 }
 
+// 予約公開: published_at が未来日付の記事は表示しない（cron不要、cf. ISR revalidate=3600 により最大1時間の遅延あり）
+const nowIso = () => new Date().toISOString()
+
 // React cache() deduplicates during a single server request.
 // layout.tsx (generateMetadata + body) and page.tsx share the same result.
 export const getBlogPost = cache(async (slug: string): Promise<BlogPost | null> => {
@@ -31,6 +34,7 @@ export const getBlogPost = cache(async (slug: string): Promise<BlogPost | null> 
     .select('*')
     .eq('slug', slug)
     .eq('is_published', true)
+    .lte('published_at', nowIso())
     .single()
   return data
 })
@@ -40,6 +44,7 @@ export async function getRelatedPosts(postId: string, category: string): Promise
     .from('blog_posts')
     .select('id, title, slug, excerpt, featured_image_url, category, tags, author_name, published_at, view_count')
     .eq('is_published', true)
+    .lte('published_at', nowIso())
     .eq('category', category)
     .neq('id', postId)
     .order('published_at', { ascending: false })
@@ -52,6 +57,7 @@ export async function getAllCategories(): Promise<string[]> {
     .from('blog_posts')
     .select('category')
     .eq('is_published', true)
+    .lte('published_at', nowIso())
     .not('category', 'is', null)
   if (!data) return []
   return Array.from(new Set(data.map(p => p.category).filter(Boolean)))
