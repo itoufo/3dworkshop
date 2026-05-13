@@ -30,7 +30,12 @@ export default function PastWorkshopsAccordion({
 
   return (
     <section className={showCategory ? 'mt-20' : ''}>
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">過去の開催</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">過去の開催</h2>
+        <p className="text-sm text-amber-700 mt-1">
+          ✨ 再開催のリクエストを受け付けています。気になるワークショップをクリックしてご相談ください。
+        </p>
+      </div>
 
       {/* Always visible: first row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -101,8 +106,8 @@ function WorkshopCard({ workshop, showCategory }: { workshop: Workshop; showCate
             <span className="text-3xl font-bold text-gray-400">3D</span>
           </div>
         )}
-        <div className="absolute top-4 right-4 px-3 py-1 bg-gray-700 text-white text-xs font-medium rounded-full">
-          終了
+        <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium rounded-full shadow">
+          再開催リクエスト受付中
         </div>
         {showCategory && workshop.category && (
           <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur text-gray-600 text-xs font-medium rounded-full">

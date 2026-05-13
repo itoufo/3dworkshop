@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar } from 'lucide-react'
-import { getWorkshop, getRelatedWorkshops, getNearestUpcomingSession, hasUpcomingSession, isOpenForRequest } from '@/lib/workshops'
+import { getWorkshop, getRelatedWorkshops, getNearestUpcomingSession, isOpenForRequest, getLatestPastSession } from '@/lib/workshops'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
@@ -21,9 +21,11 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
     notFound()
   }
 
-  // 3分岐: request-only (sessions 0件) / past (全 sessions 過去) / 通常 (upcoming あり)
+  // 2分岐: request (upcoming 無し → リクエスト受付) / 通常予約
+  // 過去開催があるかどうかで詳細メッセージを切り替える
   const isRequestOnly = isOpenForRequest(workshop)
-  const isPastWorkshop = !isRequestOnly && !hasUpcomingSession(workshop)
+  const isPastWorkshop = false
+  const latestPastSession = isRequestOnly ? getLatestPastSession(workshop) : null
 
   // Fetch related workshops
   const relatedWorkshops = workshop.category_id
@@ -211,9 +213,19 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
                 <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
                   <div className="mb-4">
                     <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full mb-3">
-                      開催リクエスト受付中
+                      {latestPastSession ? '再開催リクエスト受付中' : '開催リクエスト受付中'}
                     </span>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">開催日程をリクエスト</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {latestPastSession ? '再開催をリクエスト' : '開催日程をリクエスト'}
+                    </h3>
+                    {latestPastSession && (
+                      <div className="mb-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700">
+                        <Calendar className="w-3 h-3 inline mr-1 text-gray-400" />
+                        前回開催: {new Date(`${latestPastSession.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
+                          year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
+                        })}
+                      </div>
+                    )}
                     <p className="text-sm text-gray-600">
                       ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。
                     </p>

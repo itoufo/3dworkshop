@@ -61,6 +61,7 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
   )
 
   // 日付ピル候補: カテゴリで絞り込んだ workshops の upcoming sessions から
+  // upcoming が 0件のワークショップは「開催リクエスト受付中」 = hasRequestable=true
   const dateOptions = useMemo(() => {
     const dates = new Set<string>()
     let hasRequestable = false
@@ -79,23 +80,26 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
   }, [filteredByCategory, todayIso])
 
   // 日付フィルタ適用
+  // - selectedDate=null  : upcoming あり + sessions=0 のリクエスト枠 (デフォルト)
+  // - selectedDate='request' : upcoming が無いすべて (過去開催のみ も含む)
+  // - selectedDate='YYYY-MM-DD' : その日付に upcoming session があるもの
   const filteredByDate = useMemo(() => {
     if (selectedDate === null) {
-      // 全て = upcoming session を持つもの + 開催未定（リクエスト枠）の両方
       return filteredByCategory.filter(w => {
         const upcoming = getUpcomingSessions(w, todayIso)
         return upcoming.length > 0 || (w.sessions ?? []).length === 0
       })
     }
     if (selectedDate === 'request') {
-      return filteredByCategory.filter(w => (w.sessions ?? []).length === 0)
+      return filteredByCategory.filter(w => getUpcomingSessions(w, todayIso).length === 0)
     }
     return filteredByCategory.filter(w =>
       getUpcomingSessions(w, todayIso).some(s => s.event_date === selectedDate)
     )
   }, [filteredByCategory, selectedDate, todayIso])
 
-  // 過去ワークショップ (全 session が過去 = upcoming 0件 かつ sessions 1件以上)
+  // 過去開催 (sessions あり、upcoming 0件)
+  // 新しい仕様: リクエスト受付対象として表示
   const pastWorkshops = useMemo(() => {
     return filteredByCategory
       .filter(w => {

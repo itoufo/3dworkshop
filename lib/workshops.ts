@@ -98,6 +98,15 @@ export function hasUpcomingSession(workshop: Workshop, todayDate?: string): bool
 }
 
 export function isOpenForRequest(workshop: Workshop): boolean {
-  // sessions が0件 = リクエスト受付対象
-  return (workshop.sessions ?? []).length === 0
+  // upcoming session が無ければリクエスト受付対象
+  // (sessions=0 でも、過去 session のみでも、両方とも該当)
+  return !hasUpcomingSession(workshop)
+}
+
+export function getLatestPastSession(workshop: Workshop, todayDate?: string): WorkshopSession | null {
+  const today = todayDate || todayIso()
+  const past = (workshop.sessions ?? [])
+    .filter(s => s.event_date < today)
+    .sort((a, b) => b.event_date.localeCompare(a.event_date))
+  return past[0] ?? null
 }
