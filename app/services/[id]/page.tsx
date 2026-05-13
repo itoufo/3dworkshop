@@ -69,12 +69,12 @@ export default async function ServicePage({ params }: PageProps) {
                 <p className="text-gray-700 whitespace-pre-line mb-6">{service.description}</p>
               )}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-4">
-                <p className="text-sm text-gray-600 mb-1">単価（税込）</p>
+                <p className="text-sm text-gray-600 mb-1">最低料金（税込）</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  ¥{service.price.toLocaleString()}<span className="text-base font-normal"> / 個</span>
+                  ¥{service.price.toLocaleString()}<span className="text-base font-normal"> 〜 / 個</span>
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                  ご要望内容によっては別途追加料金のご相談をさせていただく場合があります。
+                  仕様の複雑さに応じて、購入時に単価を500円単位で調整できます。
                 </p>
               </div>
             </div>

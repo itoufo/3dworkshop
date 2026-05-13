@@ -22,12 +22,14 @@ export async function POST(
       name,
       phone,
       quantity = 1,
+      unitPrice: unitPriceInput,
       notes,
     } = body as {
       email?: string
       name?: string
       phone?: string
       quantity?: number
+      unitPrice?: number
       notes?: string
     }
 
@@ -53,7 +55,19 @@ export async function POST(
       return NextResponse.json({ error: 'サービスが見つかりません' }, { status: 404 })
     }
 
-    const unitPrice = service.price
+    // 単価: クライアントから受け取った値を採用するが、最低料金未満は拒否
+    const minPrice = service.price
+    const requestedUnit = Math.floor(Number(unitPriceInput) || minPrice)
+    if (requestedUnit < minPrice) {
+      return NextResponse.json(
+        { error: `単価は最低 ¥${minPrice.toLocaleString()} 以上に設定してください` },
+        { status: 400 }
+      )
+    }
+    if (requestedUnit > 10_000_000) {
+      return NextResponse.json({ error: '単価が大きすぎます' }, { status: 400 })
+    }
+    const unitPrice = requestedUnit
     const totalAmount = unitPrice * qty
 
     // 顧客 upsert

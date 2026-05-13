@@ -11,7 +11,9 @@ interface Props {
   unitPrice: number
 }
 
-export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice }: Props) {
+const PRICE_STEP = 500
+
+export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice: minUnitPrice }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -19,14 +21,26 @@ export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice 
     name: '',
     phone: '',
     quantity: 1,
+    unitPrice: minUnitPrice,
     notes: '',
   })
 
-  const total = useMemo(() => unitPrice * form.quantity, [unitPrice, form.quantity])
+  const total = useMemo(() => form.unitPrice * form.quantity, [form.unitPrice, form.quantity])
+
+  function decUnitPrice() {
+    setForm((f) => ({ ...f, unitPrice: Math.max(minUnitPrice, f.unitPrice - PRICE_STEP) }))
+  }
+  function incUnitPrice() {
+    setForm((f) => ({ ...f, unitPrice: f.unitPrice + PRICE_STEP }))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErrorMsg(null)
+    if (form.unitPrice < minUnitPrice) {
+      setErrorMsg(`単価は最低 ¥${minUnitPrice.toLocaleString()} 以上に設定してください`)
+      return
+    }
     setSubmitting(true)
     try {
       const res = await fetch(`/api/services/${serviceId}/checkout`, {
@@ -145,9 +159,33 @@ export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice 
       </div>
 
       <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5">
-        <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
-          <span>単価</span>
-          <span>¥{unitPrice.toLocaleString()}</span>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-sm text-gray-700">単価</p>
+            <p className="text-xs text-gray-500">最低 ¥{minUnitPrice.toLocaleString()} / 500円単位で調整可</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={decUnitPrice}
+              disabled={form.unitPrice <= minUnitPrice}
+              className="w-9 h-9 rounded-full border-2 border-gray-300 hover:border-purple-600 transition-colors flex items-center justify-center text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="単価を下げる"
+            >
+              -
+            </button>
+            <div className="w-28 text-center">
+              <span className="text-lg font-bold text-gray-900">¥{form.unitPrice.toLocaleString()}</span>
+            </div>
+            <button
+              type="button"
+              onClick={incUnitPrice}
+              className="w-9 h-9 rounded-full border-2 border-gray-300 hover:border-purple-600 transition-colors flex items-center justify-center text-lg font-bold"
+              aria-label="単価を上げる"
+            >
+              +
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between text-sm text-gray-700 mb-3">
           <span>数量</span>
@@ -157,6 +195,11 @@ export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice 
           <span className="text-lg font-bold text-gray-900">合計</span>
           <span className="text-2xl font-bold text-purple-700">¥{total.toLocaleString()}</span>
         </div>
+        {form.unitPrice > minUnitPrice && (
+          <p className="text-xs text-purple-700 mt-2">
+            最低料金より ¥{(form.unitPrice - minUnitPrice).toLocaleString()} / 個 上乗せされています
+          </p>
+        )}
       </div>
 
       {errorMsg && (
