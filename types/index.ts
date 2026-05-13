@@ -52,6 +52,7 @@ export interface WorkshopSession {
 export interface WorkshopRequest {
   id: string
   workshop_id: string | null
+  category_id?: string | null
   email: string
   name?: string | null
   phone?: string | null

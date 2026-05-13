@@ -4,10 +4,17 @@ import { useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 
 interface Props {
-  workshopId: string
+  workshopId?: string
+  categorySlug?: string
 }
 
-export default function WorkshopRequestForm({ workshopId }: Props) {
+export default function WorkshopRequestForm({ workshopId, categorySlug }: Props) {
+  if (!workshopId && !categorySlug) {
+    throw new Error('WorkshopRequestForm requires workshopId or categorySlug')
+  }
+  const endpoint = workshopId
+    ? `/api/workshops/${workshopId}/request`
+    : `/api/categories/${categorySlug}/request`
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -26,7 +33,7 @@ export default function WorkshopRequestForm({ workshopId }: Props) {
     setErrorMsg(null)
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/workshops/${workshopId}/request`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

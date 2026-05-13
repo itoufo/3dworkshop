@@ -4,37 +4,58 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import { Calendar, Clock, ArrowRight } from 'lucide-react'
+import WorkshopRequestForm from '@/components/WorkshopRequestForm'
+import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
-import PastWorkshopsAccordion from '@/components/PastWorkshopsAccordion'
+import styles from '@/app/workshops/[id]/workshop.module.css'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+export const revalidate = 3600
+
 interface Props {
   params: Promise<{ slug: string }>
 }
 
+interface SessionRef {
+  id: string
+  event_date: string
+  event_time: string | null
+  status: string
+  workshop_id: string
+  workshop_title: string
+  workshop_price: number
+  workshop_max_participants: number
+  workshop_duration: number
+}
+
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function formatDateLong(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('ja-JP', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
+  })
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-
   const { data: category } = await supabase
     .from('workshop_categories')
     .select('*')
     .eq('slug', slug)
     .single()
-
-  if (!category) {
-    return { title: 'カテゴリが見つかりません | 3DLab' }
-  }
-
+  if (!category) return { title: 'カテゴリが見つかりません | 3DLab' }
   return {
-    title: `${category.name} ワークショップ | 3DLab 東京`,
-    description: category.description || `${category.name}のワークショップ一覧。東京・湯島の3Dプリンタ教室3DLabで開催。初心者歓迎。`,
+    title: `${category.name} | 3DLab 東京・湯島`,
+    description: category.description || `${category.name}のワークショップ。東京・湯島の3Dプリンタ教室3DLabで開催。初心者歓迎。`,
     openGraph: {
-      title: `${category.name} ワークショップ | 3DLab 東京`,
-      description: category.description || `${category.name}のワークショップ一覧`,
+      title: `${category.name} | 3DLab`,
+      description: category.description || `${category.name}のワークショップ`,
       images: category.image_url ? [{ url: category.image_url }] : undefined,
     },
   }
@@ -49,32 +70,50 @@ export default async function CategoryPillarPage({ params }: Props) {
     .eq('slug', slug)
     .single()
 
-  if (!category) {
-    notFound()
-  }
+  if (!category) notFound()
 
+  // カテゴリ配下の workshops + sessions を取得
   const { data: workshops } = await supabase
     .from('workshops')
-    .select('*')
+    .select('id, title, description, rich_description, price, duration, max_participants, location, image_url, updated_at, sessions:workshop_sessions(id, event_date, event_time, status)')
     .eq('category_id', category.id)
     .eq('is_service', false)
-    .order('event_date', { ascending: true })
+    .order('updated_at', { ascending: false })
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = todayIso()
 
-  const upcomingWorkshops = (workshops || []).filter(w => {
-    if (!w.event_date) return true
-    return new Date(w.event_date) >= today
+  // 全 upcoming session をフラット化
+  const upcomingSessions: SessionRef[] = []
+  const pastSessions: SessionRef[] = []
+  for (const w of workshops || []) {
+    const sessions = (w.sessions || []) as Array<{ id: string; event_date: string; event_time: string | null; status: string }>
+    for (const s of sessions) {
+      const ref: SessionRef = {
+        id: s.id,
+        event_date: s.event_date,
+        event_time: s.event_time,
+        status: s.status,
+        workshop_id: w.id,
+        workshop_title: w.title,
+        workshop_price: w.price,
+        workshop_max_participants: w.max_participants,
+        workshop_duration: w.duration,
+      }
+      if (s.status === 'scheduled' && s.event_date >= today) upcomingSessions.push(ref)
+      else if (s.event_date < today) pastSessions.push(ref)
+    }
+  }
+  upcomingSessions.sort((a, b) => {
+    if (a.event_date !== b.event_date) return a.event_date.localeCompare(b.event_date)
+    return (a.event_time || '').localeCompare(b.event_time || '')
   })
+  pastSessions.sort((a, b) => b.event_date.localeCompare(a.event_date))
 
-  const pastWorkshops = (workshops || []).filter(w => {
-    if (!w.event_date) return false
-    return new Date(w.event_date) < today
-  }).reverse()
+  // 代表 workshop = 最新の workshop (説明文表示用)
+  const representativeWorkshop = (workshops || [])[0] || null
 
   // 構造化データ
-  const structuredData = {
+  const breadcrumbData = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
@@ -84,54 +123,39 @@ export default async function CategoryPillarPage({ params }: Props) {
     ],
   }
 
-  const itemListData = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: `${category.name} ワークショップ`,
-    itemListElement: upcomingWorkshops.map((w, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      url: `https://3dlab.jp/workshops/${w.id}`,
-      name: w.title,
-    })),
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
 
-      {/* Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListData) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }}
       />
 
       {/* Breadcrumb */}
       <div className="pt-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+          <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
             <Link href="/" className="hover:text-purple-600 transition-colors">ホーム</Link>
             <span>/</span>
             <Link href="/workshops" className="hover:text-purple-600 transition-colors">ワークショップ</Link>
+            <span>/</span>
+            <Link href="/workshops/categories" className="hover:text-purple-600 transition-colors">カテゴリ</Link>
             <span>/</span>
             <span className="text-gray-900 font-medium">{category.name}</span>
           </nav>
         </div>
       </div>
 
-      {/* Category Header */}
-      <section className="px-4 sm:px-6 lg:px-8 pb-12">
+      {/* Hero */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="grid md:grid-cols-2 gap-0">
-              {category.image_url ? (
-                <div className="relative aspect-video md:aspect-auto">
+              {(category.image_url || representativeWorkshop?.image_url) ? (
+                <div className="relative aspect-video md:aspect-auto min-h-[280px]">
                   <Image
-                    src={optimizeImageUrl(category.image_url)}
+                    src={optimizeImageUrl(category.image_url || representativeWorkshop?.image_url || '')}
                     alt={`${category.name} ワークショップ`}
                     fill
                     className="object-cover"
@@ -140,7 +164,7 @@ export default async function CategoryPillarPage({ params }: Props) {
                   />
                 </div>
               ) : (
-                <div className="aspect-video md:aspect-auto bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center min-h-[200px]">
+                <div className="aspect-video md:aspect-auto bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center min-h-[280px]">
                   <div className="w-24 h-24 bg-white/50 rounded-2xl flex items-center justify-center">
                     <span className="text-4xl font-bold text-purple-600">3D</span>
                   </div>
@@ -150,18 +174,19 @@ export default async function CategoryPillarPage({ params }: Props) {
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                   {category.name}
                 </h1>
-                {category.description && (
+                {(category.description || representativeWorkshop?.description) && (
                   <p className="text-lg text-gray-600 leading-relaxed">
-                    {category.description}
+                    {category.description || representativeWorkshop?.description}
                   </p>
                 )}
-                <div className="mt-6 flex items-center space-x-4 text-sm text-gray-500">
+                <div className="mt-6 flex items-center flex-wrap gap-2 text-sm">
                   <span className="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 rounded-full">
-                    開催予定 {upcomingWorkshops.length}件
+                    <Calendar className="w-3.5 h-3.5 mr-1" />
+                    予約可能 {upcomingSessions.length}日程
                   </span>
-                  {pastWorkshops.length > 0 && (
+                  {pastSessions.length > 0 && (
                     <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-600 rounded-full">
-                      過去の開催 {pastWorkshops.length}件
+                      累計開催 {pastSessions.length}回
                     </span>
                   )}
                 </div>
@@ -171,86 +196,132 @@ export default async function CategoryPillarPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Upcoming Workshops */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {upcomingWorkshops.length > 0 && (
-          <section className="mb-16">
-            <div className="flex items-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">開催予定</h2>
-              <span className="ml-3 w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+      {/* 詳細説明 (代表workshopから) */}
+      {representativeWorkshop?.rich_description && (
+        <section className="px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-8 md:p-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">ワークショップの詳細</h2>
+            <div
+              className={styles.workshopContent}
+              dangerouslySetInnerHTML={{ __html: representativeWorkshop.rich_description }}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* 予約可能な日程 */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Calendar className="w-6 h-6 mr-2 text-purple-600" />
+            <h2 className="text-2xl font-bold text-gray-900">予約可能な日程</h2>
+          </div>
+
+          {upcomingSessions.length === 0 ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
+              <Sparkles className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+              <p className="text-gray-900 font-medium mb-1">現在、予約可能な日程はありません</p>
+              <p className="text-gray-600 text-sm">下記フォームから開催リクエストを送ってください</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {upcomingWorkshops.map((workshop) => (
+          ) : (
+            <div className="space-y-3">
+              {upcomingSessions.map((s) => (
                 <Link
-                  key={workshop.id}
-                  href={`/workshops/${workshop.id}`}
-                  className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1"
+                  key={s.id}
+                  href={`/workshops/${s.workshop_id}`}
+                  className="group block bg-white rounded-xl shadow-sm hover:shadow-lg transition-all p-5 border border-gray-100 hover:border-purple-300"
                 >
-                  {workshop.image_url ? (
-                    <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                      <Image
-                        src={optimizeImageUrl(workshop.image_url, 75)}
-                        alt={workshop.title}
-                        fill
-                        className="object-contain group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-purple-600">3D</span>
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{workshop.title}</h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{workshop.description}</p>
-                    {workshop.event_date && (
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <Calendar className="w-4 h-4 mr-2 text-purple-500" />
-                        {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-                          year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
-                        })}
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center text-lg font-bold text-gray-900 mb-1">
+                        <Calendar className="w-5 h-5 mr-2 text-purple-500 flex-shrink-0" />
+                        {formatDateLong(s.event_date)}
                       </div>
-                    )}
-                    {workshop.event_time && (
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <Clock className="w-4 h-4 mr-2 text-purple-500" />
-                        {workshop.event_time.slice(0, 5)} 〜（{workshop.duration}分）
+                      <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 ml-7">
+                        {s.event_time && (
+                          <span className="inline-flex items-center">
+                            <Clock className="w-4 h-4 mr-1 text-purple-400" />
+                            {s.event_time.slice(0, 5)} 開始
+                            {s.workshop_duration ? ` (${s.workshop_duration}分)` : ''}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center">
+                          <Users className="w-4 h-4 mr-1 text-purple-400" />
+                          最大{s.workshop_max_participants}名
+                        </span>
                       </div>
-                    )}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <p className="text-2xl font-bold text-gray-900">¥{workshop.price.toLocaleString()}</p>
-                      <span className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-sm font-medium group-hover:shadow-lg transition-all">
-                        詳細を見る
-                      </span>
+                    </div>
+                    <div className="flex items-center space-x-4 flex-shrink-0">
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500">参加費</div>
+                        <div className="text-xl font-bold text-gray-900">¥{s.workshop_price.toLocaleString()}</div>
+                      </div>
+                      <div className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-sm font-medium group-hover:shadow-lg transition-all flex items-center">
+                        予約する
+                        <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </div>
+      </section>
 
-        {upcomingWorkshops.length === 0 && (
-          <section className="mb-16">
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">現在、開催予定のワークショップはありません</p>
-              <p className="text-gray-400 text-sm">新しい日程が決まり次第、こちらに掲載されます</p>
-            </div>
-          </section>
-        )}
+      {/* 開催リクエストフォーム */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm p-8">
+          <div className="flex items-center mb-4">
+            <Sparkles className="w-6 h-6 mr-2 text-amber-500" />
+            <h2 className="text-2xl font-bold text-gray-900">希望の日程をリクエスト</h2>
+          </div>
+          <p className="text-sm text-gray-600 mb-6">
+            上記の日程が合わない方は、ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。
+          </p>
+          <WorkshopRequestForm categorySlug={slug} />
+        </div>
+      </section>
 
-        {/* Past Workshops */}
-        <PastWorkshopsAccordion workshops={pastWorkshops} />
-      </main>
+      {/* 過去開催 (折りたたみ) */}
+      {pastSessions.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="max-w-4xl mx-auto">
+            <details className="bg-white rounded-2xl shadow-sm p-6">
+              <summary className="cursor-pointer font-medium text-gray-700 hover:text-purple-600 flex items-center justify-between">
+                <span>過去の開催 {pastSessions.length}回 を表示</span>
+                <ArrowRight className="w-4 h-4" />
+              </summary>
+              <div className="mt-4 space-y-2">
+                {pastSessions.slice(0, 30).map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/workshops/${s.workshop_id}`}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-purple-50 transition-colors text-sm"
+                  >
+                    <span className="text-gray-700">
+                      {formatDateLong(s.event_date)}
+                      {s.event_time && ` ${s.event_time.slice(0, 5)}〜`}
+                    </span>
+                    <span className="text-gray-400 truncate ml-3 max-w-[40%]">{s.workshop_title}</span>
+                  </Link>
+                ))}
+                {pastSessions.length > 30 && (
+                  <p className="text-xs text-gray-400 text-center pt-2">
+                    最新30件のみ表示
+                  </p>
+                )}
+              </div>
+            </details>
+          </div>
+        </section>
+      )}
 
       {/* SEO Content */}
-      <section className="bg-white py-16 px-4 sm:px-6 lg:px-8">
+      <section className="bg-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto prose prose-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            {category.name} ワークショップについて
+            {category.name} について
           </h2>
           <div className="text-gray-700 leading-relaxed space-y-4">
             <p>
@@ -262,7 +333,13 @@ export default async function CategoryPillarPage({ params }: Props) {
               最新の3Dプリンター機材を使用した実践的な体験ができます。
             </p>
           </div>
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center flex flex-wrap gap-3 justify-center">
+            <Link
+              href="/workshops/categories"
+              className="inline-flex items-center px-6 py-3 border border-purple-300 text-purple-700 rounded-full font-medium hover:bg-purple-50 transition-all no-underline"
+            >
+              ← カテゴリ一覧へ戻る
+            </Link>
             <Link
               href="/workshops"
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all no-underline"

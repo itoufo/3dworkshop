@@ -26,6 +26,7 @@ interface BlogPost {
 interface WorkshopRequestRow {
   id: string
   workshop_id: string | null
+  category_id: string | null
   email: string
   name: string | null
   phone: string | null
@@ -35,6 +36,7 @@ interface WorkshopRequestRow {
   status: 'new' | 'contacted' | 'scheduled' | 'closed'
   created_at: string
   workshop?: { title: string } | null
+  category?: { name: string; slug: string } | null
 }
 
 interface ServiceRequestRow {
@@ -149,7 +151,7 @@ export default function AdminDashboard() {
       const [wsReqRes, svcReqRes] = await Promise.all([
         supabase
           .from('workshop_requests')
-          .select('*, workshop:workshops(title)')
+          .select('*, workshop:workshops(title), category:workshop_categories(name, slug)')
           .order('created_at', { ascending: false }),
         supabase
           .from('service_requests')
@@ -1220,7 +1222,7 @@ export default function AdminDashboard() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">受信日時</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ワークショップ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">対象</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">送信者</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">希望日程</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">メッセージ</th>
@@ -1234,9 +1236,19 @@ export default function AdminDashboard() {
                           {new Date(req.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          <div className="font-medium text-gray-900 max-w-[200px] truncate" title={req.workshop?.title || ''}>
-                            {req.workshop?.title || <span className="text-gray-400">(削除済)</span>}
-                          </div>
+                          {req.category ? (
+                            <div>
+                              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded mr-1">カテゴリ</span>
+                              <span className="font-medium text-gray-900">{req.category.name}</span>
+                            </div>
+                          ) : req.workshop ? (
+                            <div>
+                              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded mr-1">単体</span>
+                              <span className="font-medium text-gray-900 max-w-[180px] truncate inline-block align-middle" title={req.workshop.title}>{req.workshop.title}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">(削除済)</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <div className="text-gray-900">{req.name || '未入力'}</div>
