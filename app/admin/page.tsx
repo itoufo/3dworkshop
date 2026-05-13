@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles } from 'lucide-react'
 
 interface BlogPost {
   id: string
@@ -23,6 +23,33 @@ interface BlogPost {
   created_at: string
 }
 
+interface WorkshopRequestRow {
+  id: string
+  workshop_id: string | null
+  email: string
+  name: string | null
+  phone: string | null
+  participants: number | null
+  preferred_dates: string | null
+  message: string | null
+  status: 'new' | 'contacted' | 'scheduled' | 'closed'
+  created_at: string
+  workshop?: { title: string } | null
+}
+
+interface ServiceRequestRow {
+  id: string
+  service_id: string | null
+  email: string
+  name: string | null
+  phone: string | null
+  quantity: number | null
+  message: string | null
+  status: 'new' | 'contacted' | 'quoted' | 'closed'
+  created_at: string
+  service?: { title: string; type: string } | null
+}
+
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -30,15 +57,17 @@ export default function AdminDashboard() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [categories, setCategories] = useState<(WorkshopCategory & { workshop_count: number })[]>([])
+  const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog'].includes(tab)) {
+    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests'].includes(tab)) {
       setActiveTab(tab as typeof activeTab)
     }
   }, [searchParams])
@@ -116,17 +145,51 @@ export default function AdminDashboard() {
         workshop_count: (workshopsData || []).filter(w => w.category_id === cat.id).length
       }))
 
+      // リクエスト一覧 (ワークショップ開催・サービス購入相談)
+      const [wsReqRes, svcReqRes] = await Promise.all([
+        supabase
+          .from('workshop_requests')
+          .select('*, workshop:workshops(title)')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('service_requests')
+          .select('*, service:services(title, type)')
+          .order('created_at', { ascending: false }),
+      ])
+
       setBookings(bookingsData || [])
       setCustomers(customersData || [])
       setWorkshops(workshopsData || [])
       setCoupons(couponsData || [])
       setBlogPosts(blogPostsData || [])
       setCategories(categoriesWithCount)
+      if (!wsReqRes.error) setWorkshopRequests((wsReqRes.data as WorkshopRequestRow[]) || [])
+      if (!svcReqRes.error) setServiceRequests((svcReqRes.data as ServiceRequestRow[]) || [])
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  async function updateWorkshopRequestStatus(id: string, status: WorkshopRequestRow['status']) {
+    const { error } = await supabase.from('workshop_requests').update({ status }).eq('id', id)
+    if (error) {
+      console.error(error)
+      alert('ステータス更新に失敗しました')
+      return
+    }
+    setWorkshopRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
+  }
+
+  async function updateServiceRequestStatus(id: string, status: ServiceRequestRow['status']) {
+    const { error } = await supabase.from('service_requests').update({ status }).eq('id', id)
+    if (error) {
+      console.error(error)
+      alert('ステータス更新に失敗しました')
+      return
+    }
+    setServiceRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
   }
 
   async function updateBookingStatus(bookingId: string, status: string) {
@@ -321,6 +384,22 @@ export default function AdminDashboard() {
             >
               <BookOpen className="w-4 h-4 inline mr-2" />
               ブログ管理
+            </button>
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 relative ${
+                activeTab === 'requests'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <Inbox className="w-4 h-4 inline mr-2" />
+              リクエスト
+              {(workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length) > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white">
+                  {workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length}
+                </span>
+              )}
             </button>
           </nav>
         </div>
@@ -1112,6 +1191,141 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* リクエスト管理 */}
+      {activeTab === 'requests' && (
+        <div className="space-y-6">
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Inbox className="w-5 h-5 mr-2 text-amber-600" />
+                ワークショップ開催リクエスト
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                全{workshopRequests.length}件 / 未対応 {workshopRequests.filter(r => r.status === 'new').length}件
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              {workshopRequests.length === 0 ? (
+                <p className="text-center text-gray-500 py-12">リクエストはまだありません</p>
+              ) : (
+                <table className="min-w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">受信日時</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ワークショップ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">送信者</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">希望日程</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">メッセージ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状態</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {workshopRequests.map((req) => (
+                      <tr key={req.id} className={req.status === 'new' ? 'bg-amber-50' : ''}>
+                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                          {new Date(req.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="font-medium text-gray-900 max-w-[200px] truncate" title={req.workshop?.title || ''}>
+                            {req.workshop?.title || <span className="text-gray-400">(削除済)</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="text-gray-900">{req.name || '未入力'}</div>
+                          <a href={`mailto:${req.email}`} className="text-xs text-blue-600 hover:underline">{req.email}</a>
+                          {req.phone && <div className="text-xs text-gray-500">{req.phone}</div>}
+                          {req.participants != null && <div className="text-xs text-gray-500">{req.participants}名</div>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-700 max-w-[160px] whitespace-pre-line">{req.preferred_dates || '-'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-700 max-w-[240px] whitespace-pre-line">{req.message || '-'}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={req.status}
+                            onChange={(e) => updateWorkshopRequestStatus(req.id, e.target.value as WorkshopRequestRow['status'])}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded"
+                          >
+                            <option value="new">未対応</option>
+                            <option value="contacted">連絡済</option>
+                            <option value="scheduled">日程確定</option>
+                            <option value="closed">クローズ</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
+                オーダーメイド / 追加印刷 相談
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                全{serviceRequests.length}件 / 未対応 {serviceRequests.filter(r => r.status === 'new').length}件
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              {serviceRequests.length === 0 ? (
+                <p className="text-center text-gray-500 py-12">リクエストはまだありません</p>
+              ) : (
+                <table className="min-w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">受信日時</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">サービス</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">送信者</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">数量</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">メッセージ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状態</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {serviceRequests.map((req) => (
+                      <tr key={req.id} className={req.status === 'new' ? 'bg-amber-50' : ''}>
+                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                          {new Date(req.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {req.service ? (
+                            <div>
+                              <span className="text-xs px-2 py-0.5 bg-gray-100 rounded mr-2">{req.service.type === 'reprint' ? '追加印刷' : 'オーダー'}</span>
+                              <span className="font-medium text-gray-900">{req.service.title}</span>
+                            </div>
+                          ) : <span className="text-gray-400">(削除済)</span>}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="text-gray-900">{req.name || '未入力'}</div>
+                          <a href={`mailto:${req.email}`} className="text-xs text-blue-600 hover:underline">{req.email}</a>
+                          {req.phone && <div className="text-xs text-gray-500">{req.phone}</div>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-700">{req.quantity != null ? `${req.quantity}個` : '-'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-700 max-w-[280px] whitespace-pre-line">{req.message || '-'}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={req.status}
+                            onChange={(e) => updateServiceRequestStatus(req.id, e.target.value as ServiceRequestRow['status'])}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded"
+                          >
+                            <option value="new">未対応</option>
+                            <option value="contacted">連絡済</option>
+                            <option value="quoted">見積送付済</option>
+                            <option value="closed">クローズ</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

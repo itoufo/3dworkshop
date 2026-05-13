@@ -7,7 +7,8 @@ import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, Calendar } from 'lucide-react'
+import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -311,30 +312,34 @@ export default function EditWorkshop() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  開催日 *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.event_date}
-                  onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  開始時刻 *
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={formData.event_time}
-                  onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+              <p className="text-xs text-gray-600 mb-2">
+                ※ 開催日程は下の「開催日程セッション」セクションで管理してください。
+                以下の欄は legacy 互換のための表示で、空のままでOKです。
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    開催日 (legacy)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.event_date}
+                    onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    開始時刻 (legacy)
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.event_time}
+                    onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -521,11 +526,23 @@ export default function EditWorkshop() {
                   disabled={saving}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {saving ? '保存中...' : '更新'}
+                  {saving ? '保存中...' : '基本情報を更新'}
                 </button>
               </div>
             </div>
           </form>
+
+          {/* 開催日程セッション編集セクション */}
+          <div className="mt-10 pt-8 border-t border-gray-200">
+            <div className="flex items-center mb-4">
+              <Calendar className="w-5 h-5 mr-2 text-indigo-600" />
+              <h2 className="text-xl font-bold text-gray-900">開催日程セッション</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              このワークショップの開催日を複数登録できます。日程未登録の場合、ユーザーには「開催リクエスト受付中」として表示されます。
+            </p>
+            <WorkshopSessionsEditor workshopId={params.id as string} />
+          </div>
         </div>
       </div>
       </div>

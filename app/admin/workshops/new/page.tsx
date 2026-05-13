@@ -131,7 +131,7 @@ export default function NewWorkshopPage() {
         imageUrl = data.imageUrl
       }
 
-      const { error } = await supabase
+      const { data: insertedWorkshop, error } = await supabase
         .from('workshops')
         .insert({
           title: workshop.title,
@@ -147,12 +147,39 @@ export default function NewWorkshopPage() {
           category_id: workshop.category_id || null,
           show_features: workshop.show_features
         })
+        .select()
+        .single()
 
       if (error) throw error
 
+      // 開催日が入力されている場合、workshop_sessions にも1件作成
+      if (insertedWorkshop && workshop.event_date) {
+        const { error: sessionError } = await supabase
+          .from('workshop_sessions')
+          .insert({
+            workshop_id: insertedWorkshop.id,
+            event_date: workshop.event_date,
+            event_time: workshop.event_time || null,
+            status: 'scheduled',
+          })
+        if (sessionError) {
+          console.error('Failed to create initial session:', sessionError)
+          // ワークショップは作成済みなので、警告のみ出して続行
+          alert('ワークショップは作成されましたが、初期セッションの作成に失敗しました。編集画面から手動で追加してください。')
+          setNavigating(true)
+          router.push(`/admin/workshops/${insertedWorkshop.id}/edit`)
+          return
+        }
+      }
+
       alert('ワークショップを追加しました')
       setNavigating(true)
-      router.push('/admin')
+      // 開催日未指定の場合は編集画面に飛ばしてセッション設定を促す
+      if (insertedWorkshop && !workshop.event_date) {
+        router.push(`/admin/workshops/${insertedWorkshop.id}/edit`)
+      } else {
+        router.push('/admin')
+      }
     } catch (error) {
       console.error('Error adding workshop:', error)
       alert('ワークショップの追加に失敗しました')
@@ -303,15 +330,19 @@ export default function NewWorkshopPage() {
                 </div>
               )}
 
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-amber-800">
+                  💡 開催日・時刻は任意です。空のまま保存すると「開催リクエスト受付中」状態のワークショップになり、編集画面から複数日程を追加できます。
+                </p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Calendar className="w-4 h-4 inline mr-1" />
-                    開催日 *
+                    開催日 (初回)
                   </label>
                   <input
                     type="date"
-                    required
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.event_date}
                     onChange={(e) => setWorkshop({ ...workshop, event_date: e.target.value })}
@@ -320,11 +351,10 @@ export default function NewWorkshopPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Clock className="w-4 h-4 inline mr-1" />
-                    開始時刻 *
+                    開始時刻 (初回)
                   </label>
                   <input
                     type="time"
-                    required
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
                     value={workshop.event_time}
                     onChange={(e) => setWorkshop({ ...workshop, event_time: e.target.value })}
