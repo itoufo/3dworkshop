@@ -3,10 +3,15 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import type { WorkshopCategory } from '@/types'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [workshopDropdownOpen, setWorkshopDropdownOpen] = useState(false)
+  const [mobileWorkshopExpanded, setMobileWorkshopExpanded] = useState(false)
+  const [categories, setCategories] = useState<WorkshopCategory[]>([])
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -14,9 +19,9 @@ export default function Header() {
 
   const closeMenu = () => {
     setIsMenuOpen(false)
+    setMobileWorkshopExpanded(false)
   }
 
-  // モバイルメニューが開いている時にbodyのスクロールを防止
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden'
@@ -29,9 +34,19 @@ export default function Header() {
     }
   }, [isMenuOpen])
 
+  useEffect(() => {
+    async function loadCategories() {
+      const { data } = await supabase
+        .from('workshop_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+      if (data) setCategories(data as WorkshopCategory[])
+    }
+    loadCategories()
+  }, [])
+
   const navLinks = [
     { href: '/', label: 'トップ' },
-    { href: '/workshops', label: 'ワークショップ' },
     { href: '/school', label: 'スクール' },
     { href: '/business', label: '出張・研修' },
     { href: '/products', label: '3Dプリント制作' },
@@ -61,7 +76,65 @@ export default function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-6">
-              {navLinks.map((link) => (
+              <Link
+                href="/"
+                className="text-gray-700 hover:text-purple-600 font-medium transition-colors"
+              >
+                トップ
+              </Link>
+
+              {/* ワークショップ ドロップダウン */}
+              <div
+                className="relative"
+                onMouseEnter={() => setWorkshopDropdownOpen(true)}
+                onMouseLeave={() => setWorkshopDropdownOpen(false)}
+              >
+                <Link
+                  href="/workshops"
+                  className="text-gray-700 hover:text-purple-600 font-medium transition-colors flex items-center"
+                >
+                  ワークショップ
+                  <ChevronDown
+                    className={`w-4 h-4 ml-0.5 transition-transform ${
+                      workshopDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </Link>
+                {workshopDropdownOpen && categories.length > 0 && (
+                  <div className="absolute left-0 top-full pt-2 w-64">
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                      <Link
+                        href="/workshops"
+                        className="block px-4 py-3 text-sm font-medium text-purple-700 hover:bg-purple-50 border-b border-gray-100"
+                        onClick={() => setWorkshopDropdownOpen(false)}
+                      >
+                        全てのワークショップ →
+                      </Link>
+                      <Link
+                        href="/workshops/categories"
+                        className="block px-4 py-3 text-sm font-medium text-purple-700 hover:bg-purple-50 border-b border-gray-100"
+                        onClick={() => setWorkshopDropdownOpen(false)}
+                      >
+                        📂 カテゴリ一覧 →
+                      </Link>
+                      <div className="max-h-96 overflow-y-auto">
+                        {categories.map((cat) => (
+                          <Link
+                            key={cat.id}
+                            href={`/workshops/category/${cat.slug}`}
+                            className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                            onClick={() => setWorkshopDropdownOpen(false)}
+                          >
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {navLinks.slice(1).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -88,14 +161,70 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Navigation Menu - headerの外に配置（backdrop-filterによるfixed位置ずれを回避） */}
+      {/* Mobile Navigation Menu */}
       <div
         className={`md:hidden fixed inset-x-0 top-16 bottom-0 bg-white border-t border-gray-200 shadow-lg transition-all duration-300 ease-in-out transform z-50 overflow-y-auto ${
           isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}
       >
-        <nav className="px-4 py-6 space-y-4">
-          {navLinks.map((link) => (
+        <nav className="px-4 py-6 space-y-2">
+          <Link
+            href="/"
+            className="block px-4 py-3 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-colors"
+            onClick={closeMenu}
+          >
+            トップ
+          </Link>
+
+          {/* ワークショップ - 折りたたみ */}
+          <div>
+            <div className="flex items-center">
+              <Link
+                href="/workshops"
+                className="flex-1 px-4 py-3 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-colors"
+                onClick={closeMenu}
+              >
+                ワークショップ
+              </Link>
+              {categories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setMobileWorkshopExpanded(!mobileWorkshopExpanded)}
+                  className="p-3 text-gray-500 hover:text-purple-600"
+                  aria-label="カテゴリを展開"
+                >
+                  <ChevronDown
+                    className={`w-5 h-5 transition-transform ${
+                      mobileWorkshopExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
+            {mobileWorkshopExpanded && categories.length > 0 && (
+              <div className="ml-4 mt-1 pl-3 border-l-2 border-purple-200 space-y-1">
+                <Link
+                  href="/workshops/categories"
+                  className="block px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50 rounded transition-colors"
+                  onClick={closeMenu}
+                >
+                  📂 カテゴリ一覧を見る
+                </Link>
+                {categories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/workshops/category/${cat.slug}`}
+                    className="block px-3 py-2 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                    onClick={closeMenu}
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {navLinks.slice(1).map((link) => (
             <Link
               key={link.href}
               href={link.href}
