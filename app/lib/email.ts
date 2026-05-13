@@ -287,13 +287,80 @@ export function generate3DPrintingRequestEmail(
           
           <p>制作が完了次第、ご連絡いたします。</p>
           <p>通常、3〜5営業日で完成予定です。</p>
-          
+
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
             <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
             <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
           </div>
         </div>
+        <div class="footer">
+          <p>このメールは自動送信されています。</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
+
+export function generateServiceRequestEmail(input: {
+  serviceTitle: string;
+  serviceType: 'custom_made' | 'reprint';
+  serviceId: string;
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+  quantity?: number | null;
+  message?: string | null;
+}) {
+  const typeLabel = input.serviceType === 'reprint' ? '追加印刷' : 'オーダーメイド';
+  const subject = `[${typeLabel}リクエスト] ${input.serviceTitle}`;
+
+  const rows: Array<[string, string]> = [
+    ['種別', typeLabel],
+    ['サービス', input.serviceTitle],
+    ['メール', input.email],
+  ];
+  if (input.name) rows.push(['お名前', input.name]);
+  if (input.phone) rows.push(['電話番号', input.phone]);
+  if (input.quantity != null) rows.push(['希望数量', `${input.quantity} 個`]);
+  if (input.message) rows.push(['メッセージ', input.message.replace(/\n/g, '<br>')]);
+
+  const rowsHtml = rows
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:8px 12px;color:#6b7280;width:100px;vertical-align:top;">${k}</td><td style="padding:8px 12px;color:#111827;">${v}</td></tr>`
+    )
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #f9fafb; border-left: 4px solid #9333ea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">${typeLabel}リクエスト</h2>
+        </div>
+        <div class="info-box">
+          <h3 style="margin-top:0;">${input.serviceTitle}</h3>
+          <table>${rowsHtml}</table>
+        </div>
+        <p>お客様にご連絡の上、お見積もりをお送りください。</p>
+        <p><a href="https://3dlab.jp/services/${input.serviceId}">サービス詳細を開く</a></p>
         <div class="footer">
           <p>このメールは自動送信されています。</p>
           <p>© 2024 3DLab. All rights reserved.</p>

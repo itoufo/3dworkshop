@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('workshops')
-      .select('*, category:workshop_categories(*)')
+      .select('*, category:workshop_categories(*), sessions:workshop_sessions(*)')
+      .eq('is_service', false)
       .order('is_pinned', { ascending: false })
       .order('pin_order', { ascending: true })
       .order('event_date', { ascending: true })

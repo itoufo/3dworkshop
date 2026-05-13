@@ -19,7 +19,7 @@ export async function GET(
 
     const { data, error } = await supabase
       .from('workshops')
-      .select('*, category:workshop_categories(*)')
+      .select('*, category:workshop_categories(*), sessions:workshop_sessions(*)')
       .eq('id', id)
       .single()
 

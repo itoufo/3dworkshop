@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Package, Printer } from 'lucide-react'
+import { Package, Printer, Sparkles, RotateCw } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
+import type { Service } from '@/types'
 
 interface Product {
   id: string
@@ -25,26 +26,36 @@ interface Product {
 export default function ProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
+  const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [navigating, setNavigating] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchProducts()
+    fetchData()
   }, [])
 
-  async function fetchProducts() {
+  async function fetchData() {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
+      const [productsRes, servicesRes] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('services')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+      ])
 
-      if (error) throw error
-      setProducts(data || [])
+      if (productsRes.error) throw productsRes.error
+      setProducts(productsRes.data || [])
+      // services テーブル未マイグレーション時はエラーを握り潰す
+      if (!servicesRes.error) setServices((servicesRes.data as Service[]) || [])
     } catch (error) {
-      console.error('Error fetching products:', error)
+      console.error('Error fetching products/services:', error)
     } finally {
       setLoading(false)
     }
@@ -62,15 +73,33 @@ export default function ProductsPage() {
     }
   }
 
+  const handleServiceClick = (serviceId: string) => {
+    if (navigating) return
+    setNavigating(`service-${serviceId}`)
+    router.push(`/services/${serviceId}`)
+  }
+
   const categories = [
     { key: 'all', label: '全て' },
     { key: '3d_printing', label: '3Dプリント' },
+    { key: 'custom_made', label: 'オーダーメイド' },
+    { key: 'reprint', label: '追加印刷' },
     { key: 'product', label: '商品' },
   ]
 
-  const filteredProducts = selectedCategory === 'all' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory)
+  const filteredProducts =
+    selectedCategory === 'all' || selectedCategory === 'custom_made' || selectedCategory === 'reprint'
+      ? selectedCategory === 'all'
+        ? products
+        : []
+      : products.filter(product => product.category === selectedCategory)
+
+  const filteredServices =
+    selectedCategory === 'all'
+      ? services
+      : selectedCategory === 'custom_made' || selectedCategory === 'reprint'
+        ? services.filter(s => s.type === selectedCategory)
+        : []
 
   if (loading) {
     return (
@@ -134,12 +163,79 @@ export default function ProductsPage() {
               </div>
             )}
 
+            {/* Services Grid (オーダーメイド / 追加印刷) */}
+            {filteredServices.length > 0 && (
+              <div className="mb-12">
+                {selectedCategory === 'all' && (
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <Sparkles className="w-6 h-6 mr-2 text-purple-600" />
+                    オーダーメイド・追加印刷
+                  </h2>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {filteredServices.map((service) => (
+                    <div
+                      key={service.id}
+                      onClick={() => handleServiceClick(service.id)}
+                      className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer ${
+                        navigating === `service-${service.id}` ? 'opacity-75 pointer-events-none' : ''
+                      }`}
+                    >
+                      {service.image_url ? (
+                        <div className="relative w-full aspect-video overflow-hidden">
+                          <Image
+                            src={optimizeImageUrl(service.image_url, 75)}
+                            alt={service.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                          {service.type === 'reprint' ? (
+                            <RotateCw className="w-12 h-12 text-purple-300" />
+                          ) : (
+                            <Sparkles className="w-12 h-12 text-purple-300" />
+                          )}
+                        </div>
+                      )}
+                      <div className="p-6">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-2 ${
+                          service.type === 'reprint'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-purple-100 text-purple-700'
+                        }`}>
+                          {service.type === 'reprint' ? '追加印刷' : 'オーダーメイド'}
+                        </span>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{service.title}</h3>
+                        {service.description && (
+                          <p className="text-gray-600 text-sm mb-4 line-clamp-3">{service.description}</p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500">参考価格</p>
+                            <p className="text-xl font-bold text-gray-900">
+                              ¥{service.price.toLocaleString()}<span className="text-sm font-normal">〜</span>
+                            </p>
+                          </div>
+                          <div className="text-purple-600 group-hover:text-purple-700 transition-colors">
+                            相談する →
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Products Grid */}
-            {filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 && filteredServices.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-gray-500 text-lg">まだ商品がありません</p>
               </div>
-            ) : (
+            ) : filteredProducts.length === 0 ? null : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProducts.map((product) => (
                   <div

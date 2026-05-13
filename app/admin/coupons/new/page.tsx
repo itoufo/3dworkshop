@@ -42,6 +42,7 @@ export default function NewCouponPage() {
       const { data } = await supabase
         .from('workshops')
         .select('id, title')
+        .eq('is_service', false)
         .order('created_at', { ascending: false })
       
       if (data) {

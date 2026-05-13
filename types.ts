@@ -28,8 +28,65 @@ export interface Workshop {
   show_features?: boolean
   category_id?: string | null
   category?: WorkshopCategory | null
+  is_service?: boolean
+  sessions?: WorkshopSession[]
   created_at?: string
   updated_at?: string
+}
+
+export interface WorkshopSession {
+  id: string
+  workshop_id: string
+  event_date: string                // YYYY-MM-DD
+  event_time: string | null         // HH:MM:SS
+  status: 'scheduled' | 'cancelled'
+  max_participants: number | null
+  manual_participants: number
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkshopRequest {
+  id: string
+  workshop_id: string | null
+  email: string
+  name?: string | null
+  phone?: string | null
+  preferred_dates?: string | null
+  message?: string | null
+  participants?: number | null
+  status: 'new' | 'contacted' | 'scheduled' | 'closed'
+  created_at: string
+  updated_at: string
+}
+
+export interface Service {
+  id: string
+  type: 'custom_made' | 'reprint'
+  title: string
+  description?: string | null
+  rich_description?: string | null
+  price: number
+  image_url?: string | null
+  sort_order: number
+  is_active: boolean
+  source_workshop_id?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceRequest {
+  id: string
+  service_id: string | null
+  email: string
+  name?: string | null
+  phone?: string | null
+  quantity?: number | null
+  message?: string | null
+  status: 'new' | 'contacted' | 'quoted' | 'closed'
+  created_at: string
+  updated_at: string
 }
 
 export interface User {
@@ -41,6 +98,7 @@ export interface User {
 export interface Booking {
   id: string
   workshop_id: string
+  session_id?: string | null
   user_id: string
   customer_id: string
   coupon_id?: string | null
