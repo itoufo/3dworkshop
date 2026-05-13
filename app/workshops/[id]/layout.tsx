@@ -21,17 +21,24 @@ export async function generateMetadata(
     const description = workshop.description || `${workshop.title}のワークショップ。東京都文京区湯島の3Dプリンタ教室3DLabで開催。湯島駅徒歩1分。`
     const imageUrl = workshop.image_url || '/og-image.jpg'
 
+    // カテゴリがあればピラー (集約ページ) を canonical に、なければ自身
+    // 同タイトル日程違いの workshop が複数存在するため、SEO の重複コンテンツ対策
+    const canonicalPath = workshop.category?.slug
+      ? `/workshops/category/${workshop.category.slug}`
+      : `/workshops/${id}`
+    const canonicalUrl = `https://3dlab.jp${canonicalPath}`
+
     return {
       title,
       description,
       keywords: `3Dプリンタ ワークショップ,${workshop.title},湯島,東京,3D教室,体験,3Dモデリング`,
       alternates: {
-        canonical: `/workshops/${id}`,
+        canonical: canonicalPath,
       },
       openGraph: {
         title,
         description,
-        url: `https://3dlab.jp/workshops/${id}`,
+        url: canonicalUrl,
         siteName: "3DLab - 3Dプリンタ教室",
         images: [
           {

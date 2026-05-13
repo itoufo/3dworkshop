@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
+import MobileCategoryFloatingCta from '@/components/MobileCategoryFloatingCta'
 import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
@@ -242,8 +243,8 @@ export default async function CategoryPillarPage({ params }: Props) {
               )}
             </div>
 
-            {/* 右カラム: 予約可能な日程 + リクエストフォーム (sticky on PC) */}
-            <div className="lg:col-span-1">
+            {/* 右カラム: 予約可能な日程 + リクエストフォーム (sticky on PC, hidden on SP) */}
+            <div className="lg:col-span-1 hidden lg:block">
               <div className="lg:sticky lg:top-24 space-y-6">
                 {/* 予約可能な日程 */}
                 <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -315,6 +316,19 @@ export default async function CategoryPillarPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* モバイル floating CTA + bottom sheet (lg未満のみ) */}
+      <MobileCategoryFloatingCta
+        categorySlug={slug}
+        upcomingSessions={upcomingSessions.map((s) => ({
+          id: s.id,
+          event_date: s.event_date,
+          event_time: s.event_time,
+          workshop_id: s.workshop_id,
+          workshop_price: s.workshop_price,
+          workshop_max_participants: s.workshop_max_participants,
+        }))}
+      />
 
       {/* SEO Content */}
       <section className="bg-white py-12 px-4 sm:px-6 lg:px-8">
