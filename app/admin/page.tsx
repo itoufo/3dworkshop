@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3 } from 'lucide-react'
 
 interface BlogPost {
   id: string
@@ -244,6 +244,36 @@ export default function AdminDashboard() {
     router.push(path)
   }
 
+  // 売上集計（キャンセルは除外）
+  const validBookings = bookings.filter((b) => b.status !== 'cancelled')
+
+  const totalSales = validBookings.reduce((sum, b) => sum + b.total_amount, 0)
+
+  const now = new Date()
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+  // 月別売上（予約作成日ベース、直近12ヶ月）
+  const monthlySalesMap = new Map<string, number>()
+  for (const b of validBookings) {
+    const d = new Date(b.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    monthlySalesMap.set(key, (monthlySalesMap.get(key) || 0) + b.total_amount)
+  }
+
+  const monthlySales: { key: string; label: string; amount: number }[] = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    monthlySales.push({
+      key,
+      label: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+      amount: monthlySalesMap.get(key) || 0,
+    })
+  }
+
+  const currentMonthSales = monthlySalesMap.get(currentMonthKey) || 0
+  const maxMonthlySales = Math.max(...monthlySales.map((m) => m.amount), 1)
+
   return (
     <>
       {navigating && <LoadingOverlay message="ページを読み込んでいます..." />}
@@ -313,11 +343,53 @@ export default function AdminDashboard() {
               </div>
               <span className="text-xs bg-white/20 px-2 py-1 rounded-full">今月</span>
             </div>
-            <h3 className="text-sm font-medium text-white/80">売上</h3>
+            <h3 className="text-sm font-medium text-white/80">今月の売上</h3>
             <p className="text-3xl font-bold">
-              ¥{bookings.reduce((sum, b) => sum + b.total_amount, 0).toLocaleString()}
+              ¥{currentMonthSales.toLocaleString()}
             </p>
-            <p className="text-xs text-white/60 mt-2">全期間の合計</p>
+            <p className="text-xs text-white/60 mt-2">全期間: ¥{totalSales.toLocaleString()}（キャンセル除く）</p>
+          </div>
+        </div>
+
+        {/* 売上の月別推移 */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
+                売上の月別推移
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">直近12ヶ月・予約作成日ベース（キャンセル除く）</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">今月</p>
+              <p className="text-2xl font-bold text-purple-600">¥{currentMonthSales.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="flex items-end justify-between gap-2 h-56">
+            {monthlySales.map((m) => {
+              const heightPct = (m.amount / maxMonthlySales) * 100
+              const isCurrent = m.key === currentMonthKey
+              return (
+                <div key={m.key} className="flex-1 flex flex-col items-center justify-end h-full group">
+                  <div className="text-xs font-medium text-gray-700 mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    ¥{m.amount.toLocaleString()}
+                  </div>
+                  <div
+                    className={`w-full rounded-t-lg transition-all ${
+                      isCurrent
+                        ? 'bg-gradient-to-t from-purple-600 to-pink-500'
+                        : 'bg-gradient-to-t from-purple-300 to-purple-400 group-hover:from-purple-400 group-hover:to-purple-500'
+                    }`}
+                    style={{ height: `${Math.max(heightPct, m.amount > 0 ? 2 : 0)}%` }}
+                    title={`${m.label}: ¥${m.amount.toLocaleString()}`}
+                  />
+                  <div className={`text-xs mt-2 ${isCurrent ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>
+                    {m.label.slice(2)}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -443,9 +515,6 @@ export default function AdminDashboard() {
                     クーポン
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    予約作成日
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ステータス
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -551,28 +620,6 @@ export default function AdminDashboard() {
                       ) : (
                         <span className="text-xs text-gray-400">なし</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">
-                        {(() => {
-                          const jstDate = new Date(new Date(booking.created_at).getTime() + 9 * 60 * 60 * 1000);
-                          return jstDate.toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                          });
-                        })()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        <Clock className="w-3 h-3 inline mr-1" />
-                        {(() => {
-                          const jstDate = new Date(new Date(booking.created_at).getTime() + 9 * 60 * 60 * 1000);
-                          return jstDate.toLocaleTimeString('ja-JP', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          });
-                        })()}
-                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
