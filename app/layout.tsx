@@ -117,6 +117,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
+        <meta name="google-adsense-account" content="ca-pub-5260394871552210" />
         <link rel="preconnect" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
         <link rel="dns-prefetch" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
         <script
