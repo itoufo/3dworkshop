@@ -787,9 +787,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 </span>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mb-6">
-              ※ 料金には材料費・設備使用料が含まれています
-            </p>
+            <div className="space-y-1 mb-6">
+              <p className="text-xs text-gray-500">
+                ※ 料金には材料費・設備使用料が含まれています
+              </p>
+              <p className="text-xs text-gray-500">
+                ※ お支払い後のキャンセル・返金はいたしかねます
+              </p>
+            </div>
 
             <button
               type="submit"
