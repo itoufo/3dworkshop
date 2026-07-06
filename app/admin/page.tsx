@@ -64,6 +64,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests'>('bookings')
   const [navigating, setNavigating] = useState(false)
+  const [showCancelled, setShowCancelled] = useState(false)
+  const [bookingWorkshopFilter, setBookingWorkshopFilter] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -72,6 +74,7 @@ export default function AdminDashboard() {
     if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests'].includes(tab)) {
       setActiveTab(tab as typeof activeTab)
     }
+    setBookingWorkshopFilter(searchParams.get('workshop_id'))
   }, [searchParams])
 
   useEffect(() => {
@@ -249,6 +252,25 @@ export default function AdminDashboard() {
 
   const totalSales = validBookings.reduce((sum, b) => sum + b.total_amount, 0)
 
+  // 予約管理タブの表示対象（キャンセルはデフォルト非表示・ワークショップ絞り込み対応）
+  const filterWorkshop = bookingWorkshopFilter
+    ? workshops.find((w) => w.id === bookingWorkshopFilter) || null
+    : null
+  const displayedBookings = bookings.filter(
+    (b) =>
+      (showCancelled || b.status !== 'cancelled') &&
+      (!bookingWorkshopFilter || b.workshop_id === bookingWorkshopFilter)
+  )
+  const cancelledCount = bookings.filter(
+    (b) => b.status === 'cancelled' && (!bookingWorkshopFilter || b.workshop_id === bookingWorkshopFilter)
+  ).length
+
+  // ワークショップ（日程）ごとの予約人数（キャンセル除く）
+  const participantsByWorkshop = new Map<string, number>()
+  for (const b of validBookings) {
+    participantsByWorkshop.set(b.workshop_id, (participantsByWorkshop.get(b.workshop_id) || 0) + b.participants)
+  }
+
   const now = new Date()
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
@@ -277,7 +299,7 @@ export default function AdminDashboard() {
   return (
     <>
       {navigating && <LoadingOverlay message="ページを読み込んでいます..." />}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -397,7 +419,10 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
           <nav className="flex space-x-2">
             <button
-              onClick={() => setActiveTab('bookings')}
+              onClick={() => {
+                setActiveTab('bookings')
+                if (bookingWorkshopFilter) router.replace('/admin?tab=bookings')
+              }}
               className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
                 activeTab === 'bookings'
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -485,9 +510,46 @@ export default function AdminDashboard() {
       {/* 予約管理 */}
       {activeTab === 'bookings' && (
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">予約一覧</h3>
-            <p className="text-sm text-gray-600 mt-1">全{bookings.length}件の予約</p>
+          <div className="p-6 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">予約一覧</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {displayedBookings.length}件を表示（全{bookings.length}件）
+                {!showCancelled && cancelledCount > 0 && ` ・ キャンセル${cancelledCount}件は非表示`}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              {filterWorkshop && (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <Calendar className="w-4 h-4" />
+                  {filterWorkshop.title}
+                  {filterWorkshop.event_date && (
+                    <span className="text-xs text-blue-600">
+                      {new Date(filterWorkshop.event_date).toLocaleDateString('ja-JP', {
+                        month: '2-digit',
+                        day: '2-digit',
+                      })}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => router.replace('/admin?tab=bookings')}
+                    className="ml-1 text-blue-500 hover:text-blue-800 font-bold"
+                    title="絞り込みを解除"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showCancelled}
+                  onChange={(e) => setShowCancelled(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                />
+                キャンセルも表示
+              </label>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -523,7 +585,14 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {bookings.map((booking) => (
+                {displayedBookings.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                      表示できる予約がありません
+                    </td>
+                  </tr>
+                )}
+                {displayedBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -590,6 +659,12 @@ export default function AdminDashboard() {
                         <Mail className="w-3 h-3 inline mr-1" />
                         {booking.customer?.email}
                       </div>
+                      {booking.customer?.phone && (
+                        <div className="text-xs text-gray-500">
+                          <Phone className="w-3 h-3 inline mr-1" />
+                          {booking.customer.phone}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -842,10 +917,22 @@ export default function AdminDashboard() {
                         <div className="text-sm font-semibold text-gray-900">
                           ¥{workshop.price.toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          <Users className="w-3 h-3 inline mr-1" />
-                          最大{workshop.max_participants}名 / {workshop.duration}分
+                        <div className="text-sm mt-1">
+                          <Users className="w-3 h-3 inline mr-1 text-gray-400" />
+                          {(() => {
+                            const booked =
+                              (participantsByWorkshop.get(workshop.id) || 0) +
+                              (workshop.manual_participants || 0)
+                            const isFull = booked >= workshop.max_participants
+                            return (
+                              <span className={`font-semibold ${isFull ? 'text-red-600' : 'text-purple-700'}`}>
+                                予約{booked}名
+                              </span>
+                            )
+                          })()}
+                          <span className="text-xs text-gray-500"> / 最大{workshop.max_participants}名</span>
                         </div>
+                        <div className="text-xs text-gray-500">{workshop.duration}分</div>
                         {workshop.manual_participants && workshop.manual_participants > 0 && (
                           <div className="text-xs text-orange-600 mt-1">
                             手動調整: +{workshop.manual_participants}名
@@ -864,6 +951,14 @@ export default function AdminDashboard() {
                             title={workshop.is_pinned ? 'ピン留めを解除' : 'ピン留めする'}
                           >
                             <Pin className={`w-4 h-4 ${workshop.is_pinned ? 'fill-orange-700' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => router.push(`/admin?tab=bookings&workshop_id=${workshop.id}`)}
+                            className="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                            title="この日程の予約だけを予約管理で表示"
+                          >
+                            <Users className="w-4 h-4 mr-1" />
+                            参加者一覧
                           </button>
                           <button
                             onClick={() => handleNavigate(`/admin/workshops/${workshop.id}/edit`)}

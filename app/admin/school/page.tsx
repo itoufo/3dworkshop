@@ -133,7 +133,7 @@ export default function SchoolAdminPage() {
       <AdminSidebar />
       
       <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+        <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-8">スクール生管理</h1>
 
           {/* Stats Cards */}
