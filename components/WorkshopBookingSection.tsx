@@ -517,7 +517,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
                 <div>
                   <span className="block text-sm font-medium text-gray-700 mb-2">学年</span>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     {booking.minorGrades.map((grade, i) => (
                       <div key={i}>
                         {booking.minorCount > 1 && (
