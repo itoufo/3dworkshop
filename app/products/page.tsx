@@ -9,6 +9,7 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import { Package, Printer, Sparkles, RotateCw } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import type { Service } from '@/types'
+import Footer from '@/components/Footer'
 
 interface Product {
   id: string
@@ -307,6 +308,7 @@ export default function ProductsPage() {
             )}
           </div>
         </main>
+        <Footer />
       </div>
     </>
   )

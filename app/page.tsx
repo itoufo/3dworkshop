@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 import MediaCoverage from '@/components/MediaCoverage'
 import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
 
@@ -367,63 +368,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-2xl">3D</span>
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">3Dプリンター教室・体験イベント 3DLab</h3>
-            <p className="text-sm text-gray-400">
-              東京・秋葉原エリア（文京区湯島3-14-8 加田湯島ビル 5F）
-            </p>
-            <p className="text-sm text-gray-400">
-              湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
-            </p>
-          </div>
-
-          <div className="border-t border-gray-800 pt-6 mb-6">
-            <div className="text-center space-y-2">
-              <p className="text-sm">
-                <span className="text-gray-400">お問い合わせ：</span>
-                <a href="mailto:y-sato@sunu25.com" className="text-purple-400 hover:text-purple-300 ml-2">
-                  y-sato@sunu25.com
-                </a>
-              </p>
-              <p className="text-sm">
-                <span className="text-gray-400">電話：</span>
-                <a href="tel:080-9453-0911" className="text-purple-400 hover:text-purple-300 ml-2">
-                  080-9453-0911
-                </a>
-                <span className="text-gray-500 text-xs ml-2">※「3DLabを見た」とお伝えください</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 pt-6 mb-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-400 mb-2">運営会社</p>
-              <div className="flex justify-center items-center space-x-4 flex-wrap">
-                <a href="https://sunu25.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
-                  株式会社sunu
-                </a>
-                <span className="text-gray-600">|</span>
-                <a href="https://walker.co.jp" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
-                  株式会社ウォーカー
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-500">
-              © 2024 3DLab - 3Dプリンター・スリーディープリンター 東京・秋葉原の体験イベント | 湯島・御徒町・秋葉原・御茶ノ水からアクセス
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

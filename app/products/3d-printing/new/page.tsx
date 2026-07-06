@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaCoverage from '@/components/MediaCoverage'
 import { Upload, FileUp, Package, Palette, Ruler, Hash, AlertCircle, Truck, Info } from 'lucide-react'
+import Footer from '@/components/Footer'
 
 // サイズ定義
 const sizes = [
@@ -525,6 +526,7 @@ export default function New3DPrintingOrder() {
             <MediaCoverage />
           </div>
         </main>
+        <Footer />
       </div>
     </>
   )

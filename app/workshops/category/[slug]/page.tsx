@@ -10,6 +10,7 @@ import MediaCoverage from '@/components/MediaCoverage'
 import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
+import Footer from '@/components/Footer'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -392,6 +393,7 @@ export default async function CategoryPillarPage({ params }: Props) {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   )
 }

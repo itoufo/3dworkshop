@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { Calendar, Clock, MapPin, Users, Check, Star, Gift, BookOpen, Monitor, Zap, Heart } from 'lucide-react'
+import Footer from '@/components/Footer'
 
 export default function SchoolPage() {
   const [selectedClass, setSelectedClass] = useState<'free' | 'basic'>('basic')
@@ -301,6 +302,7 @@ export default function SchoolPage() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   )
 }

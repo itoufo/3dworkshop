@@ -12,6 +12,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type { Metadata } from 'next'
+import Footer from '@/components/Footer'
 
 // SEO ターゲットキーワード:
 // 出張イベント / 出張ワークショップ / 3Dプリンター 体験 / 採用イベント / 体験ブース
@@ -317,6 +318,7 @@ export default function BusinessEventPage() {
 
       {/* CTA */}
       <BusinessContactCta />
+      <Footer />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import { CheckCircle, Calendar, Mail, Home, BookOpen } from 'lucide-react'
 import Link from 'next/link'
+import Footer from '@/components/Footer'
 
 export default function SchoolSuccessPage() {
   const searchParams = useSearchParams()
@@ -193,6 +194,7 @@ export default function SchoolSuccessPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

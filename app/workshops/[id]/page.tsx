@@ -15,6 +15,7 @@ import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import RelatedWorkshopsLazy from '@/components/RelatedWorkshopsLazy'
 import { notFound } from 'next/navigation'
 import styles from './workshop.module.css'
+import Footer from '@/components/Footer'
 
 export const revalidate = 3600
 
@@ -330,6 +331,7 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
             <RelatedWorkshopsLazy workshopId={workshop.id} categoryId={workshop.category_id} />
           )}
         </main>
+        <Footer />
       </div>
     </>
   )

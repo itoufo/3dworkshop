@@ -7,6 +7,7 @@ import { getService } from '@/lib/services'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { Sparkles, RotateCw } from 'lucide-react'
 import type { Metadata } from 'next'
+import Footer from '@/components/Footer'
 
 export const revalidate = 3600
 
@@ -104,6 +105,7 @@ export default async function ServicePage({ params }: PageProps) {
           <MediaCoverage />
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

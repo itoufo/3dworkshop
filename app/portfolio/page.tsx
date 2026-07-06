@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import Link from 'next/link'
 import { Calendar, User, Sparkles, ArrowRight } from 'lucide-react'
+import Footer from '@/components/Footer'
 
 interface PortfolioItem {
   id: string
@@ -167,6 +168,7 @@ export default function PortfolioPage() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

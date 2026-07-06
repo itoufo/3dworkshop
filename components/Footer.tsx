@@ -10,7 +10,13 @@ export default function Footer() {
               <span className="text-white font-bold text-2xl">3D</span>
             </div>
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">3Dプリンタ教室 3DLab</h3>
+          <h3 className="text-xl font-bold text-white mb-2">3Dプリンター教室・体験イベント 3DLab</h3>
+          <p className="text-sm text-gray-400">
+            東京・秋葉原エリア（文京区湯島3-14-8 加田湯島ビル 5F）
+          </p>
+          <p className="text-sm text-gray-400">
+            湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
+          </p>
         </div>
 
         {/* Contact Information */}
@@ -58,6 +64,22 @@ export default function Footer() {
             <Link href="/tokushoho" className="text-gray-400 hover:text-purple-400 transition-colors">
               特定商取引法に基づく表記
             </Link>
+          </div>
+        </div>
+
+        {/* 運営会社 */}
+        <div className="border-t border-gray-800 pt-6 mb-6">
+          <div className="text-center">
+            <p className="text-sm text-gray-400 mb-2">運営会社</p>
+            <div className="flex justify-center items-center space-x-4 flex-wrap">
+              <a href="https://sunu25.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                株式会社sunU
+              </a>
+              <span className="text-gray-600">|</span>
+              <a href="https://walker.co.jp" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                株式会社ウォーカー
+              </a>
+            </div>
           </div>
         </div>
 

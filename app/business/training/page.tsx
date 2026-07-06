@@ -12,6 +12,7 @@ import {
   Cpu,
 } from 'lucide-react'
 import type { Metadata } from 'next'
+import Footer from '@/components/Footer'
 
 // SEO ターゲットキーワード:
 // 企業研修 / 3Dプリンター 研修 / AI 研修 / DX研修 / 新人研修 / リスキリング
@@ -393,6 +394,7 @@ export default function BusinessTrainingPage() {
 
       {/* CTA */}
       <BusinessContactCta />
+      <Footer />
     </div>
   )
 }

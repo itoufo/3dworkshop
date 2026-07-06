@@ -4,6 +4,7 @@ import { BookOpen, Sparkles, ArrowRight } from 'lucide-react'
 import BlogPostGrid from '@/components/BlogPostGrid'
 import Link from 'next/link'
 import { getAllCategories } from '@/lib/blog'
+import Footer from '@/components/Footer'
 
 // ISR: cache for 1 hour (listing updates when new posts are added)
 export const revalidate = 3600
@@ -133,6 +134,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

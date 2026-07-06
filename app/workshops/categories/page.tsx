@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Header from '@/components/Header'
 import { ArrowRight, FolderOpen, Calendar, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
+import Footer from '@/components/Footer'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -221,6 +222,7 @@ export default async function WorkshopCategoriesIndex() {
           </Link>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

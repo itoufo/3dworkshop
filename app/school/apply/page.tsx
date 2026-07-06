@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaCoverage from '@/components/MediaCoverage'
 import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Tag, X, Shield, Clock, Gift, Check } from 'lucide-react'
+import Footer from '@/components/Footer'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -694,6 +695,7 @@ export default function SchoolApplyPage() {
             <MediaCoverage />
           </div>
         </main>
+        <Footer />
       </div>
     </>
   )

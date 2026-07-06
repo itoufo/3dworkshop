@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 import { Building2, Users, MapPin, Calendar, Clock, CheckCircle, ArrowRight, Phone, Mail } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -276,27 +277,7 @@ export default function BusinessPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-2xl">3D</span>
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">3DLab</h3>
-            <p className="text-sm text-gray-400">
-              東京・秋葉原エリア（文京区湯島3-14-8 加田湯島ビル 5F）
-            </p>
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-500">
-              © 2024 3DLab - 出張イベント・企業研修
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

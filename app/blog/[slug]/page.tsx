@@ -7,6 +7,7 @@ import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { getBlogPost, getRelatedPosts } from '@/lib/blog'
 import ViewCountIncrementer from '@/components/ViewCountIncrementer'
+import Footer from '@/components/Footer'
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
@@ -213,6 +214,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <Sparkles className="w-5 h-5" />
         <span>3Dプリンター体験</span>
       </Link>
+
+      <Footer />
     </div>
   )
 }
