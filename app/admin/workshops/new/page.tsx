@@ -32,7 +32,8 @@ export default function NewWorkshopPage() {
     category_id: '',
     show_features: true,
     is_private: false,
-    preview_password: ''
+    preview_password: '',
+    collect_demographics: false
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -77,7 +78,8 @@ export default function NewWorkshopPage() {
             category_id: fromCategory,
             show_features: latestWs.show_features !== false,
             is_private: latestWs.is_private === true,
-            preview_password: latestWs.preview_password || ''
+            preview_password: latestWs.preview_password || '',
+            collect_demographics: latestWs.collect_demographics === true
           })
           if (latestWs.image_url) {
             setImagePreview(latestWs.image_url)
@@ -156,7 +158,8 @@ export default function NewWorkshopPage() {
           category_id: workshop.category_id || null,
           show_features: workshop.show_features,
           is_private: workshop.is_private,
-          preview_password: workshop.preview_password.trim() || null
+          preview_password: workshop.preview_password.trim() || null,
+          collect_demographics: workshop.collect_demographics
         })
         .select()
         .single()
@@ -318,6 +321,34 @@ export default function NewWorkshopPage() {
                   <p className="text-xs text-gray-500 mt-1">作成後、共有用URLは編集画面に表示されます</p>
                 </div>
               )}
+            </div>
+
+            {/* 年齢・性別の収集設定 */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Users className="w-4 h-4 mr-1 text-blue-600" />
+                    予約時に年齢・性別を入力してもらう
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    オンにすると予約フォームに年齢・性別の入力欄（任意）が表示されます。オフの場合は不明として扱われます
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWorkshop({ ...workshop, collect_demographics: !workshop.collect_demographics })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
+                    workshop.collect_demographics ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      workshop.collect_demographics ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
             {/* 基本情報 */}

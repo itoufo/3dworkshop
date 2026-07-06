@@ -31,6 +31,7 @@ export interface Workshop {
   is_service?: boolean
   is_private?: boolean
   preview_password?: string | null
+  collect_demographics?: boolean
   sessions?: WorkshopSession[]
   created_at?: string
   updated_at?: string

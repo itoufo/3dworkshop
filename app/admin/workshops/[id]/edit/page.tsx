@@ -7,7 +7,7 @@ import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { FolderOpen, Calendar, Lock, Copy } from 'lucide-react'
+import { FolderOpen, Calendar, Lock, Copy, Users } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
@@ -36,7 +36,8 @@ export default function EditWorkshop() {
     category_id: '',
     show_features: true,
     is_private: false,
-    preview_password: ''
+    preview_password: '',
+    collect_demographics: false
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -80,7 +81,8 @@ export default function EditWorkshop() {
           category_id: workshopData.category_id || '',
           show_features: workshopData.show_features !== false,
           is_private: workshopData.is_private === true,
-          preview_password: workshopData.preview_password || ''
+          preview_password: workshopData.preview_password || '',
+          collect_demographics: workshopData.collect_demographics === true
         })
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
@@ -161,6 +163,7 @@ export default function EditWorkshop() {
           show_features: formData.show_features,
           is_private: formData.is_private,
           preview_password: formData.preview_password.trim() || null,
+          collect_demographics: formData.collect_demographics,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -349,6 +352,34 @@ export default function EditWorkshop() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* 年齢・性別の収集設定 */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Users className="w-4 h-4 mr-1 text-blue-600" />
+                    予約時に年齢・性別を入力してもらう
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    オンにすると予約フォームに年齢・性別の入力欄（任意）が表示されます。オフの場合は不明として扱われます
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, collect_demographics: !formData.collect_demographics })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
+                    formData.collect_demographics ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.collect_demographics ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
             <div>

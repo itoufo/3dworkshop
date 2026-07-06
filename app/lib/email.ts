@@ -183,7 +183,8 @@ export function generateBookingConfirmationEmail(
   location: string,
   userName: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  userEmail: string
+  userEmail: string,
+  participants?: number
 ) {
   const subject = `予約確認: ${workshopTitle}`;
   
@@ -216,6 +217,7 @@ export function generateBookingConfirmationEmail(
             <p><strong>開催日:</strong> ${date}</p>
             <p><strong>開催時間:</strong> ${time}</p>
             <p><strong>場所:</strong> ${location}</p>
+            ${participants ? `<p><strong>人数:</strong> ${participants}名</p>` : ''}
           </div>
           
           <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>

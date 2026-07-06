@@ -5,7 +5,7 @@ import { Workshop, WorkshopSession } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight, ChevronDown } from 'lucide-react'
 
 function todayIso(): string {
   const d = new Date()
@@ -46,9 +46,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     email: '',
     phone: '',
     age: '',
-    gender: '',
-    notes: ''
+    gender: ''
   })
+  const [couponOpen, setCouponOpen] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [couponValidation, setCouponValidation] = useState<{
     loading: boolean
@@ -149,8 +149,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           email: booking.email,
           name: booking.name,
           phone: booking.phone,
-          age: booking.age ? parseInt(booking.age) : null,
-          gender: booking.gender || null
+          // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
+          ...(workshop.collect_demographics && booking.age ? { age: parseInt(booking.age) } : {}),
+          ...(workshop.collect_demographics && booking.gender ? { gender: booking.gender } : {})
         }, {
           onConflict: 'email'
         })
@@ -172,7 +173,6 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           booking_time: bookingTime,
           participants: booking.participants,
           total_amount: workshop.price * booking.participants,
-          notes: booking.notes,
           status: 'pending',
           payment_status: 'pending'
         })
@@ -459,108 +459,111 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             />
           </div>
 
-          {/* Age and Gender */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="booking-age" className="block text-sm font-medium text-gray-700 mb-2">
-                年齢 *
-              </label>
-              <input
-                id="booking-age"
-                type="number"
-                min="1"
-                max="150"
-                required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
-                value={booking.age}
-                onChange={(e) => setBooking({ ...booking, age: e.target.value })}
-                placeholder="25"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="booking-gender" className="block text-sm font-medium text-gray-700 mb-2">
-                性別 *
-              </label>
-              <select
-                id="booking-gender"
-                required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
-                value={booking.gender}
-                onChange={(e) => setBooking({ ...booking, gender: e.target.value })}
-              >
-                <option value="">選択</option>
-                <option value="male">男性</option>
-                <option value="female">女性</option>
-                <option value="other">その他</option>
-                <option value="prefer_not_to_say">回答しない</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label htmlFor="booking-notes" className="block text-sm font-medium text-gray-700 mb-2">
-              備考・質問など
-            </label>
-            <textarea
-              id="booking-notes"
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
-              value={booking.notes}
-              onChange={(e) => setBooking({ ...booking, notes: e.target.value })}
-              placeholder="アレルギーや配慮が必要な事項があればご記入ください"
-            />
-          </div>
-
-          {/* Coupon Code */}
-          <div>
-            <label htmlFor="booking-coupon" className="block text-sm font-medium text-gray-700 mb-2">
-              <Tag className="w-4 h-4 inline mr-1" />
-              クーポンコード
-            </label>
-            {!appliedCoupon ? (
-              <div className="flex space-x-2">
+          {/* Age and Gender (収集対象のワークショップのみ・任意) */}
+          {workshop.collect_demographics && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="booking-age" className="block text-sm font-medium text-gray-700 mb-2">
+                  年齢
+                </label>
                 <input
-                  id="booking-coupon"
-                  type="text"
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all uppercase"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="SUMMER2024"
+                  id="booking-age"
+                  type="number"
+                  min="1"
+                  max="150"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                  value={booking.age}
+                  onChange={(e) => setBooking({ ...booking, age: e.target.value })}
+                  placeholder="25"
                 />
-                <button
-                  type="button"
-                  onClick={validateCoupon}
-                  disabled={!couponCode.trim() || couponValidation.loading}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {couponValidation.loading ? '検証中...' : '適用'}
-                </button>
               </div>
-            ) : (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-800">
-                    ✓ {appliedCoupon.code} - {appliedCoupon.description || 'クーポンが適用されました'}
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    {appliedCoupon.discount_type === 'percentage'
-                      ? `${appliedCoupon.discount_value}%割引`
-                      : `¥${appliedCoupon.discount_value.toLocaleString()}割引`}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={removeCoupon}
-                  className="text-green-600 hover:text-green-800"
+
+              <div>
+                <label htmlFor="booking-gender" className="block text-sm font-medium text-gray-700 mb-2">
+                  性別
+                </label>
+                <select
+                  id="booking-gender"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                  value={booking.gender}
+                  onChange={(e) => setBooking({ ...booking, gender: e.target.value })}
                 >
-                  <X className="w-5 h-5" />
-                </button>
+                  <option value="">選択しない</option>
+                  <option value="male">男性</option>
+                  <option value="female">女性</option>
+                  <option value="other">その他</option>
+                  <option value="prefer_not_to_say">回答しない</option>
+                </select>
               </div>
-            )}
-            {couponValidation.error && (
-              <p className="text-sm text-red-600 mt-2">{couponValidation.error}</p>
+            </div>
+          )}
+
+          {/* Coupon Code (アコーディオン) */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setCouponOpen(!couponOpen)}
+              className="w-full px-4 py-3 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <span>
+                <Tag className="w-4 h-4 inline mr-1" />
+                クーポンコードをお持ちの方
+                {appliedCoupon && (
+                  <span className="ml-2 text-green-600 font-normal">✓ {appliedCoupon.code} 適用中</span>
+                )}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-gray-500 transition-transform ${
+                  couponOpen || appliedCoupon ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+            {(couponOpen || appliedCoupon) && (
+              <div className="px-4 pb-4">
+                {!appliedCoupon ? (
+                  <div className="flex space-x-2">
+                    <input
+                      id="booking-coupon"
+                      type="text"
+                      className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all uppercase"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="SUMMER2024"
+                    />
+                    <button
+                      type="button"
+                      onClick={validateCoupon}
+                      disabled={!couponCode.trim() || couponValidation.loading}
+                      className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {couponValidation.loading ? '検証中...' : '適用'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-800">
+                        ✓ {appliedCoupon.code} - {appliedCoupon.description || 'クーポンが適用されました'}
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        {appliedCoupon.discount_type === 'percentage'
+                          ? `${appliedCoupon.discount_value}%割引`
+                          : `¥${appliedCoupon.discount_value.toLocaleString()}割引`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+                {couponValidation.error && (
+                  <p className="text-sm text-red-600 mt-2">{couponValidation.error}</p>
+                )}
+              </div>
             )}
           </div>
 
