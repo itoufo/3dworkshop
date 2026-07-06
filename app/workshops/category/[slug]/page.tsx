@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Header from '@/components/Header'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import MobileCategoryFloatingCta from '@/components/MobileCategoryFloatingCta'
+import MediaCoverage from '@/components/MediaCoverage'
 import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
@@ -242,6 +243,9 @@ export default async function CategoryPillarPage({ params }: Props) {
                   </div>
                 </details>
               )}
+
+              {/* メディア掲載・取材実績 */}
+              <MediaCoverage />
             </div>
 
             {/* 右カラム: 予約可能な日程 + リクエストフォーム (sticky on PC, hidden on SP) */}
