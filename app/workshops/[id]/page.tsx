@@ -6,6 +6,7 @@ import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar, Lock }
 import { getWorkshop, isOpenForRequest, getLatestPastSession, getNearestUpcomingSession } from '@/lib/workshops'
 import { previewCookieName, previewToken } from '@/lib/preview-auth'
 import WorkshopPasswordGate from '@/components/WorkshopPasswordGate'
+import MediaCoverage from '@/components/MediaCoverage'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
@@ -284,6 +285,9 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
                 </div>
               </div>
               )}
+
+              {/* メディア掲載・取材実績 */}
+              <MediaCoverage />
             </div>
 
             {/* Right Column - Booking / Request (Client Component) */}

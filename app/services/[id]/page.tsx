@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import ServicePurchaseForm from '@/components/ServicePurchaseForm'
+import MediaCoverage from '@/components/MediaCoverage'
 import { getService } from '@/lib/services'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { Sparkles, RotateCw } from 'lucide-react'
@@ -98,6 +99,9 @@ export default async function ServicePage({ params }: PageProps) {
               unitPrice={service.price}
             />
           </div>
+
+          {/* メディア掲載・取材実績 */}
+          <MediaCoverage />
         </div>
       </main>
     </div>

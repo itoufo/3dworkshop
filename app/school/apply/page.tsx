@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
+import MediaCoverage from '@/components/MediaCoverage'
 import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Tag, X, Shield, Clock, Gift, Check } from 'lucide-react'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -688,6 +689,9 @@ export default function SchoolApplyPage() {
                 </div>
               </div>
             </form>
+
+            {/* メディア掲載・取材実績 */}
+            <MediaCoverage />
           </div>
         </main>
       </div>

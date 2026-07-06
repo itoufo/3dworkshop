@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
+import MediaCoverage from '@/components/MediaCoverage'
 import { Upload, FileUp, Package, Palette, Ruler, Hash, AlertCircle, Truck, Info } from 'lucide-react'
 
 // サイズ定義
@@ -519,6 +520,9 @@ export default function New3DPrintingOrder() {
                 </button>
               </div>
             </form>
+
+            {/* メディア掲載・取材実績 */}
+            <MediaCoverage />
           </div>
         </main>
       </div>
