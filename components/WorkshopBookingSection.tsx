@@ -72,6 +72,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   }>({ loading: false, valid: false })
   const [appliedCoupon, setAppliedCoupon] = useState<{id: string; code: string; description?: string; discount_type: 'percentage' | 'fixed_amount'; discount_value: number} | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
   const [availability, setAvailability] = useState<{
     available_spots: number
     is_full: boolean
@@ -84,6 +85,21 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       fetchAvailability(workshop.id, selectedSession?.id ?? null)
     }
   }, [workshop.id, isPastWorkshop, selectedSession?.id])
+
+  // モーダル表示中は背景スクロールを固定し、Escape で閉じる
+  useEffect(() => {
+    if (!modalOpen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [modalOpen])
 
   async function fetchAvailability(workshopId: string, sessionId: string | null) {
     try {
@@ -294,11 +310,29 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   return (
     <>
       {submitting && <LoadingOverlay message="決済画面へ移動しています..." />}
-      <div id="booking-form" className="bg-white rounded-2xl shadow-xl p-8 sticky top-24">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">予約フォーム</h2>
+      <div id="booking-form" className="bg-white rounded-2xl shadow-xl overflow-hidden sticky top-24">
+        {/* Price Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 text-white">
+          <p className="text-sm text-white/80 mb-1">参加費（1名あたり）</p>
+          <div className="flex items-end justify-between">
+            <span className="text-3xl font-bold">¥{workshop.price.toLocaleString()}</span>
+            {availability && (
+              availability.is_full ? (
+                <span className="inline-flex items-center px-3 py-1 bg-red-500 rounded-full text-sm font-bold">
+                  満席
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
+                  残り{availability.available_spots}名
+                </span>
+              )
+            )}
+          </div>
+        </div>
 
+        <div className="p-6">
         {/* Event Info Card */}
-        <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-6 mb-6">
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-xl p-5 mb-6">
           <h3 className="font-semibold text-gray-900 mb-3">開催情報</h3>
           <div className="space-y-3">
             {upcomingSessions.length >= 2 ? (
@@ -403,6 +437,68 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <p className="text-sm text-red-600">キャンセル待ちをご希望の場合は、お問い合わせください。</p>
           </div>
         ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center"
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              予約する
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </button>
+
+            <div className="mt-4 space-y-1.5 text-xs text-gray-500">
+              <div className="flex items-center justify-center">
+                <Shield className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
+                安全な決済はStripeで処理されます
+              </div>
+              <div className="flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
+                ご予約は約3分で完了します
+              </div>
+            </div>
+          </>
+        )}
+        </div>
+      </div>
+
+      {/* Booking Modal */}
+      {modalOpen && !availability?.is_full && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setModalOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="予約フォーム"
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">予約フォーム</h2>
+                {selectedSession && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {new Date(`${selectedSession.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
+                      year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
+                    })}
+                    {selectedSession.event_time ? ` ${selectedSession.event_time.slice(0, 5)}〜` : ''}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                aria-label="閉じる"
+                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Participants */}
           <div>
@@ -709,18 +805,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             </div>
           </div>
         </form>
-        )}
-      </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Booking Button (Mobile Only) */}
-      {!availability?.is_full && (
+      {!availability?.is_full && !modalOpen && (
         <button
-          onClick={() => {
-            const bookingForm = document.getElementById('booking-form')
-            if (bookingForm) {
-              bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
-          }}
+          onClick={() => setModalOpen(true)}
           className="lg:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"
         >
           <Calendar className="w-5 h-5" />
