@@ -5,6 +5,7 @@ export interface WorkshopCategory {
   description?: string | null
   image_url?: string | null
   sort_order: number
+  email_production_notes?: string | null
   created_at: string
   updated_at: string
 }

@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
           .eq('id', bookingId)
           .select(`
             *,
-            workshops(*),
+            workshops(*, workshop_categories(*)),
             customers(*),
             workshop_session:workshop_sessions(*)
           `)
@@ -294,7 +294,8 @@ export async function POST(request: NextRequest) {
             customer.email,
             booking.participants,
             booking.minor_count,
-            booking.minor_grades
+            booking.minor_grades,
+            workshop.workshop_categories?.email_production_notes
           )
 
           const emailResult = await sendEmail({

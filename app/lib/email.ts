@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { productionNotesToLines } from '@/lib/email-templates';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -198,13 +199,17 @@ export function generateBookingConfirmationEmail(
   userEmail: string,
   participants?: number,
   minorCount?: number | null,
-  minorGrades?: string | null
+  minorGrades?: string | null,
+  productionNotes?: string | null
 ) {
   const subject = `予約確認: ${workshopTitle}`;
 
+  const productionNoteLines = productionNotesToLines(productionNotes);
   const entryTime = calcEntryTime(time);
   // 自社会場（湯島）の場合のみ郵便番号・社名・地図リンクを添える
   const isYushimaVenue = location.includes('湯島');
+  // location 自体に郵便番号が入っているデータがあるため、先頭の〒表記を除去して二重表示を防ぐ
+  const locationBody = location.replace(/^〒?\s*[0-9０-９]{3}[-ー−‐]?[0-9０-９]{4}\s*/, '');
   const hasElementary = !!(minorCount && minorGrades && ELEMENTARY_OR_YOUNGER_RE.test(minorGrades));
 
   const html = `
@@ -255,7 +260,7 @@ export function generateBookingConfirmationEmail(
             ${isYushimaVenue ? `
             <p>
               〒113-0034<br>
-              ${location}<br>
+              ${locationBody}<br>
               株式会社ウォーカー<br>
               <a href="https://maps.app.goo.gl/h1pXEVh2qi8VX4x56">https://maps.app.goo.gl/h1pXEVh2qi8VX4x56</a>
             </p>
@@ -273,11 +278,7 @@ export function generateBookingConfirmationEmail(
           <div class="info-box">
             <h3>作品制作について</h3>
             <ul>
-              <li>制作いただく作品は、指定のサイズ・色の範囲内でのオリジナル制作となります。あらかじめご了承ください。</li>
-              <li>サイズ: 最大10cm四方</li>
-              <li>色: 白</li>
-              <li>細かい文字や繊細なデザインは、再現が難しい場合がございます</li>
-              <li>サイズや仕上がりには多少の誤差が生じる可能性がございます</li>
+              ${productionNoteLines.map((line) => `<li>${line}</li>`).join('\n              ')}
             </ul>
           </div>
 

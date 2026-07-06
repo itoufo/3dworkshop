@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Save, Type, Link, FileText, Image as ImageIcon, Hash } from 'lucide-react'
+import { DEFAULT_PRODUCTION_NOTES } from '@/lib/email-templates'
+import { ArrowLeft, Save, Type, Link, FileText, Image as ImageIcon, Hash, Mail } from 'lucide-react'
 
 export default function NewCategoryPage() {
   const router = useRouter()
@@ -13,7 +14,8 @@ export default function NewCategoryPage() {
     slug: '',
     description: '',
     image_url: '',
-    sort_order: '0'
+    sort_order: '0',
+    email_production_notes: ''
   })
   const [saving, setSaving] = useState(false)
   const [navigating, setNavigating] = useState(false)
@@ -36,7 +38,8 @@ export default function NewCategoryPage() {
           slug: formData.slug,
           description: formData.description || null,
           image_url: formData.image_url || null,
-          sort_order: parseInt(formData.sort_order) || 0
+          sort_order: parseInt(formData.sort_order) || 0,
+          email_production_notes: formData.email_production_notes.trim() || null
         })
 
       if (error) throw error
@@ -127,6 +130,23 @@ export default function NewCategoryPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="カテゴリのピラーページに表示される説明文"
                 />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Mail className="w-5 h-5 mr-2 text-purple-600" />
+                  完了メールの「作品制作について」
+                </h3>
+                <textarea
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none text-gray-900"
+                  value={formData.email_production_notes}
+                  onChange={(e) => setFormData({ ...formData, email_production_notes: e.target.value })}
+                  placeholder={DEFAULT_PRODUCTION_NOTES}
+                />
+                <p className="text-xs text-gray-500">
+                  予約完了メールの「作品制作について」に表示されます。1行につき1項目。未入力の場合はデフォルト文言（プレースホルダーの内容）が使われます。
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
