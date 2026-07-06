@@ -471,6 +471,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <input
               id="booking-phone"
               type="tel"
+              required
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
               value={booking.phone}
               onChange={(e) => setBooking({ ...booking, phone: e.target.value })}
