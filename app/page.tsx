@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
+import MediaCoverage from '@/components/MediaCoverage'
 import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
 
 export default function HomePage() {
@@ -282,6 +283,13 @@ export default function HomePage() {
               <p className="text-xs text-gray-500 mt-1">パートナー募集</p>
             </Link>
           </nav>
+        </div>
+      </section>
+
+      {/* メディア掲載・取材実績 */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8" aria-label="メディア掲載・取材実績">
+        <div className="max-w-5xl mx-auto">
+          <MediaCoverage />
         </div>
       </section>
 
