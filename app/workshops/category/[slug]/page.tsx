@@ -252,70 +252,94 @@ export default async function CategoryPillarPage({ params }: Props) {
             <div className="lg:col-span-1 hidden lg:block">
               <div className="lg:sticky lg:top-24 space-y-6">
                 {/* 予約可能な日程 */}
-                <div className="bg-white rounded-2xl shadow-xl p-6">
-                  <div className="flex items-center mb-4">
-                    <Calendar className="w-5 h-5 mr-2 text-purple-600" />
-                    <h2 className="text-xl font-bold text-gray-900">予約可能な日程</h2>
+                <div className="bg-white rounded-2xl shadow-xl ring-2 ring-purple-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center text-white">
+                      <Calendar className="w-5 h-5 mr-2" />
+                      <h2 className="text-xl font-bold">予約可能な日程</h2>
+                    </div>
+                    {upcomingSessions.length > 0 && (
+                      <span className="bg-white text-purple-700 text-sm font-bold rounded-full px-3 py-0.5 flex-shrink-0">
+                        {upcomingSessions.length}件
+                      </span>
+                    )}
                   </div>
 
-                  {upcomingSessions.length === 0 ? (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
-                      <Sparkles className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                      <p className="text-gray-900 font-medium text-sm mb-1">予約可能な日程はありません</p>
-                      <p className="text-gray-600 text-xs">下のフォームからリクエストを送ってください</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
-                      {upcomingSessions.map((s) => (
-                        <Link
-                          key={s.id}
-                          href={`/workshops/${s.workshop_id}`}
-                          className="group block bg-gradient-to-br from-white to-purple-50/30 rounded-xl p-3 border border-gray-100 hover:border-purple-300 hover:shadow-md transition-all"
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center text-sm font-bold text-gray-900 min-w-0">
-                              <Calendar className="w-4 h-4 mr-1.5 text-purple-500 flex-shrink-0" />
-                              <span className="truncate">{formatDateLong(s.event_date)}</span>
+                  <div className="p-5">
+                    {upcomingSessions.length === 0 ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
+                        <Sparkles className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                        <p className="text-gray-900 font-medium text-sm mb-1">予約可能な日程はありません</p>
+                        <p className="text-gray-600 text-xs">下のフォームからリクエストを送ってください</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                        {upcomingSessions.map((s) => (
+                          <Link
+                            key={s.id}
+                            href={`/workshops/${s.workshop_id}`}
+                            className="group block bg-gradient-to-br from-white to-purple-50/40 rounded-xl p-4 border-2 border-purple-100 hover:border-purple-400 hover:shadow-lg transition-all"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <span className="text-base font-bold text-gray-900 truncate">
+                                {formatDateLong(s.event_date)}
+                              </span>
+                              <span className="text-base font-bold text-purple-700 flex-shrink-0">
+                                ¥{s.workshop_price.toLocaleString()}
+                              </span>
                             </div>
-                            <span className="text-sm font-bold text-gray-900 flex-shrink-0">
-                              ¥{s.workshop_price.toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="text-xs text-gray-600 ml-5 flex items-center gap-2 min-w-0">
+                            <div className="text-sm text-gray-600 flex items-center gap-3 mb-3">
                               {s.event_time && (
                                 <span className="inline-flex items-center">
-                                  <Clock className="w-3 h-3 mr-0.5 text-purple-400" />
+                                  <Clock className="w-3.5 h-3.5 mr-1 text-purple-400" />
                                   {s.event_time.slice(0, 5)}〜
                                 </span>
                               )}
                               <span className="inline-flex items-center">
-                                <Users className="w-3 h-3 mr-0.5 text-purple-400" />
+                                <Users className="w-3.5 h-3.5 mr-1 text-purple-400" />
                                 最大{s.workshop_max_participants}名
                               </span>
                             </div>
-                            <span className="text-xs font-medium text-purple-600 group-hover:text-purple-700 flex items-center flex-shrink-0">
-                              予約
-                              <ArrowRight className="w-3 h-3 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+                            <span className="flex items-center justify-center w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm rounded-full py-2.5 shadow group-hover:shadow-md transition-all">
+                              この日程を予約する
+                              <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
                             </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* リクエストフォーム */}
-                <div className="bg-white rounded-2xl shadow-xl p-6">
-                  <div className="flex items-center mb-3">
-                    <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
-                    <h2 className="text-lg font-bold text-gray-900">希望の日程をリクエスト</h2>
+                {/* リクエストフォーム: 日程があるときは折りたたみで控えめに */}
+                {upcomingSessions.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-xl p-6">
+                    <div className="flex items-center mb-3">
+                      <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
+                      <h2 className="text-lg font-bold text-gray-900">開催をリクエスト</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      ご希望の日程をお送りください。開催可能になりましたらメールでお知らせします。
+                    </p>
+                    <WorkshopRequestForm categorySlug={slug} />
                   </div>
-                  <p className="text-xs text-gray-600 mb-4">
-                    日程が合わない方はご希望をお送りください。開催可能になりましたらメールでお知らせします。
-                  </p>
-                  <WorkshopRequestForm categorySlug={slug} />
-                </div>
+                ) : (
+                  <details className="group bg-gray-50 rounded-2xl border border-gray-200">
+                    <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden p-5 flex items-center justify-between hover:bg-gray-100 rounded-2xl transition-colors">
+                      <span className="flex items-center text-gray-700 font-medium text-sm">
+                        <Sparkles className="w-4 h-4 mr-2 text-amber-500" />
+                        日程が合わない方はこちら（開催リクエスト）
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-gray-400 group-open:rotate-90 transition-transform flex-shrink-0" />
+                    </summary>
+                    <div className="px-5 pb-5">
+                      <p className="text-sm text-gray-600 mb-4">
+                        ご希望の日程をお送りください。開催可能になりましたらメールでお知らせします。
+                      </p>
+                      <WorkshopRequestForm categorySlug={slug} />
+                    </div>
+                  </details>
+                )}
               </div>
             </div>
           </div>

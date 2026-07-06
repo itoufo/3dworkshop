@@ -111,62 +111,73 @@ export default function MobileCategoryFloatingCta({ categorySlug, upcomingSessio
                   <Calendar className="w-5 h-5 mr-2 text-purple-600" />
                   <h2 className="text-lg font-bold text-gray-900">予約可能な日程</h2>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {upcomingSessions.map((s) => (
                     <Link
                       key={s.id}
                       href={`/workshops/${s.workshop_id}`}
                       onClick={() => setOpen(false)}
-                      className="group block bg-gradient-to-br from-white to-purple-50/30 rounded-xl p-3 border border-gray-100 hover:border-purple-300 hover:shadow-md transition-all"
+                      className="group block bg-gradient-to-br from-white to-purple-50/40 rounded-xl p-4 border-2 border-purple-100 active:border-purple-400 transition-all"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center text-sm font-bold text-gray-900 min-w-0">
-                          <Calendar className="w-4 h-4 mr-1.5 text-purple-500 flex-shrink-0" />
-                          <span className="truncate">{formatDateLong(s.event_date)}</span>
-                        </div>
-                        <span className="text-sm font-bold text-gray-900 flex-shrink-0">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-base font-bold text-gray-900 truncate">
+                          {formatDateLong(s.event_date)}
+                        </span>
+                        <span className="text-base font-bold text-purple-700 flex-shrink-0">
                           ¥{s.workshop_price.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-xs text-gray-600 ml-5 flex items-center gap-2 min-w-0">
-                          {s.event_time && (
-                            <span className="inline-flex items-center">
-                              <Clock className="w-3 h-3 mr-0.5 text-purple-400" />
-                              {s.event_time.slice(0, 5)}〜
-                            </span>
-                          )}
+                      <div className="text-sm text-gray-600 flex items-center gap-3 mb-3">
+                        {s.event_time && (
                           <span className="inline-flex items-center">
-                            <Users className="w-3 h-3 mr-0.5 text-purple-400" />
-                            最大{s.workshop_max_participants}名
+                            <Clock className="w-3.5 h-3.5 mr-1 text-purple-400" />
+                            {s.event_time.slice(0, 5)}〜
                           </span>
-                        </div>
-                        <span className="text-xs font-medium text-purple-600 group-hover:text-purple-700 flex items-center flex-shrink-0">
-                          予約
-                          <ArrowRight className="w-3 h-3 ml-0.5" />
+                        )}
+                        <span className="inline-flex items-center">
+                          <Users className="w-3.5 h-3.5 mr-1 text-purple-400" />
+                          最大{s.workshop_max_participants}名
                         </span>
                       </div>
+                      <span className="flex items-center justify-center w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm rounded-full py-2.5 shadow">
+                        この日程を予約する
+                        <ArrowRight className="w-4 h-4 ml-1.5" />
+                      </span>
                     </Link>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* リクエストフォーム */}
-            <section className={hasUpcoming ? 'border-t border-gray-200 pt-6' : 'pt-2'}>
-              <div className="flex items-center mb-2">
-                <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
-                <h2 className="text-lg font-bold text-gray-900">
-                  {hasUpcoming ? '希望の日程をリクエスト' : '開催をリクエスト'}
-                </h2>
-              </div>
-              <p className="text-xs text-gray-600 mb-4">
-                {hasUpcoming
-                  ? '日程が合わない方はご希望をお送りください。'
-                  : 'ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。'}
-              </p>
-              <WorkshopRequestForm categorySlug={categorySlug} />
-            </section>
+            {/* リクエストフォーム: 日程があるときは折りたたみで控えめに */}
+            {hasUpcoming ? (
+              <details className="group bg-gray-50 rounded-2xl border border-gray-200 mb-2">
+                <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden p-4 flex items-center justify-between">
+                  <span className="flex items-center text-gray-700 font-medium text-sm">
+                    <Sparkles className="w-4 h-4 mr-2 text-amber-500" />
+                    日程が合わない方はこちら（開催リクエスト）
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-open:rotate-90 transition-transform flex-shrink-0" />
+                </summary>
+                <div className="px-4 pb-4">
+                  <p className="text-sm text-gray-600 mb-4">
+                    ご希望の日程をお送りください。開催可能になりましたらメールでお知らせします。
+                  </p>
+                  <WorkshopRequestForm categorySlug={categorySlug} />
+                </div>
+              </details>
+            ) : (
+              <section className="pt-2">
+                <div className="flex items-center mb-2">
+                  <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
+                  <h2 className="text-lg font-bold text-gray-900">開催をリクエスト</h2>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。
+                </p>
+                <WorkshopRequestForm categorySlug={categorySlug} />
+              </section>
+            )}
           </div>
         </div>
       </div>
