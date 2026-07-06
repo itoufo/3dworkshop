@@ -24,6 +24,16 @@ function getUpcomingSessions(w: Workshop): WorkshopSession[] {
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
+// 学年から小学生以下（同伴者が必要な区分）を検出する
+const ELEMENTARY_OR_YOUNGER_RE = /小|年長|年中|年少|幼|園|未就学/
+
+const GRADE_OPTIONS = ['小1', '小2', '小3', '小4', '小5', '小6', '中1', '中2', '中3', '高1', '高2', '高3']
+
+// 学年リストを人数に合わせて伸縮する（入力済みの値は保持）
+function resizeGrades(list: string[], n: number): string[] {
+  return Array.from({ length: n }, (_, i) => list[i] ?? '')
+}
+
 interface WorkshopBookingSectionProps {
   workshop: Workshop
   relatedWorkshops: Workshop[]
@@ -46,7 +56,10 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     email: '',
     phone: '',
     age: '',
-    gender: ''
+    gender: '',
+    hasMinors: false,
+    minorCount: 1,
+    minorGrades: [''] as string[]
   })
   const [couponOpen, setCouponOpen] = useState(false)
   const [couponCode, setCouponCode] = useState('')
@@ -174,7 +187,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           participants: booking.participants,
           total_amount: workshop.price * booking.participants,
           status: 'pending',
-          payment_status: 'pending'
+          payment_status: 'pending',
+          minor_count: booking.hasMinors ? booking.minorCount : null,
+          minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null
         })
         .select()
         .single()
@@ -399,7 +414,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               required
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
               value={booking.participants}
-              onChange={(e) => setBooking({ ...booking, participants: parseInt(e.target.value) })}
+              onChange={(e) => {
+                const p = parseInt(e.target.value)
+                const c = Math.min(booking.minorCount, p)
+                setBooking({ ...booking, participants: p, minorCount: c, minorGrades: resizeGrades(booking.minorGrades, c) })
+              }}
             >
               {[...Array(Math.min(availability?.available_spots || workshop.max_participants, 5))].map((_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -457,6 +476,88 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               onChange={(e) => setBooking({ ...booking, phone: e.target.value })}
               placeholder="090-1234-5678"
             />
+          </div>
+
+          {/* 高校生以下の参加者 */}
+          <div className="border border-gray-200 rounded-xl p-4 space-y-4">
+            <label htmlFor="booking-has-minors" className="flex items-center cursor-pointer">
+              <input
+                id="booking-has-minors"
+                type="checkbox"
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                checked={booking.hasMinors}
+                onChange={(e) => setBooking({ ...booking, hasMinors: e.target.checked })}
+              />
+              <span className="ml-2 text-sm font-medium text-gray-700">高校生以下の参加者が含まれる</span>
+            </label>
+
+            {booking.hasMinors && (
+              <>
+                <div>
+                  <label htmlFor="booking-minor-count" className="block text-sm font-medium text-gray-700 mb-2">
+                    高校生以下の人数
+                  </label>
+                  <select
+                    id="booking-minor-count"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                    value={booking.minorCount}
+                    onChange={(e) => {
+                      const c = parseInt(e.target.value)
+                      setBooking({ ...booking, minorCount: c, minorGrades: resizeGrades(booking.minorGrades, c) })
+                    }}
+                  >
+                    {[...Array(booking.participants)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1}名
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <span className="block text-sm font-medium text-gray-700 mb-2">学年</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    {booking.minorGrades.map((grade, i) => (
+                      <div key={i}>
+                        {booking.minorCount > 1 && (
+                          <label htmlFor={`booking-minor-grade-${i}`} className="block text-xs text-gray-500 mb-1">
+                            {i + 1}人目
+                          </label>
+                        )}
+                        <select
+                          id={`booking-minor-grade-${i}`}
+                          required
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                          value={grade}
+                          onChange={(e) => {
+                            const next = [...booking.minorGrades]
+                            next[i] = e.target.value
+                            setBooking({ ...booking, minorGrades: next })
+                          }}
+                        >
+                          <option value="">選択してください</option>
+                          {GRADE_OPTIONS.map((g) => (
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  ※参加対象は小学生以上です。未就学のお子様はご参加いただけません。
+                </p>
+
+                {booking.minorGrades.some((g) => ELEMENTARY_OR_YOUNGER_RE.test(g)) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                    小学生の参加者がいる場合、同伴者（保護者）1名の付き添いが必要です。同伴者1名までは無料です。
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Age and Gender (収集対象のワークショップのみ・任意) */}

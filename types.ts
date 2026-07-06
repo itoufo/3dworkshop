@@ -112,6 +112,8 @@ export interface Booking {
   discount_amount?: number
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
+  minor_count?: number | null
+  minor_grades?: string | null
   created_at: string
   updated_at?: string
   // Joined fields (when using Supabase .select() with relations)

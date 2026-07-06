@@ -292,7 +292,9 @@ export async function POST(request: NextRequest) {
             workshop.location || '東京都文京区湯島3-14-8 加田湯島ビル 5F',
             customer.name,
             customer.email,
-            booking.participants
+            booking.participants,
+            booking.minor_count,
+            booking.minor_grades
           )
 
           const emailResult = await sendEmail({

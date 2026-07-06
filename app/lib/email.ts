@@ -176,6 +176,18 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
   return html
 }
 
+// 学年の自由入力から小学生以下（同伴者が必要な区分）を検出する
+const ELEMENTARY_OR_YOUNGER_RE = /小|年長|年中|年少|幼|園|未就学/;
+
+// 開始時刻の15分前（入室可能時刻）を "H:MM" で返す。時刻が読み取れない場合は null
+function calcEntryTime(time: string): string | null {
+  const m = time.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const total = parseInt(m[1]) * 60 + parseInt(m[2]) - 15;
+  if (total < 0) return null;
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
 export function generateBookingConfirmationEmail(
   workshopTitle: string,
   date: string,
@@ -184,10 +196,17 @@ export function generateBookingConfirmationEmail(
   userName: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userEmail: string,
-  participants?: number
+  participants?: number,
+  minorCount?: number | null,
+  minorGrades?: string | null
 ) {
   const subject = `予約確認: ${workshopTitle}`;
-  
+
+  const entryTime = calcEntryTime(time);
+  // 自社会場（湯島）の場合のみ郵便番号・社名・地図リンクを添える
+  const isYushimaVenue = location.includes('湯島');
+  const hasElementary = !!(minorCount && minorGrades && ELEMENTARY_OR_YOUNGER_RE.test(minorGrades));
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -198,6 +217,8 @@ export function generateBookingConfirmationEmail(
         .header { background-color: #f4f4f4; padding: 20px; text-align: center; }
         .content { padding: 20px; }
         .info-box { background-color: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #4CAF50; }
+        .info-box ul { margin: 10px 0; padding-left: 20px; }
+        .info-box li { margin: 5px 0; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
       </style>
     </head>
@@ -208,21 +229,70 @@ export function generateBookingConfirmationEmail(
         </div>
         <div class="content">
           <p>${userName} 様</p>
-          <p>この度はワークショップにお申し込みいただき、誠にありがとうございます。</p>
-          <p>以下の内容で予約を承りました。</p>
-          
+          <p>このたびはご予約をいただき、誠にありがとうございます。</p>
+          <p>ご参加にあたっての詳細と注意事項をご案内いたします。必ずご確認ください。</p>
+
           <div class="info-box">
             <h3>予約内容</h3>
             <p><strong>ワークショップ名:</strong> ${workshopTitle}</p>
             <p><strong>開催日:</strong> ${date}</p>
-            <p><strong>開催時間:</strong> ${time}</p>
-            <p><strong>場所:</strong> ${location}</p>
+            <p><strong>開始時間:</strong> ${time}</p>
             ${participants ? `<p><strong>人数:</strong> ${participants}名</p>` : ''}
+            ${minorCount ? `<p><strong>高校生以下:</strong> ${minorCount}名${minorGrades ? `（${minorGrades}）` : ''}</p>` : ''}
           </div>
-          
-          <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
-          <p>当日お会いできることを楽しみにしております。</p>
-          
+          ${hasElementary ? `
+          <div class="info-box" style="background-color: #fff8e1; border-left-color: #FFC107;">
+            <p>※小学生のご参加には同伴者（保護者）1名の付き添いが必要です（同伴者1名まで無料）。</p>
+          </div>
+          ` : ''}
+          <div class="info-box">
+            <h3>当日のご案内</h3>
+            <ul>
+              <li>開始時間: ${time}</li>
+              ${entryTime ? `<li>${entryTime}以降に会場へお越しください（それ以前のご入室はご遠慮ください）</li>` : ''}
+              <li>場所が分からない場合は、お気軽にご連絡ください</li>
+            </ul>
+            ${isYushimaVenue ? `
+            <p>
+              〒113-0034<br>
+              ${location}<br>
+              株式会社ウォーカー<br>
+              <a href="https://maps.app.goo.gl/h1pXEVh2qi8VX4x56">https://maps.app.goo.gl/h1pXEVh2qi8VX4x56</a>
+            </p>
+            ` : `<p>${location}</p>`}
+          </div>
+
+          <div class="info-box">
+            <h3>持ち物・服装について</h3>
+            <ul>
+              <li>スマートフォンまたはPC</li>
+              <li>服装は自由です</li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <h3>作品制作について</h3>
+            <ul>
+              <li>制作いただく作品は、指定のサイズ・色の範囲内でのオリジナル制作となります。あらかじめご了承ください。</li>
+              <li>サイズ: 最大10cm四方</li>
+              <li>色: 白</li>
+              <li>細かい文字や繊細なデザインは、再現が難しい場合がございます</li>
+              <li>サイズや仕上がりには多少の誤差が生じる可能性がございます</li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <h3>その他注意事項</h3>
+            <ul>
+              <li>お支払い後の返金はいたしかねます</li>
+              <li>完成した作品は後日郵送にてお届けいたします</li>
+              <li>返送された場合はご連絡いたしますが、2か月間ご返信がない場合は処分させていただきます</li>
+            </ul>
+          </div>
+
+          <p>ご不明点がございましたら、お気軽にお問い合わせください。</p>
+          <p>当日はお気をつけてお越しくださいませ。</p>
+
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
             <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>

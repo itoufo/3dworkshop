@@ -670,6 +670,12 @@ export default function AdminDashboard() {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         {booking.participants}名
                       </span>
+                      {booking.minor_count != null && booking.minor_count > 0 && (
+                        <div className="text-xs text-orange-600 mt-1">
+                          うち高校生以下{booking.minor_count}名
+                          {booking.minor_grades && <>（{booking.minor_grades}）</>}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-gray-900">

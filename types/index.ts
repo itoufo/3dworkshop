@@ -128,6 +128,8 @@ export interface Booking {
   coupon_id?: string
   discount_amount?: number
   notes?: string
+  minor_count?: number | null
+  minor_grades?: string | null
   created_at: string
   updated_at: string
   workshop?: Workshop
