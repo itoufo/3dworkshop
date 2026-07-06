@@ -21,6 +21,15 @@ export async function generateMetadata(
     const description = workshop.description || `${workshop.title}のワークショップ。東京都文京区湯島の3Dプリンタ教室3DLabで開催。湯島駅徒歩1分。`
     const imageUrl = workshop.image_url || '/og-image.jpg'
 
+    // 限定公開: 検索エンジンにインデックスさせない。内容の詳細もメタデータに出さない
+    if (workshop.is_private) {
+      return {
+        title: `${workshop.title} | 3DLab`,
+        description: '限定公開のワークショップです。',
+        robots: { index: false, follow: false },
+      }
+    }
+
     // カテゴリがあればピラー (集約ページ) を canonical に、なければ自身
     // 同タイトル日程違いの workshop が複数存在するため、SEO の重複コンテンツ対策
     const canonicalPath = workshop.category?.slug

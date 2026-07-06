@@ -91,6 +91,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from('workshops')
       .select('id, updated_at, event_date')
       .eq('is_service', false)
+      .eq('is_private', false)
       .order('event_date', { ascending: false })
 
     const workshopPages: MetadataRoute.Sitemap = (workshops || []).map((workshop) => ({

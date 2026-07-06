@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       .from('workshops')
       .select('*, category:workshop_categories(*), sessions:workshop_sessions(*)')
       .eq('is_service', false)
+      .eq('is_private', false)
       .order('is_pinned', { ascending: false })
       .order('pin_order', { ascending: true })
       .order('event_date', { ascending: true })
@@ -33,7 +34,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500, headers })
     }
 
-    return NextResponse.json({ data: data || [], count: (data || []).length }, { headers })
+    // preview_password はクライアントに返さない
+    const sanitized = (data || []).map(({ preview_password: _pw, ...rest }) => rest)
+
+    return NextResponse.json({ data: sanitized, count: sanitized.length }, { headers })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers })
   }

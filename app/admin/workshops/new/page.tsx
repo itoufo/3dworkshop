@@ -7,7 +7,7 @@ import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen } from 'lucide-react'
+import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -30,7 +30,9 @@ export default function NewWorkshopPage() {
     event_date: '',
     event_time: '',
     category_id: '',
-    show_features: true
+    show_features: true,
+    is_private: false,
+    preview_password: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -73,7 +75,9 @@ export default function NewWorkshopPage() {
             event_date: '',
             event_time: '',
             category_id: fromCategory,
-            show_features: latestWs.show_features !== false
+            show_features: latestWs.show_features !== false,
+            is_private: latestWs.is_private === true,
+            preview_password: latestWs.preview_password || ''
           })
           if (latestWs.image_url) {
             setImagePreview(latestWs.image_url)
@@ -106,6 +110,11 @@ export default function NewWorkshopPage() {
 
     if (parseInt(workshop.price) < 50) {
       alert('価格は50円以上で設定してください')
+      return
+    }
+
+    if (workshop.is_private && !workshop.preview_password.trim()) {
+      alert('限定公開にする場合は閲覧パスワードを設定してください')
       return
     }
 
@@ -145,7 +154,9 @@ export default function NewWorkshopPage() {
           event_date: workshop.event_date || null,
           event_time: workshop.event_time || null,
           category_id: workshop.category_id || null,
-          show_features: workshop.show_features
+          show_features: workshop.show_features,
+          is_private: workshop.is_private,
+          preview_password: workshop.preview_password.trim() || null
         })
         .select()
         .single()
@@ -263,6 +274,50 @@ export default function NewWorkshopPage() {
                   }`}
                 />
               </button>
+            </div>
+
+            {/* 限定公開（パスワード保護）設定 */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Lock className="w-4 h-4 mr-1 text-amber-600" />
+                    限定公開（パスワード保護）
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    オンにすると一覧・カテゴリページ・検索エンジンから非表示になり、URLとパスワードを知っている人だけが閲覧・予約できます
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWorkshop({ ...workshop, is_private: !workshop.is_private })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
+                    workshop.is_private ? 'bg-amber-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      workshop.is_private ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {workshop.is_private && (
+                <div className="pt-2 border-t border-amber-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    閲覧パスワード *
+                  </label>
+                  <input
+                    type="text"
+                    value={workshop.preview_password}
+                    onChange={(e) => setWorkshop({ ...workshop, preview_password: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-gray-900"
+                    placeholder="例: 3dlab2026"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">作成後、共有用URLは編集画面に表示されます</p>
+                </div>
+              )}
             </div>
 
             {/* 基本情報 */}

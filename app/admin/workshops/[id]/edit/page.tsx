@@ -7,7 +7,7 @@ import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { FolderOpen, Calendar } from 'lucide-react'
+import { FolderOpen, Calendar, Lock, Copy } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
@@ -34,7 +34,9 @@ export default function EditWorkshop() {
     manual_participants: '',
     manual_participants_note: '',
     category_id: '',
-    show_features: true
+    show_features: true,
+    is_private: false,
+    preview_password: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -76,7 +78,9 @@ export default function EditWorkshop() {
           manual_participants: workshopData.manual_participants?.toString() || '0',
           manual_participants_note: workshopData.manual_participants_note || '',
           category_id: workshopData.category_id || '',
-          show_features: workshopData.show_features !== false
+          show_features: workshopData.show_features !== false,
+          is_private: workshopData.is_private === true,
+          preview_password: workshopData.preview_password || ''
         })
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
@@ -108,7 +112,13 @@ export default function EditWorkshop() {
       alert('価格は50円以上で設定してください')
       return
     }
-    
+
+    // 限定公開のバリデーション
+    if (formData.is_private && !formData.preview_password.trim()) {
+      alert('限定公開にする場合は閲覧パスワードを設定してください')
+      return
+    }
+
     setSaving(true)
 
     try {
@@ -149,6 +159,8 @@ export default function EditWorkshop() {
           manual_participants_note: formData.manual_participants_note || null,
           category_id: formData.category_id || null,
           show_features: formData.show_features,
+          is_private: formData.is_private,
+          preview_password: formData.preview_password.trim() || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -272,6 +284,71 @@ export default function EditWorkshop() {
                   }`}
                 />
               </button>
+            </div>
+
+            {/* 限定公開（パスワード保護）設定 */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-md space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Lock className="w-4 h-4 mr-1 text-amber-600" />
+                    限定公開（パスワード保護）
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    オンにすると一覧・カテゴリページ・検索エンジンから非表示になり、URLとパスワードを知っている人だけが閲覧・予約できます
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, is_private: !formData.is_private })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
+                    formData.is_private ? 'bg-amber-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.is_private ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {formData.is_private && (
+                <div className="space-y-3 pt-2 border-t border-amber-200">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      閲覧パスワード *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.preview_password}
+                      onChange={(e) => setFormData({ ...formData, preview_password: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                      placeholder="例: 3dlab2026"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">このパスワードを共有相手に伝えてください。変更すると認証済みの閲覧者も再入力が必要になります</p>
+                  </div>
+                  <div className="bg-white rounded border border-amber-200 p-3">
+                    <p className="text-xs font-medium text-gray-700 mb-1">共有用URL:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-gray-900 break-all flex-1">
+                        {typeof window !== 'undefined' ? `${window.location.origin}/workshops/${params.id}` : `/workshops/${params.id}`}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/workshops/${params.id}`)
+                          alert('URLをコピーしました')
+                        }}
+                        className="flex-shrink-0 p-1.5 text-amber-700 hover:bg-amber-100 rounded transition-colors"
+                        title="URLをコピー"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

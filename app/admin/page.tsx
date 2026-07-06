@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3 } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
 
 interface BlogPost {
   id: string
@@ -796,6 +796,12 @@ export default function AdminDashboard() {
                               {workshop.title}
                               {workshop.is_pinned && (
                                 <Pin className="w-4 h-4 ml-2 text-orange-500 fill-orange-500" />
+                              )}
+                              {workshop.is_private && (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                  <Lock className="w-3 h-3 mr-1" />
+                                  限定公開
+                                </span>
                               )}
                             </div>
                             <div className="text-xs text-gray-500 line-clamp-1">

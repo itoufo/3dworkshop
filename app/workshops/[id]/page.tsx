@@ -1,8 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import Header from '@/components/Header'
-import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar } from 'lucide-react'
+import { Sparkles, Shield, Heart, Users, ArrowLeft, FolderOpen, Calendar, Lock } from 'lucide-react'
 import { getWorkshop, isOpenForRequest, getLatestPastSession, getNearestUpcomingSession } from '@/lib/workshops'
+import { previewCookieName, previewToken } from '@/lib/preview-auth'
+import WorkshopPasswordGate from '@/components/WorkshopPasswordGate'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
@@ -22,6 +25,22 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
     notFound()
   }
 
+  // 限定公開: パスワード認証済み Cookie がなければパスワードゲートを表示
+  // (cookies() を呼ぶのは限定公開のときだけ → 公開WSの ISR キャッシュは維持される)
+  if (workshop.is_private) {
+    const cookieStore = await cookies()
+    const token = cookieStore.get(previewCookieName(workshop.id))?.value
+    const expected = workshop.preview_password
+      ? previewToken(workshop.id, workshop.preview_password)
+      : null
+    if (!expected || token !== expected) {
+      return <WorkshopPasswordGate workshopId={workshop.id} title={workshop.title} />
+    }
+  }
+
+  // preview_password はクライアントコンポーネントに渡さない
+  const { preview_password: _previewPassword, ...safeWorkshop } = workshop
+
   // 2分岐: request (upcoming 無し → リクエスト受付) / 通常予約
   const isRequestOnly = isOpenForRequest(workshop)
   const isPastWorkshop = false
@@ -39,17 +58,31 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
       })
     : workshop.title
 
+  // 出張開催など、通常会場（湯島 3DLab）以外での開催判定
+  // location が設定されていて「湯島」を含まない場合はカスタム会場として表示する
+  const isCustomVenue = !!workshop.location && !workshop.location.includes('湯島')
+  const customVenueMapQuery = isCustomVenue ? workshop.location!.split('（')[0].trim() : null
+
   // 関連ワークショップ・予約 (availability) は client lazy fetch で SSR コストを削減
 
   return (
     <>
-      <StructuredData data={WorkshopEventSchema(workshop)} />
+      {!workshop.is_private && <StructuredData data={WorkshopEventSchema(safeWorkshop)} />}
       <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
         <Header />
 
         {/* Breadcrumb and Back Button */}
         <div className="pt-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
+            {/* 限定公開バナー */}
+            {workshop.is_private && (
+              <div className="flex items-center px-4 py-3 mb-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800">
+                <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
+                <p className="text-sm font-medium">
+                  このページは限定公開です。URLとパスワードを知っている方のみ閲覧できます。
+                </p>
+              </div>
+            )}
             <Breadcrumb
               items={[
                 { name: 'ワークショップ', href: '/workshops' },
@@ -169,6 +202,40 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
               )}
 
               {/* Access Section */}
+              {isCustomVenue ? (
+                <div className="bg-white rounded-2xl shadow-xl p-8 mt-8">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">アクセス（開催会場）</h3>
+
+                  {/* Map */}
+                  <div className="rounded-xl overflow-hidden shadow-md h-64 mb-6">
+                    <iframe
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(customVenueMapQuery!)}&output=embed&hl=ja&z=16`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen={true}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="開催会場の地図"
+                    />
+                  </div>
+
+                  {/* Address */}
+                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                    <h4 className="font-bold text-gray-900 mb-2">📍 開催会場</h4>
+                    <address className="not-italic text-gray-700">
+                      <p>{workshop.location}</p>
+                    </address>
+                  </div>
+
+                  <div className="flex items-start space-x-2 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <span>⚠️</span>
+                    <span className="text-amber-800">
+                      このワークショップは通常の3DLab（湯島）とは会場が異なります。お間違えのないようご注意ください。
+                    </span>
+                  </div>
+                </div>
+              ) : (
               <div className="bg-white rounded-2xl shadow-xl p-8 mt-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">アクセス</h3>
 
@@ -216,6 +283,7 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
                   </div>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Right Column - Booking / Request (Client Component) */}
@@ -245,7 +313,7 @@ export default async function WorkshopDetail({ params }: { params: Promise<{ id:
                 </div>
               ) : (
                 <WorkshopBookingSectionLazy
-                  workshop={workshop}
+                  workshop={safeWorkshop}
                   relatedWorkshops={[]}
                   isPastWorkshop={isPastWorkshop}
                 />

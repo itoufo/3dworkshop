@@ -27,7 +27,10 @@ export async function GET(
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404, headers })
     }
 
-    return NextResponse.json({ data }, { headers })
+    // preview_password はクライアントに返さない
+    const { preview_password: _pw, ...sanitized } = data
+
+    return NextResponse.json({ data: sanitized }, { headers })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers })
   }

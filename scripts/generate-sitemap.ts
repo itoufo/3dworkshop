@@ -102,6 +102,7 @@ async function fetchWorkshops(): Promise<Workshop[]> {
     const { data, error } = await supabase
       .from('workshops')
       .select('id, updated_at')
+      .eq('is_private', false)
       .order('updated_at', { ascending: false })
 
     if (error) {

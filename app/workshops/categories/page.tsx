@@ -45,6 +45,7 @@ export default async function WorkshopCategoriesIndex() {
     .from('workshops')
     .select('id, category_id, sessions:workshop_sessions(event_date, status)')
     .eq('is_service', false)
+    .eq('is_private', false)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)

@@ -29,6 +29,8 @@ export interface Workshop {
   category_id?: string | null
   category?: WorkshopCategory | null
   is_service?: boolean
+  is_private?: boolean
+  preview_password?: string | null
   sessions?: WorkshopSession[]
   created_at?: string
   updated_at?: string

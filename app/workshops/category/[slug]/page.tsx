@@ -79,6 +79,7 @@ export default async function CategoryPillarPage({ params }: Props) {
     .select('id, title, description, rich_description, price, duration, max_participants, location, image_url, updated_at, sessions:workshop_sessions(id, event_date, event_time, status)')
     .eq('category_id', category.id)
     .eq('is_service', false)
+    .eq('is_private', false)
     .order('updated_at', { ascending: false })
 
   const today = todayIso()
