@@ -20,30 +20,50 @@
 }
 
 .workshopContent h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 2rem 0 1.25rem;
-  color: #1f2937;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2.5rem 0 1.25rem;
+  color: #111827;
   position: relative;
-  padding-left: 1rem;
-  border-left: 4px solid #9333ea;
-  background: linear-gradient(to right, rgba(147, 51, 234, 0.05), transparent);
+  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  background: linear-gradient(
+    90deg,
+    rgba(147, 51, 234, 0.1) 0%,
+    rgba(236, 72, 153, 0.06) 55%,
+    rgba(236, 72, 153, 0) 100%
+  );
+  border-radius: 0.625rem;
+  overflow: hidden;
+}
+
+.workshopContent h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #9333ea, #ec4899);
 }
 
 .workshopContent h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 1.75rem 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 1.75rem 0 0.875rem;
   color: #374151;
   position: relative;
-  padding-left: 0.75rem;
+  padding-left: 0.875rem;
 }
 
 .workshopContent h3::before {
-  content: '▸';
-  color: #ec4899;
+  content: '';
   position: absolute;
   left: 0;
+  top: 0.25em;
+  bottom: 0.25em;
+  width: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #a855f7, #ec4899);
 }
 
 /* 見出し内に紛れ込んだ改行・色指定を無効化（エディタ由来の崩れ対策） */
