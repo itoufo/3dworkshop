@@ -54,6 +54,10 @@ export default function Footer() {
             <Link href="/privacy" className="text-gray-400 hover:text-purple-400 transition-colors">
               プライバシーポリシー
             </Link>
+            <span className="text-gray-600">|</span>
+            <Link href="/tokushoho" className="text-gray-400 hover:text-purple-400 transition-colors">
+              特定商取引法に基づく表記
+            </Link>
           </div>
         </div>
 

@@ -21,7 +21,7 @@ export default function TermsPage() {
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
                   制定日：2024年1月1日<br />
-                  最終改定日：2024年3月28日
+                  最終改定日：2026年7月7日
                 </p>
               </section>
 
@@ -70,9 +70,8 @@ export default function TermsPage() {
               <section className="mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">第5条（キャンセルポリシー）</h2>
                 <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                  <li>ワークショップのキャンセルは、開催日の3日前までに連絡いただいた場合、全額返金いたします。</li>
-                  <li>開催日の2日前から前日のキャンセルは、料金の50％を返金いたします。</li>
-                  <li>開催日当日のキャンセル、または無断欠席の場合、返金はいたしません。</li>
+                  <li>お支払い後のキャンセル・返金はいたしかねます。</li>
+                  <li>前項にかかわらず、当社の都合によりワークショップが中止となった場合は、全額を返金いたします。</li>
                   <li>スクール会員の退会は、退会希望月の前月15日までにお申し出ください。</li>
                 </ol>
               </section>
@@ -184,11 +183,14 @@ export default function TermsPage() {
               </section>
 
               <div className="mt-12 pt-8 border-t border-gray-200">
-                <p className="text-center text-gray-600">
+                <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-center">
                   <Link href="/privacy" className="text-purple-600 hover:text-purple-700">
                     プライバシーポリシーはこちら
                   </Link>
-                </p>
+                  <Link href="/tokushoho" className="text-purple-600 hover:text-purple-700">
+                    特定商取引法に基づく表記はこちら
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
