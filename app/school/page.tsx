@@ -7,7 +7,7 @@ import { Calendar, Clock, MapPin, Users, Check, Star, Gift, BookOpen, Monitor, Z
 import Footer from '@/components/Footer'
 
 export default function SchoolPage() {
-  const [selectedClass, setSelectedClass] = useState<'free' | 'basic'>('basic')
+  const [selectedClass, setSelectedClass] = useState<'free' | 'basic'>('free')
 
   const features = [
     { icon: Monitor, text: '有料版AIが使い放題！' },
@@ -80,10 +80,10 @@ export default function SchoolPage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            選べる2つのクラス
+            クラス紹介
           </h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="max-w-xl mx-auto">
             {/* 自由創作クラス */}
             <div 
               className={`relative bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer transition-all duration-300 ${
@@ -148,73 +148,6 @@ export default function SchoolPage() {
               </div>
             </div>
 
-            {/* 基本実践クラス */}
-            <div 
-              className={`relative bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer transition-all duration-300 ${
-                selectedClass === 'basic' ? 'ring-4 ring-purple-600 scale-[1.02]' : 'hover:shadow-2xl'
-              }`}
-              onClick={() => setSelectedClass('basic')}
-            >
-              <div className="absolute top-4 right-4">
-                {selectedClass === 'basic' && (
-                  <div className="bg-purple-600 text-white rounded-full p-2">
-                    <Check className="w-5 h-5" />
-                  </div>
-                )}
-              </div>
-              
-              <div className="absolute top-4 left-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold">
-                一番人気
-              </div>
-              
-              <div className="p-8">
-                <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-4 py-2 rounded-full inline-block mb-4">
-                  <span className="text-sm font-bold">基本実践クラス（授業＋作品作り）</span>
-                </div>
-                
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  好きを育てる！ものづくりを通して<br />
-                  未来スキルを楽しく習得
-                </h3>
-                
-                <p className="text-gray-600 mb-6">
-                  AIの使い方や3Dプリンターの基礎を授業で学び、その場で実際に作品を制作していくクラス。
-                  学んだ内容をすぐ実践できるため、確実にスキルが身につく！
-                </p>
-                
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-start">
-                    <Calendar className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-gray-700 font-medium">月2回</p>
-                      <p className="text-sm text-gray-500">授業日：土・日曜日</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Clock className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-gray-700 font-medium">90分/回</p>
-                      <p className="text-sm text-gray-500">じっくり学べる時間設定</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Gift className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-gray-700 font-medium">月1作品制作</p>
-                      <p className="text-sm text-gray-500">例：オリジナルフィギュア</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t pt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600">月謝</span>
-                    <span className="text-3xl font-bold text-gray-900">¥30,000</span>
-                  </div>
-                  <p className="text-sm text-gray-500">入会金: ¥20,000（税別）※システム登録料含む</p>
-                </div>
-              </div>
-            </div>
           </div>
           
           {/* 申込ボタン */}
@@ -224,7 +157,7 @@ export default function SchoolPage() {
               className="inline-flex items-center px-12 py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xl font-bold rounded-2xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
             >
               <Heart className="w-6 h-6 mr-3" />
-              選択したクラスに申し込む
+              このクラスに申し込む
             </Link>
           </div>
         </div>

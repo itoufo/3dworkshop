@@ -34,25 +34,14 @@ const classes: Record<string, SchoolClass> = {
     duration: '120分/回',
     frequency: '開校日の好きな日に月2回',
     perks: '制作し放題（時間内）'
-  },
-  basic: {
-    id: 'basic',
-    name: '基本実践クラス（授業＋作品作り）',
-    description: 'AIの使い方や3Dプリンターの基礎を授業で学び、実際に作品を制作していくクラス',
-    price: 30000,
-    registrationFee: 22000, // 20000円（税別）= 22000円（税込）
-    duration: '90分/回',
-    frequency: '月2回',
-    schedule: '授業日：土・日曜日',
-    perks: '月1作品（例：オリジナルフィギュア）'
   }
 }
 
 export default function SchoolApplyPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const classType = searchParams.get('class') || 'basic'
-  const selectedClass = classes[classType] || classes.basic
+  const classType = searchParams.get('class') || 'free'
+  const selectedClass = classes[classType] || classes.free
   
   const [formData, setFormData] = useState({
     studentName: '',

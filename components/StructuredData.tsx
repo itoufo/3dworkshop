@@ -77,7 +77,7 @@ export function SchoolCourseSchema() {
     "@context": "https://schema.org",
     "@type": "Course",
     "name": "AI×3Dプリンタ教室",
-    "description": "東京都文京区湯島のAI×3Dプリンタ教室。自由創作クラス・基本実践クラスの2つのコースをご用意。",
+    "description": "東京都文京区湯島のAI×3Dプリンタ教室。自由創作クラスをご用意。",
     "provider": {
       "@type": "Organization",
       "name": "3DLab - 3Dプリンタ教室",
@@ -105,13 +105,6 @@ export function SchoolCourseSchema() {
         "@type": "Offer",
         "name": "自由創作クラス",
         "price": "17000",
-        "priceCurrency": "JPY",
-        "availability": "https://schema.org/InStock"
-      },
-      {
-        "@type": "Offer",
-        "name": "基本実践クラス",
-        "price": "30000",
         "priceCurrency": "JPY",
         "availability": "https://schema.org/InStock"
       }
