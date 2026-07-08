@@ -31,7 +31,8 @@ export async function uploadWorkshopImage(file: File): Promise<string | null> {
     const { data, error } = await supabaseAdmin.storage
       .from('workshop-images')
       .upload(fileName, file, {
-        cacheControl: '3600',
+        // ファイル名はタイムスタンプ+ランダムで毎回ユニーク（上書きなし）のため長期キャッシュで安全
+        cacheControl: '31536000, immutable',
         upsert: false,
         contentType: file.type
       })
