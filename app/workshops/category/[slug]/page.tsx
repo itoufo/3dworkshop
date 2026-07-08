@@ -11,6 +11,7 @@ import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
 import Footer from '@/components/Footer'
+import { optimizeRichContentImages } from '@/lib/rich-content'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -219,7 +220,7 @@ export default async function CategoryPillarPage({ params }: Props) {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">ワークショップの詳細</h2>
                   <div
                     className={styles.workshopContent}
-                    dangerouslySetInnerHTML={{ __html: representativeWorkshop.rich_description }}
+                    dangerouslySetInnerHTML={{ __html: optimizeRichContentImages(representativeWorkshop.rich_description) }}
                   />
                 </div>
               )}

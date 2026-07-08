@@ -8,6 +8,7 @@ import { optimizeImageUrl } from '@/lib/image-optimization'
 import { getBlogPost, getRelatedPosts } from '@/lib/blog'
 import ViewCountIncrementer from '@/components/ViewCountIncrementer'
 import Footer from '@/components/Footer'
+import { optimizeRichContentImages } from '@/lib/rich-content'
 
 export const revalidate = 3600
 
@@ -124,7 +125,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {/* Content */}
                 <div
                   className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-purple-600 prose-strong:text-gray-900 prose-img:rounded-xl"
-                  dangerouslySetInnerHTML={{ __html: blogPost.content }}
+                  dangerouslySetInnerHTML={{ __html: optimizeRichContentImages(blogPost.content) }}
                 />
 
                 {/* Tags */}

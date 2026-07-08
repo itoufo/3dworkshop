@@ -8,6 +8,7 @@ import { optimizeImageUrl } from '@/lib/image-optimization'
 import { Sparkles, RotateCw } from 'lucide-react'
 import type { Metadata } from 'next'
 import Footer from '@/components/Footer'
+import { optimizeRichContentImages } from '@/lib/rich-content'
 
 export const revalidate = 3600
 
@@ -95,7 +96,7 @@ export default async function ServicePage({ params }: PageProps) {
           {service.rich_description && (
             <div
               className="bg-white rounded-2xl shadow-sm p-8 mb-8 prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: service.rich_description }}
+              dangerouslySetInnerHTML={{ __html: optimizeRichContentImages(service.rich_description) }}
             />
           )}
 

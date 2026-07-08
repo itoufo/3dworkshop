@@ -7,6 +7,7 @@ import MediaCoverage from '@/components/MediaCoverage'
 import { StructuredData, WorkshopEventSchema } from '@/components/StructuredData'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { optimizeImageUrl } from '@/lib/image-optimization'
+import { optimizeRichContentImages } from '@/lib/rich-content'
 import WorkshopBookingSectionLazy from '@/components/WorkshopBookingSectionLazy'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import RelatedWorkshopsLazy from '@/components/RelatedWorkshopsLazy'
@@ -131,7 +132,7 @@ export default function WorkshopDetailView({ workshop }: { workshop: Workshop })
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">ワークショップの詳細</h2>
                   <div
                     className={styles.workshopContent}
-                    dangerouslySetInnerHTML={{ __html: workshop.rich_description }}
+                    dangerouslySetInnerHTML={{ __html: optimizeRichContentImages(workshop.rich_description) }}
                   />
                 </div>
               )}
