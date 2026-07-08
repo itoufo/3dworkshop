@@ -27,3 +27,77 @@
   status = 301
   force = true
   conditions = {Host = ["www.3dlab.jp"]}
+# ===== 静的アセットのキャッシュ =====
+# public/ 配下は Netlify CDN が直接配信するため next.config の headers() は効かない。
+# Netlify の for パターンは拡張子グロブ非対応のため、実在アセットを明示する。
+# （更新頻度が低い画像のみ7日キャッシュ。差し替え時は7日以内に自然反映）
+
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/logo.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/hero-bg.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/og-image.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/media-coverage/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-both.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yu-headshot.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yu-workshop.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yu.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yuho-avif.avif"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yuho-headshot.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yuho-workshop.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-ito-yuho.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/staff-workshop-scene.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

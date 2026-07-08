@@ -120,6 +120,9 @@ export default function RootLayout({
         <meta name="google-adsense-account" content="ca-pub-5260394871552210" />
         <link rel="preconnect" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
         <link rel="dns-prefetch" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
+        {/* heatmap スクリプト配信元（別 Supabase プロジェクト） */}
+        <link rel="preconnect" href="https://zqyhxtaddfruoipjrhah.supabase.co" />
+        <link rel="dns-prefetch" href="https://zqyhxtaddfruoipjrhah.supabase.co" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
