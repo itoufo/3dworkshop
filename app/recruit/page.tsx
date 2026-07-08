@@ -1,10 +1,15 @@
-'use client'
-
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Clock, CircleDollarSign, Heart, Sparkles, CheckCircle } from 'lucide-react'
+import type { Metadata } from 'next'
+import { MapPin, Clock, CircleDollarSign, Users, Calendar, Train, CheckCircle } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'アルバイト募集（ワークショップ講師） | 3DLab 東京・湯島',
+  description:
+    '湯島駅徒歩1分の3Dプリンター体験スタジオ3DLabで、ワークショップ講師のアルバイトを募集しています。未経験可・週2日/1日4時間から・時給1,250円〜。',
+}
 
 export default function RecruitPage() {
   return (
@@ -26,122 +31,105 @@ export default function RecruitPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-900/60" />
             </div>
             <div className="relative text-center py-16 px-6">
-              <div className="inline-block bg-pink-500 text-white font-bold px-4 py-2 rounded-full text-sm mb-4">
-                未経験OK！講師デビュー
+              <div className="inline-block bg-white/15 border border-white/40 text-white px-4 py-2 rounded-full text-sm mb-4">
+                アルバイト・パート募集
               </div>
               <h1 className="text-4xl font-bold text-white mb-4">
                 ワークショップ講師募集
               </h1>
               <p className="text-xl text-purple-100">
-                学生さん・主婦の方、大歓迎！
+                未経験の方も、アシスタントから始められます
               </p>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
-            {/* Appeal Points */}
+            {/* Key Facts */}
             <section className="mb-10">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-5 text-center">
-                  <div className="text-3xl mb-2">🎓</div>
-                  <p className="font-bold text-gray-900">未経験OK</p>
-                  <p className="text-sm text-gray-600">丁寧に教えます！</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                <div className="border border-gray-200 rounded-2xl p-5 text-center">
+                  <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="font-bold text-gray-900">未経験可</p>
+                  <p className="text-sm text-gray-500 mt-1">研修があります</p>
                 </div>
-                <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-5 text-center">
-                  <div className="text-3xl mb-2">📅</div>
-                  <p className="font-bold text-gray-900">週2日〜OK</p>
-                  <p className="text-sm text-gray-600">シフト相談できます</p>
+                <div className="border border-gray-200 rounded-2xl p-5 text-center">
+                  <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="font-bold text-gray-900">週2日から</p>
+                  <p className="text-sm text-gray-500 mt-1">1日4時間〜</p>
                 </div>
-                <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-5 text-center">
-                  <div className="text-3xl mb-2">🚃</div>
-                  <p className="font-bold text-gray-900">駅チカ</p>
-                  <p className="text-sm text-gray-600">湯島駅から徒歩1分</p>
+                <div className="border border-gray-200 rounded-2xl p-5 text-center">
+                  <Train className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="font-bold text-gray-900">湯島駅 徒歩1分</p>
+                  <p className="text-sm text-gray-500 mt-1">御徒町からも8分</p>
                 </div>
-                <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl p-5 text-center">
-                  <div className="text-3xl mb-2">🤖</div>
-                  <p className="font-bold text-gray-900">AIが学べる</p>
-                  <p className="text-sm text-gray-600">最新技術に触れられる！</p>
+                <div className="border border-gray-200 rounded-2xl p-5 text-center">
+                  <CircleDollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="font-bold text-gray-900">時給1,250円〜</p>
+                  <p className="text-sm text-gray-500 mt-1">交通費支給</p>
                 </div>
               </div>
 
-              <div className="flex items-center mb-4">
-                <Sparkles className="w-6 h-6 text-purple-600 mr-2" />
-                <h2 className="text-2xl font-bold text-gray-900">こんな職場です</h2>
-              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">どんな職場か</h2>
 
               {/* Workplace Image */}
-              <div className="relative h-48 rounded-2xl overflow-hidden mb-6">
+              <div className="relative h-56 rounded-2xl overflow-hidden mb-6">
                 <Image
-                  src="/hero-bg.jpg"
-                  alt="3DLabスタジオの様子"
+                  src="/staff-workshop-scene.jpg"
+                  alt="3DLabワークショップ中のスタッフと参加者"
                   fill
                   className="object-cover"
+                  sizes="(max-width: 896px) 100vw, 800px"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-4 left-4 text-white">
-                  <p className="font-bold">湯島駅すぐのスタジオ</p>
-                  <p className="text-sm opacity-90">明るく開放的な空間です</p>
-                </div>
               </div>
 
-              <p className="text-gray-700 leading-relaxed">
-                3DLabは湯島駅すぐの3Dプリンター体験スタジオ。
-                お子さん連れのご家族やものづくりが好きな方が参加されるワークショップで、講師として活躍していただきます。
-                「教えた経験がない...」という方も大丈夫！まずは先輩講師のサポートからスタート。
-                3DプリンターやAIに興味がなくても、<strong className="text-purple-600">働きながら自然と最新技術に詳しくなれます</strong>。
-                就活や将来のキャリアに役立つ経験ができますよ！
-              </p>
+              <div className="text-gray-700 leading-relaxed space-y-4">
+                <p>
+                  3DLabは、湯島駅を出てすぐのビルにある3Dプリンター体験スタジオです。
+                  週末を中心に、親子連れや、ものづくりに興味のある大人の方が参加するワークショップを開いています。
+                  スタッフは数名の小さなチームで、代表も現場で一緒に講師をしています。
+                </p>
+                <p>
+                  お願いしたいのは、このワークショップの運営です。
+                  参加者と一緒に手を動かして、AIでデザインを作ったり、3Dプリンターで出力したりする作業をサポートしてもらいます。
+                  最初はアシスタントとして先輩講師と一緒に入り、流れがつかめてきたら進行をお任せします。
+                  ここまでで数ヶ月かける人もいれば、もっと早い人もいます。
+                </p>
+                <p>
+                  3DプリンターやAIの知識は、入ってから覚えれば十分です。
+                  実際、道具の操作は数回やれば慣れるものがほとんどで、それよりも参加者（特に子ども）のペースに合わせて声をかけられることのほうが大事だと考えています。
+                </p>
+              </div>
             </section>
 
             {/* Job Details */}
             <section className="mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">募集内容</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">募集要項</h2>
 
               <div className="space-y-6">
                 {/* Job Description */}
-                <div className="bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
-                  <h3 className="font-bold text-gray-900 mb-3 flex items-center">
-                    <Heart className="w-5 h-5 text-pink-500 mr-2" />
-                    募集職種：ワークショップ講師
-                  </h3>
-                  <p className="text-gray-700 mb-4">
-                    3Dプリンターやプログラミングのワークショップで、子どもたちや参加者に教えるお仕事です。
-                  </p>
-
-                  <div className="bg-white rounded-xl p-4 mb-4">
-                    <p className="font-bold text-purple-600 mb-2">まずはサポートからスタート！</p>
-                    <div className="flex items-center text-gray-600 text-sm">
-                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">STEP1</span>
-                      <span className="mx-2">→</span>
-                      <span>講師のサポート・準備</span>
-                      <span className="mx-2">→</span>
-                      <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full">STEP2</span>
-                      <span className="mx-2">→</span>
-                      <span>講師デビュー！</span>
-                    </div>
-                  </div>
-
+                <div className="p-6 border border-gray-200 rounded-2xl">
+                  <h3 className="font-bold text-gray-900 mb-3">仕事内容</h3>
                   <ul className="space-y-2 text-gray-700">
                     <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>ワークショップの進行・参加者へのレクチャー</span>
+                      <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>ワークショップの進行、参加者へのレクチャー</span>
                     </li>
                     <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>3Dプリンター・プログラミングの操作サポート</span>
+                      <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>3Dプリンター・AIツールの操作サポート</span>
                     </li>
                     <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>教材・機材の準備・片付け</span>
+                      <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>教材・機材の準備と片付け</span>
                     </li>
                     <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>参加者の作品づくりのお手伝い</span>
+                      <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>参加者の作品づくりの手伝い</span>
                     </li>
                   </ul>
-                  <p className="mt-4 text-sm text-gray-500 bg-white rounded-lg p-3">
-                    ※経験ゼロでも大丈夫！先輩スタッフが丁寧に教えます。まずはサポートから始めて、慣れてきたら講師としてデビュー！
+                  <p className="mt-4 text-sm text-gray-500">
+                    入って最初の期間はアシスタント業務（準備・サポート）が中心です。講師デビューの時期は本人と相談しながら決めます。
                   </p>
                 </div>
 
@@ -162,22 +150,30 @@ export default function RecruitPage() {
                   <Clock className="w-5 h-5 text-purple-600 mr-3 mt-0.5" />
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">勤務時間</h3>
-                    <p className="text-gray-700">10:00〜20:00の間で応相談</p>
-                    <ul className="text-sm text-gray-500 mt-2 space-y-1">
-                      <li>・週2日〜、1日4時間〜OK</li>
-                      <li>・土日に入れる方、大歓迎！</li>
-                      <li>・学校帰り、お子さんのお迎え前など柔軟に対応します</li>
-                    </ul>
+                    <p className="text-gray-700">10:00〜20:00の間で応相談（週2日・1日4時間から）</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      ワークショップは土日開催が多いため、土日に入れる方を特に探しています。
+                      平日は授業前後・お子さんの送り迎えの時間に合わせるなど、シフトは柔軟に調整できます。
+                    </p>
                   </div>
                 </div>
 
                 {/* Salary */}
-                <div className="flex items-start p-4 border border-gray-200 rounded-xl bg-purple-50">
+                <div className="flex items-start p-4 border border-gray-200 rounded-xl">
                   <CircleDollarSign className="w-5 h-5 text-purple-600 mr-3 mt-0.5" />
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-1">時給</h3>
-                    <p className="text-2xl font-bold text-purple-600">1,250円〜</p>
-                    <p className="text-sm text-gray-500 mt-1">交通費支給（上限あり）/ 昇給あり</p>
+                    <h3 className="font-bold text-gray-900 mb-1">給与</h3>
+                    <p className="text-2xl font-bold text-gray-900">時給 1,250円〜</p>
+                    <p className="text-sm text-gray-500 mt-1">交通費支給（上限あり）・昇給あり</p>
+                  </div>
+                </div>
+
+                {/* Benefits */}
+                <div className="flex items-start p-4 border border-gray-200 rounded-xl">
+                  <Users className="w-5 h-5 text-purple-600 mr-3 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">待遇</h3>
+                    <p className="text-gray-700">研修あり / 服装自由 / スタッフ割引（ワークショップ・スクール）</p>
                   </div>
                 </div>
               </div>
@@ -185,89 +181,37 @@ export default function RecruitPage() {
 
             {/* Who We're Looking For */}
             <section className="mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">こんな方にピッタリ</h2>
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6">
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-start">
-                    <span className="text-2xl mr-3">👩‍🎓</span>
-                    <span>授業やサークルと両立したい<strong className="text-purple-600">学生さん</strong></span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-2xl mr-3">👩</span>
-                    <span>お子さんが学校に行っている間に働きたい<strong className="text-purple-600">主婦の方</strong></span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-2xl mr-3">😊</span>
-                    <span>人と話すのが好き、接客に興味がある方</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-2xl mr-3">🎨</span>
-                    <span>ものづくりや手作りが好きな方</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-2xl mr-3">👶</span>
-                    <span>子どもと接するのが好きな方</span>
-                  </li>
-                </ul>
-                <div className="mt-4 pt-4 border-t border-purple-200 bg-white rounded-lg p-4">
-                  <p className="text-sm text-gray-600">
-                    <strong className="text-purple-600">経験・資格は一切不要！</strong>
-                    「3Dプリンターって何？」という方でもOK。丁寧に教えます。
-                    明るく元気に対応していただければ大丈夫です。
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Benefits */}
-            <section className="mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">うれしいポイント</h2>
-
-              {/* AI Experience Highlight */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl p-6 mb-6">
-                <div className="flex items-start">
-                  <div className="text-4xl mr-4">🤖</div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">AIと3Dプリンターが学べる！</h3>
-                    <p className="text-gray-700">
-                      今話題のAI（人工知能）や3Dプリンターを実際に使いながら学べます。
-                      「AIって難しそう...」と思っている方も大丈夫！
-                      日々の業務を通じて自然と身につくので、<strong className="text-blue-600">就活でアピールできるスキル</strong>が手に入ります。
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl text-center">
-                  <div className="text-2xl mb-2">🎁</div>
-                  <p className="font-medium text-gray-900">交通費支給</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl text-center">
-                  <div className="text-2xl mb-2">📚</div>
-                  <p className="font-medium text-gray-900">研修あり</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl text-center">
-                  <div className="text-2xl mb-2">👗</div>
-                  <p className="font-medium text-gray-900">服装自由</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl text-center">
-                  <div className="text-2xl mb-2">🎉</div>
-                  <p className="font-medium text-gray-900">スタッフ割引</p>
-                </div>
-              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">こんな方に向いています</h2>
+              <ul className="space-y-3 text-gray-700">
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>子どもと接するのが好きな方（参加者の多くは小学生の親子です）</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>人と話すこと、接客が苦にならない方</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>ものづくりや新しい道具に興味がある方</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>授業や家庭と両立できる仕事を探している学生・主婦（夫）の方</span>
+                </li>
+              </ul>
+              <p className="mt-4 text-sm text-gray-500">
+                経験や資格は問いません。3Dプリンターに触ったことがなくても、業務の中で覚えられます。
+              </p>
             </section>
 
             {/* How to Apply */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">応募方法</h2>
               <div className="bg-purple-600 text-white rounded-2xl p-6">
-                <p className="mb-4 text-lg">
-                  まずはお気軽にご連絡ください！
-                </p>
-                <p className="mb-4 text-purple-200">
-                  メールでお名前・電話番号・希望の勤務日をお送りいただくか、お電話でもOKです。
-                  「ちょっと話を聞いてみたい」だけでも大歓迎！
+                <p className="mb-4 text-purple-100">
+                  メールにお名前・電話番号・希望の勤務日を書いてお送りください。お電話でも受け付けています。
+                  応募の前に、スタジオの見学だけしていただくことも可能です。
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
@@ -278,13 +222,13 @@ export default function RecruitPage() {
                   </a>
                   <a
                     href="tel:080-9453-0911"
-                    className="inline-block bg-pink-500 text-white font-bold px-6 py-3 rounded-full hover:bg-pink-600 transition-colors text-center"
+                    className="inline-block border-2 border-white text-white font-bold px-6 py-3 rounded-full hover:bg-white/10 transition-colors text-center"
                   >
                     電話で応募 080-9453-0911
                   </a>
                 </div>
                 <p className="mt-4 text-purple-200 text-sm">
-                  ※電話受付：10:00〜18:00 /「3DLabを見た」とお伝えください
+                  電話受付：10:00〜18:00 /「採用ページを見た」とお伝えください
                 </p>
               </div>
             </section>
