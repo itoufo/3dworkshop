@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import { MapPin, Clock, CircleDollarSign, Users, Calendar, Train, CheckCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'アルバイト募集（ワークショップ講師） | 3DLab 東京・湯島',
+  title: 'アルバイト募集（ワークショップ講師）東京・湯島',
   description:
     '湯島駅徒歩1分の3Dプリンター体験スタジオ3DLabで、ワークショップ講師のアルバイトを募集しています。未経験可・週2日/1日4時間から・時給1,250円〜。',
 }
