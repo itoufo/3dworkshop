@@ -11,6 +11,16 @@ import Footer from '@/components/Footer'
 
 export const revalidate = 3600
 
+// アクティブなサービスをビルド時に列挙して ISR 化する（これが無いとルート全体が毎リクエスト SSR になる）
+export async function generateStaticParams() {
+  const { supabase } = await import('@/lib/supabase')
+  const { data } = await supabase
+    .from('services')
+    .select('id')
+    .eq('is_active', true)
+  return (data ?? []).map(({ id }) => ({ id }))
+}
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

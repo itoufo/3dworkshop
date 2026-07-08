@@ -9,6 +9,20 @@ import { getBlogPost, getRelatedPosts } from '@/lib/blog'
 import ViewCountIncrementer from '@/components/ViewCountIncrementer'
 import Footer from '@/components/Footer'
 
+export const revalidate = 3600
+
+// 公開済み記事をビルド時に列挙して ISR 化する（これが無いとルート全体が毎リクエスト SSR になる）。
+// 予約公開（published_at が未来）の記事は列挙しない → 公開時刻後の初回アクセスで生成される。
+export async function generateStaticParams() {
+  const { supabase } = await import('@/lib/supabase')
+  const { data } = await supabase
+    .from('blog_posts')
+    .select('slug')
+    .eq('is_published', true)
+    .lte('published_at', new Date().toISOString())
+  return (data ?? []).map(({ slug }) => ({ slug }))
+}
+
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
 }

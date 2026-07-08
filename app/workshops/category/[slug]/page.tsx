@@ -18,6 +18,14 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export const revalidate = 3600
 
+// カテゴリをビルド時に列挙して ISR 化する（これが無いとルート全体が毎リクエスト SSR になる）
+export async function generateStaticParams() {
+  const { data } = await supabase
+    .from('workshop_categories')
+    .select('slug')
+  return (data ?? []).map(({ slug }) => ({ slug }))
+}
+
 interface Props {
   params: Promise<{ slug: string }>
 }
