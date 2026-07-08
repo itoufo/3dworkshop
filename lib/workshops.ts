@@ -9,6 +9,15 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 const SELECT_WITH_RELATIONS =
   '*, category:workshop_categories(*), sessions:workshop_sessions(*)'
 
+// 一覧用の軽量 select。rich_description（1件あたり数KB〜十数KB）等の重いフィールドを
+// 除外する。全件分が WorkshopListClient への props として RSC ペイロード = HTML に
+// 直接埋まるため、ここの絞り込みがそのままページサイズに効く。
+const SELECT_FOR_LISTING =
+  'id, title, description, image_url, event_date, event_time, duration, location, ' +
+  'max_participants, price, is_pinned, pin_order, category_id, ' +
+  'category:workshop_categories(id, name, slug), ' +
+  'sessions:workshop_sessions(id, event_date, event_time, status)'
+
 function todayIso(): string {
   return new Date().toISOString().split('T')[0]
 }
@@ -35,17 +44,19 @@ export const getWorkshop = cache(async (id: string): Promise<Workshop | null> =>
   return normalizeSessions(data as Workshop)
 })
 
+// 一覧表示用（/workshops）。本文が必要な場合は getWorkshop を使うこと。
 export async function getAllWorkshops(): Promise<Workshop[]> {
   const { data } = await supabase
     .from('workshops')
-    .select(SELECT_WITH_RELATIONS)
+    .select(SELECT_FOR_LISTING)
     .eq('is_service', false)
     .eq('is_private', false)
     .order('is_pinned', { ascending: false })
     .order('pin_order', { ascending: true })
     .order('event_date', { ascending: true })
     .order('event_time', { ascending: true })
-  return ((data as Workshop[]) || []).map(normalizeSessions)
+  // supabase-js は列挙型 select 文字列の型推論に失敗するため unknown 経由でキャスト
+  return ((data as unknown as Workshop[]) || []).map(normalizeSessions)
 }
 
 export async function getWorkshopCategories(): Promise<WorkshopCategory[]> {
