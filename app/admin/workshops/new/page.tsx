@@ -52,13 +52,14 @@ export default function NewWorkshopPage() {
 
       if (cats) setCategories(cats)
 
-      // from_categoryが指定されている場合、直近WSの内容をコピー
+      // from_categoryが指定されている場合、直近の公開WSの内容をコピー（非公開の特別回は雛形にしない）
       if (fromCategory) {
         setCopyingFromCategory(true)
         const { data: latestWs } = await supabase
           .from('workshops')
           .select('*')
           .eq('category_id', fromCategory)
+          .eq('is_private', false)
           .order('event_date', { ascending: false })
           .limit(1)
           .single()
