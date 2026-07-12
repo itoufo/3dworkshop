@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
+import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
 
@@ -247,8 +248,13 @@ export default function AdminDashboard() {
     router.push(path)
   }
 
-  // 売上集計（キャンセルは除外）
-  const validBookings = bookings.filter((b) => b.status !== 'cancelled')
+  // 内部/テスト（オーナー・身内・動作確認）は集計から除外し、実顧客だけを見る
+  const realBookings = bookings.filter((b) => !isInternalEmail(b.customer?.email))
+  const realCustomers = customers.filter((c) => !isInternalEmail(c.email))
+  const internalBookingCount = bookings.length - realBookings.length
+
+  // 売上集計（キャンセル + 内部/テストは除外）
+  const validBookings = realBookings.filter((b) => b.status !== 'cancelled')
 
   const totalSales = validBookings.reduce((sum, b) => sum + b.total_amount, 0)
 
@@ -330,8 +336,10 @@ export default function AdminDashboard() {
               <TrendingUp className="w-5 h-5 text-white/60" />
             </div>
             <h3 className="text-sm font-medium text-white/80">総予約数</h3>
-            <p className="text-3xl font-bold">{bookings.length}</p>
-            <p className="text-xs text-white/60 mt-2">全期間の予約</p>
+            <p className="text-3xl font-bold">{realBookings.length}</p>
+            <p className="text-xs text-white/60 mt-2">
+              実顧客のみ{internalBookingCount > 0 ? `（内部/テスト${internalBookingCount}件を除く）` : ''}
+            </p>
           </div>
           
           <div className="bg-gradient-to-br from-pink-500 to-pink-600 p-6 rounded-2xl shadow-lg text-white">
@@ -342,8 +350,8 @@ export default function AdminDashboard() {
               <TrendingUp className="w-5 h-5 text-white/60" />
             </div>
             <h3 className="text-sm font-medium text-white/80">顧客数</h3>
-            <p className="text-3xl font-bold">{customers.length}</p>
-            <p className="text-xs text-white/60 mt-2">登録済み顧客</p>
+            <p className="text-3xl font-bold">{realCustomers.length}</p>
+            <p className="text-xs text-white/60 mt-2">実顧客のみ</p>
           </div>
           
           <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl shadow-lg text-white">
@@ -659,6 +667,11 @@ export default function AdminDashboard() {
                         <Mail className="w-3 h-3 inline mr-1" />
                         {booking.customer?.email}
                       </div>
+                      {isInternalEmail(booking.customer?.email) && (
+                        <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700">
+                          内部/テスト
+                        </span>
+                      )}
                       {booking.customer?.phone && (
                         <div className="text-xs text-gray-500">
                           <Phone className="w-3 h-3 inline mr-1" />
