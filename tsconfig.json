@@ -23,5 +23,6 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "//": "scripts/ は tsx で個別実行する開発ツール。next build の型チェックに含めると googleapis 等の巨大型定義でビルドがOOM(SIGABRT)するため除外する。",
+  "exclude": ["node_modules", "scripts"]
 }
