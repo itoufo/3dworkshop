@@ -137,6 +137,18 @@ export default function RootLayout({
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
+              // 内部/テスト端末のオプトアウト: ?ga_internal=1 で無効化(=1で保存), ?ga_internal=0 で解除。
+              // 保存済みなら Google 公式の ga-disable フラグで page_view/イベントを全停止する。
+              try {
+                var _p = new URLSearchParams(location.search);
+                if (_p.has('ga_internal')) {
+                  if (_p.get('ga_internal') === '0') { localStorage.removeItem('ga_internal'); }
+                  else { localStorage.setItem('ga_internal', '1'); }
+                }
+                if (localStorage.getItem('ga_internal') === '1') {
+                  window['ga-disable-${GA_MEASUREMENT_ID}'] = true;
+                }
+              } catch (e) {}
               gtag('js', new Date());
               gtag('config', '${GA_MEASUREMENT_ID}');
             `,

@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const [showCancelled, setShowCancelled] = useState(false)
+  const [hideInternal, setHideInternal] = useState(true)
   const [bookingWorkshopFilter, setBookingWorkshopFilter] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -265,6 +266,7 @@ export default function AdminDashboard() {
   const displayedBookings = bookings.filter(
     (b) =>
       (showCancelled || b.status !== 'cancelled') &&
+      (!hideInternal || !isInternalEmail(b.customer?.email)) &&
       (!bookingWorkshopFilter || b.workshop_id === bookingWorkshopFilter)
   )
   const cancelledCount = bookings.filter(
@@ -556,6 +558,15 @@ export default function AdminDashboard() {
                   className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                 />
                 キャンセルも表示
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hideInternal}
+                  onChange={(e) => setHideInternal(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                />
+                内部/テストを隠す
               </label>
             </div>
           </div>
