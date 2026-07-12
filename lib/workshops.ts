@@ -59,6 +59,14 @@ export async function getAllWorkshops(): Promise<Workshop[]> {
   return ((data as unknown as Workshop[]) || []).map(normalizeSessions)
 }
 
+// 「特別ワークショップ」バナー用。ピン留め(is_pinned)されていて、かつ今後の開催
+// (upcoming session)がある公開ワークショップの先頭を返す。無ければ null。
+// ※ 管理画面のピン留めトグルがそのままバナー掲載の ON/OFF を兼ねる。
+export async function getFeaturedWorkshop(): Promise<Workshop | null> {
+  const all = await getAllWorkshops()
+  return all.find(w => w.is_pinned && hasUpcomingSession(w)) ?? null
+}
+
 export async function getWorkshopCategories(): Promise<WorkshopCategory[]> {
   const { data } = await supabase
     .from('workshop_categories')

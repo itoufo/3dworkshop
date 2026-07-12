@@ -8,6 +8,7 @@ import { optimizeImageUrl } from '@/lib/image-optimization'
 import { getBlogPost, getRelatedPosts } from '@/lib/blog'
 import ViewCountIncrementer from '@/components/ViewCountIncrementer'
 import Footer from '@/components/Footer'
+import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
 import { optimizeRichContentImages } from '@/lib/rich-content'
 
 export const revalidate = 3600
@@ -63,6 +64,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <ArrowLeft className="w-4 h-4 mr-2" />
             ブログ一覧に戻る
           </Link>
+
+          {/* 特別ワークショップ告知（ピン留めWSがある時のみ表示） */}
+          <SpecialWorkshopBanner compact />
 
           <div className="lg:flex lg:gap-8">
             {/* Article */}

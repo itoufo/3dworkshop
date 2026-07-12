@@ -3,7 +3,11 @@ import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import MediaCoverage from '@/components/MediaCoverage'
+import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
 import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
+
+// 特別WSバナーの掲載元(ピン留めWS)を反映するため ISR（1時間）
+export const revalidate = 3600
 
 export default function HomePage() {
   return (
@@ -113,6 +117,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 特別ワークショップ告知バナー（ピン留めWSがある時のみ表示） */}
+      <SpecialWorkshopBanner />
 
       {/* Highlights */}
       <section className="py-10 lg:py-20 px-4 sm:px-6 lg:px-8">

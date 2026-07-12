@@ -5,6 +5,7 @@ import BlogPostGrid from '@/components/BlogPostGrid'
 import Link from 'next/link'
 import { getAllCategories } from '@/lib/blog'
 import Footer from '@/components/Footer'
+import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
 
 // ISR: cache for 1 hour (listing updates when new posts are added)
 export const revalidate = 3600
@@ -68,6 +69,9 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
               3Dプリンティングの技術情報、ワークショップレポート、制作のコツなどをお届けします
             </p>
           </div>
+
+          {/* 特別ワークショップ告知（ピン留めWSがある時のみ表示） */}
+          <SpecialWorkshopBanner compact />
 
           {/* Blog Grid (Client Component) */}
           <BlogPostGrid posts={blogPosts} categories={categories} />
