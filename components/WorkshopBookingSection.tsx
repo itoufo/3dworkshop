@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Workshop, WorkshopSession } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight, ChevronDown } from 'lucide-react'
+import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
 
 function todayIso(): string {
   const d = new Date()
@@ -101,6 +102,32 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     }
   }, [modalOpen])
 
+  // GA4: view_item（予約セクション表示を workshop ごとに1回）
+  const viewItemSentRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (isPastWorkshop) return
+    if (viewItemSentRef.current === workshop.id) return
+    viewItemSentRef.current = workshop.id
+    gaEvent('view_item', {
+      currency: GA_CURRENCY,
+      value: workshop.price,
+      items: [gaWorkshopItem(workshop)],
+    })
+  }, [workshop, isPastWorkshop])
+
+  // GA4: 満席表示（構造的ゼロの可視化）。セッション単位で1回だけ送る
+  const fullReportedRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!availability?.is_full) return
+    const key = selectedSession?.id ?? workshop.id
+    if (fullReportedRef.current.has(key)) return
+    fullReportedRef.current.add(key)
+    gaEvent('ws_availability_full', {
+      workshop_id: workshop.id,
+      session_id: selectedSession?.id ?? null,
+    })
+  }, [availability?.is_full, selectedSession?.id, workshop.id])
+
   async function fetchAvailability(workshopId: string, sessionId: string | null) {
     try {
       const params = new URLSearchParams({ workshopId })
@@ -134,6 +161,13 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
       const data = await response.json()
 
+      gaEvent('ws_coupon_apply', {
+        workshop_id: workshop.id,
+        code: couponCode.trim(),
+        valid: response.ok,
+        discount: response.ok ? data.discount_amount : 0,
+      })
+
       if (response.ok) {
         setCouponValidation({
           loading: false,
@@ -162,6 +196,27 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     setCouponCode('')
     setCouponValidation({ loading: false, valid: false })
     setAppliedCoupon(null)
+  }
+
+  // GA4: add_to_cart（「予約する」でモーダルを開く＝予約意図）
+  const openBookingModal = () => {
+    gaEvent('add_to_cart', {
+      currency: GA_CURRENCY,
+      value: workshop.price * booking.participants,
+      items: [gaWorkshopItem(workshop, booking.participants)],
+    })
+    setModalOpen(true)
+  }
+
+  // GA4: ws_session_select（日程ラジオの選択）
+  const handleSessionSelect = (sessionId: string) => {
+    setSelectedSessionId(sessionId)
+    const s = upcomingSessions.find(x => x.id === sessionId)
+    gaEvent('ws_session_select', {
+      workshop_id: workshop.id,
+      session_id: sessionId,
+      event_date: s?.event_date,
+    })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -230,11 +285,21 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
       const { sessionId } = await response.json()
 
+      // GA4: begin_checkout（Stripe へリダイレクトする直前）
+      gaEvent('begin_checkout', {
+        currency: GA_CURRENCY,
+        value: workshop.price * booking.participants,
+        coupon: appliedCoupon?.code,
+        participants: booking.participants,
+        items: [gaWorkshopItem(workshop, booking.participants)],
+      })
+
       const stripe = await stripePromise
       await stripe?.redirectToCheckout({ sessionId })
 
     } catch {
       console.error('Error creating booking')
+      gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'checkout' })
       alert('予約の作成中にエラーが発生しました。')
       setSubmitting(false)
     }
@@ -359,7 +424,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                           name="workshop-session"
                           value={s.id}
                           checked={selected}
-                          onChange={() => setSelectedSessionId(s.id)}
+                          onChange={() => handleSessionSelect(s.id)}
                           className="mr-3 accent-purple-600"
                         />
                         <div className="flex-1 text-sm">
@@ -440,7 +505,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <>
             <button
               type="button"
-              onClick={() => setModalOpen(true)}
+              onClick={openBookingModal}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center"
             >
               <Calendar className="w-5 h-5 mr-2" />
@@ -818,7 +883,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       {/* Floating Booking Button (Mobile Only) */}
       {!availability?.is_full && !modalOpen && (
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={openBookingModal}
           className="lg:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"
         >
           <Calendar className="w-5 h-5" />

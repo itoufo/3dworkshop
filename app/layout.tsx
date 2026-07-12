@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { GA_MEASUREMENT_ID } from "@/lib/gtag";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -129,7 +130,7 @@ export default function RootLayout({
         />
         <script
           async
-          src="https://www.googletagmanager.com/gtag/js?id=G-HWRY2Z7G7N"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         />
         <script
           dangerouslySetInnerHTML={{
@@ -137,7 +138,7 @@ export default function RootLayout({
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-HWRY2Z7G7N');
+              gtag('config', '${GA_MEASUREMENT_ID}');
             `,
           }}
         />

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle2 } from 'lucide-react'
+import { gaEvent } from '@/lib/gtag'
 
 interface Props {
   workshopId?: string
@@ -28,6 +29,14 @@ export default function WorkshopRequestForm({ workshopId, categorySlug }: Props)
     website: '', // honeypot
   })
 
+  // GA4: リクエストのみ導線（＝Stripe 決済導線なし）の閲覧。構造的ゼロの可視化
+  useEffect(() => {
+    gaEvent('ws_request_only_view', {
+      workshop_id: workshopId ?? null,
+      category_slug: categorySlug ?? null,
+    })
+  }, [workshopId, categorySlug])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErrorMsg(null)
@@ -47,6 +56,11 @@ export default function WorkshopRequestForm({ workshopId, categorySlug }: Props)
         }
         return
       }
+      gaEvent('ws_request_submit', {
+        workshop_id: workshopId ?? null,
+        category_slug: categorySlug ?? null,
+        participants: form.participants,
+      })
       setSuccess(true)
     } catch {
       setErrorMsg('通信エラーが発生しました。')

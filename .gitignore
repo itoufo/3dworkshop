@@ -64,3 +64,12 @@ Thumbs.db
 tmp/
 temp/
 .env
+
+# Service account keys / secrets (never commit)
+/secrets/
+
+# Generated GA4 reports
+/outputs/ga4-report-*.md
+
+# Local Netlify folder
+.netlify

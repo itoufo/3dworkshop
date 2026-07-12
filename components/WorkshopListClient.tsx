@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Workshop, WorkshopCategory } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -8,6 +8,7 @@ import { Calendar, Clock, MapPin, Users, Pin, ChevronLeft, ChevronRight, Sparkle
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { useRouter } from 'next/navigation'
 import PastWorkshopsAccordion from '@/components/PastWorkshopsAccordion'
+import { gaEvent, gaWorkshopItem } from '@/lib/gtag'
 
 const ITEMS_PER_PAGE = 9
 
@@ -110,17 +111,35 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
       .reverse()
   }, [filteredByCategory, todayIso])
 
-  const handleWorkshopClick = (e: React.MouseEvent, workshopId: string) => {
+  const handleWorkshopClick = (e: React.MouseEvent, workshop: Workshop) => {
     e.preventDefault()
     if (navigating) return
-    setNavigating(workshopId)
-    router.push(`/workshops/${workshopId}`)
+    gaEvent('select_item', {
+      item_list_id: `cat:${selectedCategory ?? 'all'}|date:${selectedDate ?? 'default'}`,
+      items: [gaWorkshopItem(workshop)],
+    })
+    setNavigating(workshop.id)
+    router.push(`/workshops/${workshop.id}`)
   }
 
   const totalPages = Math.ceil(filteredByDate.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
   const currentWorkshops = filteredByDate.slice(startIndex, endIndex)
+
+  // GA4: 一覧表示の item_list 識別子（カテゴリ×日付フィルタ）
+  const listId = `cat:${selectedCategory ?? 'all'}|date:${selectedDate ?? 'default'}`
+
+  // GA4: view_item_list（ページ / フィルタが変わるたびに送信）
+  useEffect(() => {
+    if (currentWorkshops.length === 0) return
+    gaEvent('view_item_list', {
+      item_list_id: listId,
+      items: currentWorkshops.map(w => gaWorkshopItem(w)),
+    })
+    // currentWorkshops / listId は下記依存から導出されるため意図的に除外
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, selectedCategory, selectedDate])
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -251,7 +270,7 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
                 return (
                   <div
                     key={workshop.id}
-                    onClick={(e) => handleWorkshopClick(e, workshop.id)}
+                    onClick={(e) => handleWorkshopClick(e, workshop)}
                     className={`group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1 cursor-pointer ${
                       navigating === workshop.id ? 'opacity-75 pointer-events-none' : ''
                     }`}

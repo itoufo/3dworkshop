@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
+import { gaEvent, GA_CURRENCY } from '@/lib/gtag'
 
 interface Customer {
   id: string
@@ -70,6 +71,24 @@ function SuccessContent() {
       }
 
       setBooking(data.booking)
+
+      // GA4: purchase。session_id 単位で1回だけ送り、リロード/再描画の二重計上を防ぐ
+      const purchaseKey = `ga_purchase_${sessionId}`
+      if (data.booking && !sessionStorage.getItem(purchaseKey)) {
+        sessionStorage.setItem(purchaseKey, '1')
+        const b: Booking = data.booking
+        gaEvent('purchase', {
+          transaction_id: b.id,
+          currency: GA_CURRENCY,
+          value: b.total_amount,
+          items: [{
+            item_id: b.workshop_id,
+            item_name: b.workshop?.title,
+            price: b.workshop?.price,
+            quantity: b.participants,
+          }],
+        })
+      }
     } catch (error) {
       console.error('Error confirming payment:', error)
       setError(error instanceof Error ? error.message : '予約の確定に失敗しました')
