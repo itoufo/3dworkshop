@@ -74,6 +74,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const [appliedCoupon, setAppliedCoupon] = useState<{id: string; code: string; description?: string; discount_type: 'percentage' | 'fixed_amount'; discount_value: number} | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  // GA4: モーダル離脱計測用。開いた(add_to_cart)のに決済(begin_checkout)へ進まず閉じたら離脱。
+  const checkoutStartedRef = useRef(false)
+  const closeMethodRef = useRef<string>('unknown')
+  const prevModalOpenRef = useRef(false)
+  // モーダルを閉じる唯一の入口。閉じ方(× / 背景 / Esc)を記録してから閉じる。
+  const requestClose = (method: string) => {
+    closeMethodRef.current = method
+    setModalOpen(false)
+  }
   const [availability, setAvailability] = useState<{
     available_spots: number
     is_full: boolean
@@ -93,7 +102,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setModalOpen(false)
+      if (e.key === 'Escape') requestClose('escape')
     }
     window.addEventListener('keydown', onKeyDown)
     return () => {
@@ -101,6 +110,21 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [modalOpen])
+
+  // GA4: モーダルを開いた→決済へ進まず閉じた 遷移で ws_booking_modal_abandon を1回送る。
+  // 「キャンセル不可などの文言で決断直前に離脱していないか」を数値で検証するための計測。
+  useEffect(() => {
+    if (prevModalOpenRef.current && !modalOpen && !checkoutStartedRef.current) {
+      gaEvent('ws_booking_modal_abandon', {
+        workshop_id: workshop.id,
+        method: closeMethodRef.current, // 'x_button' | 'backdrop' | 'escape' | 'unknown'
+        participants: booking.participants,
+        coupon_applied: !!appliedCoupon,
+        value: workshop.price * booking.participants,
+      })
+    }
+    prevModalOpenRef.current = modalOpen
+  }, [modalOpen, workshop.id, workshop.price, booking.participants, appliedCoupon])
 
   // GA4: view_item（予約セクション表示を workshop ごとに1回）
   const viewItemSentRef = useRef<string | null>(null)
@@ -200,6 +224,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
   // GA4: add_to_cart（「予約する」でモーダルを開く＝予約意図）
   const openBookingModal = () => {
+    checkoutStartedRef.current = false
+    closeMethodRef.current = 'unknown'
     gaEvent('add_to_cart', {
       currency: GA_CURRENCY,
       value: workshop.price * booking.participants,
@@ -293,6 +319,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         participants: booking.participants,
         items: [gaWorkshopItem(workshop, booking.participants)],
       })
+      checkoutStartedRef.current = true // 決済へ進んだので離脱としてカウントしない
 
       const stripe = await stripePromise
       await stripe?.redirectToCheckout({ sessionId })
@@ -533,7 +560,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setModalOpen(false)}
+            onClick={() => requestClose('backdrop')}
           />
           <div
             role="dialog"
@@ -555,7 +582,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               </div>
               <button
                 type="button"
-                onClick={() => setModalOpen(false)}
+                onClick={() => requestClose('x_button')}
                 aria-label="閉じる"
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
               >
@@ -857,7 +884,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 ※ 料金には材料費・設備使用料が含まれています
               </p>
               <p className="text-xs text-gray-500">
-                ※ お支払い後のキャンセル・返金はいたしかねます
+                ※ 開催日の3日前まで無料でキャンセル・全額返金いたします
               </p>
             </div>
 

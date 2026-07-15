@@ -53,6 +53,10 @@ export default function Footer() {
               スタッフ紹介
             </Link>
             <span className="text-gray-600">|</span>
+            <Link href="/faq" className="text-gray-400 hover:text-purple-400 transition-colors">
+              よくある質問
+            </Link>
+            <span className="text-gray-600">|</span>
             <Link href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
               利用規約
             </Link>

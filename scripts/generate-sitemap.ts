@@ -93,6 +93,12 @@ const staticPages: SitemapUrl[] = [
     priority: 0.75,
   },
   {
+    loc: '/faq',
+    lastmod: new Date().toISOString(),
+    changefreq: 'monthly',
+    priority: 0.6,
+  },
+  {
     loc: '/terms',
     lastmod: new Date().toISOString(),
     changefreq: 'monthly',
