@@ -52,7 +52,7 @@ export default function NewWorkshopPage() {
 
       if (cats) setCategories(cats)
 
-      // from_categoryが指定されている場合、直近の公開WSの内容をコピー（非公開の特別回は雛形にしない）
+      // from_categoryが指定されている場合、直近の通常公開WSをコピー（ピン留めの特別回・サービスは雛形にしない）
       if (fromCategory) {
         setCopyingFromCategory(true)
         const { data: latestWs } = await supabase
@@ -60,9 +60,11 @@ export default function NewWorkshopPage() {
           .select('*')
           .eq('category_id', fromCategory)
           .eq('is_private', false)
+          .eq('is_pinned', false)   // ピン留めの特別回（例: 夏休み親子特別回）は雛形にしない
+          .eq('is_service', false)  // サービスも雛形にしない
           .order('event_date', { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle()
 
         if (latestWs) {
           setWorkshop({
