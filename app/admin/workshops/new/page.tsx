@@ -7,7 +7,7 @@ import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock } from 'lucide-react'
+import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -33,7 +33,10 @@ export default function NewWorkshopPage() {
     show_features: true,
     is_private: false,
     preview_password: '',
-    collect_demographics: false
+    collect_demographics: false,
+    early_bird_enabled: false,
+    early_bird_discount: '',
+    early_bird_slots: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -82,7 +85,10 @@ export default function NewWorkshopPage() {
             show_features: latestWs.show_features !== false,
             is_private: latestWs.is_private === true,
             preview_password: latestWs.preview_password || '',
-            collect_demographics: latestWs.collect_demographics === true
+            collect_demographics: latestWs.collect_demographics === true,
+            early_bird_enabled: latestWs.early_bird_enabled === true,
+            early_bird_discount: latestWs.early_bird_discount?.toString() || '',
+            early_bird_slots: latestWs.early_bird_slots?.toString() || ''
           })
           if (latestWs.image_url) {
             setImagePreview(latestWs.image_url)
@@ -120,6 +126,11 @@ export default function NewWorkshopPage() {
 
     if (workshop.is_private && !workshop.preview_password.trim()) {
       alert('限定公開にする場合は閲覧パスワードを設定してください')
+      return
+    }
+
+    if (workshop.early_bird_enabled && !(parseInt(workshop.early_bird_discount) > 0 && parseInt(workshop.early_bird_slots) > 0)) {
+      alert('早割を有効にする場合は、1名あたりの割引額と先着組数を1以上で設定してください')
       return
     }
 
@@ -162,7 +173,10 @@ export default function NewWorkshopPage() {
           show_features: workshop.show_features,
           is_private: workshop.is_private,
           preview_password: workshop.preview_password.trim() || null,
-          collect_demographics: workshop.collect_demographics
+          collect_demographics: workshop.collect_demographics,
+          early_bird_enabled: workshop.early_bird_enabled,
+          early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
+          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null
         })
         .select()
         .single()
@@ -352,6 +366,65 @@ export default function NewWorkshopPage() {
                   />
                 </button>
               </div>
+            </div>
+
+            {/* 早割チケット設定 */}
+            <div className="p-4 bg-pink-50 border border-pink-200 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Ticket className="w-4 h-4 mr-1 text-pink-600" />
+                    早割チケット（先着割引）
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    オンにすると、先着◯組までの予約に「1名あたり◯円引き」を自動適用します（予約1件＝1組。キャンセルで枠は戻ります）
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWorkshop({ ...workshop, early_bird_enabled: !workshop.early_bird_enabled })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
+                    workshop.early_bird_enabled ? 'bg-pink-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      workshop.early_bird_enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {workshop.early_bird_enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-pink-200">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      1名あたりの割引額（円）*
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={workshop.early_bird_discount}
+                      onChange={(e) => setWorkshop({ ...workshop, early_bird_discount: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-gray-900"
+                      placeholder="例: 1000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      先着組数（予約数）*
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={workshop.early_bird_slots}
+                      onChange={(e) => setWorkshop({ ...workshop, early_bird_slots: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-gray-900"
+                      placeholder="例: 10"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 基本情報 */}

@@ -33,6 +33,9 @@ export interface Workshop {
   is_private?: boolean
   preview_password?: string | null
   collect_demographics?: boolean
+  early_bird_enabled?: boolean
+  early_bird_discount?: number | null
+  early_bird_slots?: number | null
   sessions?: WorkshopSession[]
   created_at?: string
   updated_at?: string

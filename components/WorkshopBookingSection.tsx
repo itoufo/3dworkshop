@@ -88,7 +88,18 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     is_full: boolean
     manual_participants: number
     booked_participants: number
+    early_bird?: {
+      enabled: boolean
+      discount: number
+      slots: number
+      remaining: number
+    } | null
   } | null>(null)
+
+  // 早割: 残り組数がある間は「1名あたり割引 × 参加人数」を適用（金額の確定はサーバー側）
+  const earlyBird = availability?.early_bird
+  const earlyBirdActive = !!earlyBird && earlyBird.enabled && earlyBird.remaining > 0 && earlyBird.discount > 0
+  const earlyBirdDiscount = earlyBirdActive ? earlyBird!.discount * booking.participants : 0
 
   useEffect(() => {
     if (!isPastWorkshop) {
@@ -420,6 +431,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               )
             )}
           </div>
+          {earlyBirdActive && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm font-medium">
+              <span>🎉 早割 先着{earlyBird!.slots}組・1名¥{earlyBird!.discount.toLocaleString()}引き</span>
+              <span className="ml-auto rounded-full bg-yellow-300 px-2 py-0.5 text-xs font-bold text-purple-900">
+                残り{earlyBird!.remaining}組
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="p-6">
@@ -866,6 +885,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   ¥{(workshop.price * booking.participants).toLocaleString()}
                 </span>
               </div>
+              {earlyBirdActive && (
+                <div className="flex justify-between items-center text-pink-600">
+                  <span>早割（1名¥{earlyBird!.discount.toLocaleString()}引き × {booking.participants}名）</span>
+                  <span>-¥{earlyBirdDiscount.toLocaleString()}</span>
+                </div>
+              )}
               {couponValidation.valid && couponValidation.discount_amount && (
                 <div className="flex justify-between items-center text-green-600">
                   <span>クーポン割引</span>
@@ -875,7 +900,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                 <span className="text-gray-900 font-semibold">合計金額</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  ¥{((workshop.price * booking.participants) - (couponValidation.discount_amount || 0)).toLocaleString()}
+                  ¥{Math.max(0, (workshop.price * booking.participants) - earlyBirdDiscount - (couponValidation.discount_amount || 0)).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -884,7 +909,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 ※ 料金には材料費・設備使用料が含まれています
               </p>
               <p className="text-xs text-gray-500">
-                ※ 開催日の3日前まで無料でキャンセル・全額返金いたします
+                ※ 開催日の前日まで無料でキャンセル・全額返金いたします
               </p>
             </div>
 

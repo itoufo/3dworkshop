@@ -17,12 +17,38 @@ export async function GET(request: NextRequest) {
 
     const { data: workshop, error: workshopError } = await supabaseAdmin
       .from('workshops')
-      .select('max_participants, manual_participants')
+      .select('max_participants, manual_participants, early_bird_enabled, early_bird_discount, early_bird_slots')
       .eq('id', workshopId)
       .single()
 
     if (workshopError || !workshop) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
+    }
+
+    // 早割の残り組数（ワークショップ単位・キャンセル以外の予約行数でカウント）
+    let early_bird: {
+      enabled: boolean
+      discount: number
+      slots: number
+      remaining: number
+    } | null = null
+    if (
+      workshop.early_bird_enabled &&
+      (workshop.early_bird_discount ?? 0) > 0 &&
+      (workshop.early_bird_slots ?? 0) > 0
+    ) {
+      const { count } = await supabaseAdmin
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('workshop_id', workshopId)
+        .neq('status', 'cancelled')
+      const used = count ?? 0
+      early_bird = {
+        enabled: true,
+        discount: workshop.early_bird_discount,
+        slots: workshop.early_bird_slots,
+        remaining: Math.max(0, workshop.early_bird_slots - used),
+      }
     }
 
     // セッション単位カウント
@@ -68,6 +94,7 @@ export async function GET(request: NextRequest) {
         available_spots: Math.max(0, availableSpots),
         is_full: isCancelled || availableSpots <= 0,
         is_cancelled: isCancelled,
+        early_bird,
       })
     }
 
@@ -97,6 +124,7 @@ export async function GET(request: NextRequest) {
       total_participants: totalParticipants,
       available_spots: Math.max(0, availableSpots),
       is_full: availableSpots <= 0,
+      early_bird,
     })
   } catch (error) {
     console.error('Error checking availability:', error)
