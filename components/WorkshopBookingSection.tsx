@@ -76,6 +76,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const [modalOpen, setModalOpen] = useState(false)
   // GA4: モーダル離脱計測用。開いた(add_to_cart)のに決済(begin_checkout)へ進まず閉じたら離脱。
   const checkoutStartedRef = useRef(false)
+  // GA4: フォームに一度でも触れたか。「開いただけ」と「入力したが送信手前で離脱」を分離する。
+  const formStartedRef = useRef(false)
   const closeMethodRef = useRef<string>('unknown')
   const prevModalOpenRef = useRef(false)
   // モーダルを閉じる唯一の入口。閉じ方(× / 背景 / Esc)を記録してから閉じる。
@@ -236,6 +238,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   // GA4: add_to_cart（「予約する」でモーダルを開く＝予約意図）
   const openBookingModal = () => {
     checkoutStartedRef.current = false
+    formStartedRef.current = false
     closeMethodRef.current = 'unknown'
     gaEvent('add_to_cart', {
       currency: GA_CURRENCY,
@@ -243,6 +246,18 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       items: [gaWorkshopItem(workshop, booking.participants)],
     })
     setModalOpen(true)
+  }
+
+  // GA4: ws_form_start（モーダル内でフォームに最初に触れた1回だけ）。
+  // add_to_cart(開いた) と begin_checkout(送信) の間を「入力に着手したか」で分解する。
+  const handleFormStart = () => {
+    if (formStartedRef.current) return
+    formStartedRef.current = true
+    gaEvent('ws_form_start', {
+      workshop_id: workshop.id,
+      currency: GA_CURRENCY,
+      value: workshop.price * booking.participants,
+    })
   }
 
   // GA4: ws_session_select（日程ラジオの選択）
@@ -610,7 +625,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             </div>
 
             <div className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-4">
           {/* Participants */}
           <div>
             <label htmlFor="booking-participants" className="block text-sm font-medium text-gray-700 mb-2">
