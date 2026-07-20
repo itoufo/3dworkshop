@@ -14,6 +14,7 @@
     "event:status": "tsx scripts/event-posting/cli.ts status",
     "event:discover": "tsx scripts/event-posting/cli.ts discover",
     "ga4:report": "tsx scripts/ga4-report.ts",
+    "ga4:modal": "tsx scripts/ga4-modal-funnel.ts",
     "prebuild": "npm run generate:sitemap"
   },
   "dependencies": {
