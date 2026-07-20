@@ -575,12 +575,15 @@ export default function AdminDashboard() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ステータス
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     作成日時
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ワークショップ開催日
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ワークショップ
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -594,9 +597,6 @@ export default function AdminDashboard() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     クーポン
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ステータス
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     アクション
@@ -613,6 +613,17 @@ export default function AdminDashboard() {
                 )}
                 {displayedBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        booking.status === 'confirmed'
+                          ? 'bg-green-100 text-green-800'
+                          : booking.status === 'cancelled'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {booking.status === 'confirmed' ? '✓ 確定' : booking.status === 'cancelled' ? '× キャンセル' : '○ 保留'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {new Date(booking.created_at).toLocaleDateString('ja-JP', {
@@ -658,12 +669,15 @@ export default function AdminDashboard() {
                         <span className="text-sm text-gray-400">未設定</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                    <td className="px-4 py-4 max-w-[200px]">
+                      <div
+                        className="text-sm font-medium text-gray-900 truncate"
+                        title={booking.workshop?.title}
+                      >
                         {booking.workshop?.title}
                       </div>
                       {booking.workshop?.location && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 truncate" title={booking.workshop.location}>
                           <MapPin className="w-3 h-3 inline mr-1" />
                           {booking.workshop.location}
                         </div>
@@ -725,17 +739,6 @@ export default function AdminDashboard() {
                       ) : (
                         <span className="text-xs text-gray-400">なし</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        booking.status === 'confirmed' 
-                          ? 'bg-green-100 text-green-800'
-                          : booking.status === 'cancelled'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {booking.status === 'confirmed' ? '✓ 確定' : booking.status === 'cancelled' ? '× キャンセル' : '○ 保留'}
-                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <select
