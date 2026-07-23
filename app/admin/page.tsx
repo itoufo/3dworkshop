@@ -714,11 +714,6 @@ export default function AdminDashboard() {
                           {booking.minor_grades && <>（{booking.minor_grades}）</>}
                         </div>
                       )}
-                      {booking.companion_count != null && booking.companion_count > 0 && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          + 同伴者{booking.companion_count}名（無料・席数外）
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-gray-900">

@@ -118,8 +118,6 @@ export interface Booking {
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
   minor_count?: number | null
   minor_grades?: string | null
-  // 同伴者（付き添いの保護者）: 1名まで無料・定員にカウントしない
-  companion_count?: number | null
   created_at: string
   updated_at?: string
   // Joined fields (when using Supabase .select() with relations)
