@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {
@@ -74,6 +74,9 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'payment',
       customer_email: customer_email,
+      // 30分で失効させ、未決済のまま席が押さえられ続けるのを防ぐ。
+      // 失効時は checkout.session.expired Webhook で予約をキャンセルする。
+      expires_at: checkoutExpiresAt(),
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/workshops/${workshop_id}`,
       metadata: {
