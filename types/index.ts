@@ -134,6 +134,8 @@ export interface Booking {
   notes?: string
   minor_count?: number | null
   minor_grades?: string | null
+  // 同伴者（付き添いの保護者）: 1名まで無料・定員にカウントしない
+  companion_count?: number | null
   created_at: string
   updated_at: string
   workshop?: Workshop
