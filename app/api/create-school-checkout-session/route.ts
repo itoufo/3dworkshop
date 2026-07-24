@@ -35,26 +35,31 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 入会金用の一回限りの価格を作成（one_time）
-    const onetimePrice = await stripe.prices.create({
-      unit_amount: registration_fee,
-      currency: 'jpy',
-      product_data: {
-        name: 'スクール入会金（初回のみ・システム登録料含む）'
-      }
-    })
-
-    // Line items: サブスクリプション + 入会金
+    // Line items: サブスクリプション（+ 入会金）
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       {
         price: recurringPrice.id,  // 月額サブスクリプション
         quantity: 1
-      },
-      {
-        price: onetimePrice.id,    // 入会金（一回限り）
-        quantity: 1
       }
     ]
+
+    // 入会金無料キャンペーン中は 0 円になるため、行自体を追加しない
+    // （Stripe は subscription モードで 0 円の one_time 明細を受け付けない）
+    if (registration_fee > 0) {
+      // 入会金用の一回限りの価格を作成（one_time）
+      const onetimePrice = await stripe.prices.create({
+        unit_amount: registration_fee,
+        currency: 'jpy',
+        product_data: {
+          name: 'スクール入会金（初回のみ・システム登録料含む）'
+        }
+      })
+
+      lineItems.push({
+        price: onetimePrice.id,    // 入会金（一回限り）
+        quantity: 1
+      })
+    }
 
     // Create metadata for the session
     const metadata: Record<string, string> = {

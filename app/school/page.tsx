@@ -5,6 +5,13 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { Calendar, Clock, MapPin, Users, Check, Star, Gift, BookOpen, Monitor, Zap, Heart } from 'lucide-react'
 import Footer from '@/components/Footer'
+import {
+  CAMPAIGN_END_LABEL,
+  REGULAR_REGISTRATION_FEE,
+  isEnrollmentFeeCampaignActive,
+} from '@/lib/school-campaign'
+
+const campaignActive = isEnrollmentFeeCampaignActive()
 
 export default function SchoolPage() {
   const [selectedClass, setSelectedClass] = useState<'free' | 'basic'>('free')
@@ -40,9 +47,22 @@ export default function SchoolPage() {
             </p>
             
             {/* 入会特典 */}
-            <div className="mt-8 inline-flex items-center bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-8 py-4 rounded-2xl shadow-lg">
-              <Zap className="w-6 h-6 mr-2" />
-              <span className="text-xl font-bold">入会月は月謝無料！</span>
+            <div className="mt-8 flex flex-col items-center gap-3">
+              {campaignActive && (
+                <div className="inline-flex flex-col sm:flex-row sm:items-center bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-2xl shadow-lg">
+                  <span className="flex items-center justify-center text-xl font-bold">
+                    <Zap className="w-6 h-6 mr-2" />
+                    入会金<span className="line-through opacity-70 mx-1 font-normal">¥{REGULAR_REGISTRATION_FEE.toLocaleString()}</span>が0円！
+                  </span>
+                  <span className="mt-1 sm:mt-0 sm:ml-4 text-sm font-semibold bg-white/20 rounded-full px-3 py-1">
+                    {CAMPAIGN_END_LABEL}まで
+                  </span>
+                </div>
+              )}
+              <div className="inline-flex items-center bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-8 py-4 rounded-2xl shadow-lg">
+                <Zap className="w-6 h-6 mr-2" />
+                <span className="text-xl font-bold">入会月は月謝無料！</span>
+              </div>
             </div>
           </div>
           
@@ -143,7 +163,19 @@ export default function SchoolPage() {
                     <span className="text-gray-600">月謝</span>
                     <span className="text-3xl font-bold text-gray-900">¥17,000</span>
                   </div>
-                  <p className="text-sm text-gray-500">入会金: ¥20,000（税別）※システム登録料含む</p>
+                  {campaignActive ? (
+                    <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+                      <span className="text-base font-semibold text-gray-800">入会金</span>
+                      <span className="text-right">
+                        <span className="text-base text-gray-400 line-through mr-2">
+                          ¥{REGULAR_REGISTRATION_FEE.toLocaleString()}
+                        </span>
+                        <span className="text-2xl font-black text-orange-600">¥0</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-base text-gray-500">入会金: ¥20,000（税別）※システム登録料含む</p>
+                  )}
                 </div>
               </div>
             </div>

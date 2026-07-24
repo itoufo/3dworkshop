@@ -9,6 +9,12 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaCoverage from '@/components/MediaCoverage'
 import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Tag, X, Shield, Clock, Gift, Check } from 'lucide-react'
 import Footer from '@/components/Footer'
+import {
+  CAMPAIGN_END_LABEL,
+  REGULAR_REGISTRATION_FEE,
+  getRegistrationFee,
+  isEnrollmentFeeCampaignActive,
+} from '@/lib/school-campaign'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -30,12 +36,15 @@ const classes: Record<string, SchoolClass> = {
     name: '自由創作クラス（教室開放）',
     description: 'PCや有料版AIを自由に使いながら、自分のアイデアをとことん形にできるクラス',
     price: 17000,
-    registrationFee: 22000, // 20000円（税別）= 22000円（税込）
+    // 通常 20000円（税別）= 22000円（税込）。キャンペーン期間中は 0 円
+    registrationFee: getRegistrationFee(),
     duration: '120分/回',
     frequency: '開校日の好きな日に月2回',
     perks: '制作し放題（時間内）'
   }
 }
+
+const campaignActive = isEnrollmentFeeCampaignActive()
 
 export default function SchoolApplyPage() {
   const searchParams = useSearchParams()
@@ -186,7 +195,7 @@ export default function SchoolApplyPage() {
           monthly_fee: selectedClass.price,
           registration_fee: selectedClass.registrationFee,
           coupon_id: appliedCoupon?.id,
-          discount_amount: couponValidation.discount_amount || 0
+          discount_amount: discountAmount
         }),
       })
 
@@ -223,11 +232,15 @@ export default function SchoolApplyPage() {
   }
 
   // basicクラスは初月月謝も請求、freeクラスは入会金のみ
-  const totalAmount = selectedClass.id === 'basic' 
-    ? selectedClass.registrationFee + selectedClass.price 
+  const totalAmount = selectedClass.id === 'basic'
+    ? selectedClass.registrationFee + selectedClass.price
     : selectedClass.registrationFee
-  const discountAmount = couponValidation.discount_amount || 0
+  // 初回請求額を超える割引は適用しない（入会金無料キャンペーンで初回0円のときに
+  // 合計がマイナス表示になる・Stripeがエラーになるのを防ぐ）
+  const discountAmount = Math.min(couponValidation.discount_amount || 0, totalAmount)
   const finalAmount = totalAmount - discountAmount
+  // 初回請求が0円のときはクーポンを適用する余地がないため入力欄を出さない
+  const couponApplicable = totalAmount > 0
 
   return (
     <>
@@ -469,6 +482,7 @@ export default function SchoolApplyPage() {
               </div>
 
               {/* Coupon Code */}
+              {couponApplicable && (
               <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl p-6 border border-yellow-200">
                 <label className="flex items-center text-base font-bold text-gray-900 mb-3">
                   <Tag className="w-5 h-5 mr-2 text-amber-600" />
@@ -528,6 +542,7 @@ export default function SchoolApplyPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Price Summary */}
               <div className="bg-gradient-to-br from-slate-50 to-gray-100 rounded-3xl p-8 border-2 border-gray-200 shadow-lg">
@@ -540,10 +555,28 @@ export default function SchoolApplyPage() {
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                    <span className="text-gray-700 font-medium">入会金（初回のみ）</span>
-                    <span className="text-xl font-bold text-gray-900">
-                      ¥{selectedClass.registrationFee.toLocaleString()}
-                    </span>
+                    <div>
+                      <span className="text-gray-700 font-medium">入会金（初回のみ）</span>
+                      {campaignActive && (
+                        <span className="ml-2 text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full font-bold shadow-sm">
+                          キャンペーン中
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {campaignActive ? (
+                        <>
+                          <span className="text-lg text-gray-400 line-through mr-2">
+                            ¥{REGULAR_REGISTRATION_FEE.toLocaleString()}
+                          </span>
+                          <span className="text-xl text-green-600 font-black">¥0</span>
+                        </>
+                      ) : (
+                        <span className="text-xl font-bold text-gray-900">
+                          ¥{selectedClass.registrationFee.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-200">
@@ -602,13 +635,27 @@ export default function SchoolApplyPage() {
                   <ul className="text-sm text-blue-800 space-y-2">
                     {selectedClass.id === 'free' ? (
                       <>
+                        {campaignActive && (
+                          <li className="flex items-start">
+                            <span className="text-blue-600 mr-2">✓</span>
+                            <span>
+                              入会金（通常¥{REGULAR_REGISTRATION_FEE.toLocaleString()}）は
+                              <span className="font-bold text-green-700">無料</span>
+                              です（{CAMPAIGN_END_LABEL}までのお申込み）
+                            </span>
+                          </li>
+                        )}
                         <li className="flex items-start">
                           <span className="text-blue-600 mr-2">✓</span>
                           <span>初月（入会月）の月謝は<span className="font-bold text-green-700">無料</span>です</span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-blue-600 mr-2">✓</span>
-                          <span>本日は入会金のみをお支払いいただきます</span>
+                          <span>
+                            {campaignActive
+                              ? '本日のお支払いは0円です（お支払い方法のご登録のみ行います）'
+                              : '本日は入会金のみをお支払いいただきます'}
+                          </span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-blue-600 mr-2">✓</span>

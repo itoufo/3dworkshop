@@ -83,7 +83,8 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
     : '自由創作クラス（教室開放）'
   
   const monthlyFee = enrollment.monthly_fee || (classType === 'basic' ? 30000 : 17000)
-  const registrationFee = enrollment.registration_fee || 22000
+  // 入会金無料キャンペーンでは 0 が入るため ?? を使う（|| だと 0 が 22000 に化ける）
+  const registrationFee = enrollment.registration_fee ?? 22000
   
   const html = `
     <!DOCTYPE html>
@@ -138,7 +139,11 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             <h3 style="color: #9333ea; margin-top: 30px;">料金について</h3>
             <div class="info-row">
               <span class="info-label">入会金：</span>
-              <span class="info-value">¥${registrationFee.toLocaleString()}（初回のみ）</span>
+              <span class="info-value">${
+                registrationFee === 0
+                  ? '<strong style="color:#16a34a;">無料</strong>（入会金無料キャンペーン適用）'
+                  : `¥${registrationFee.toLocaleString()}（初回のみ）`
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">月謝：</span>
