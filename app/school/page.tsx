@@ -59,10 +59,6 @@ export default function SchoolPage() {
                   </span>
                 </div>
               )}
-              <div className="inline-flex items-center bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-8 py-4 rounded-2xl shadow-lg">
-                <Zap className="w-6 h-6 mr-2" />
-                <span className="text-xl font-bold">入会月は月謝無料！</span>
-              </div>
             </div>
           </div>
           

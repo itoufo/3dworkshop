@@ -86,12 +86,11 @@ export async function POST(request: NextRequest) {
       customer_email,
       metadata,
       locale: 'ja',
+      // 無料トライアルは設けない。申込時に初月の月謝を課金し、以後は毎月同日に自動更新。
+      // （trial_end を使うと Stripe の決済画面に「◯日間無料」と表示され、
+      //   月末申込ほど短い日数が出て誤解を招くため廃止）
       subscription_data: {
-        metadata,
-        // freeクラスの場合は翌月まで無料トライアル
-        ...(class_type === 'free' && {
-          trial_end: Math.floor(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).getTime() / 1000)
-        })
+        metadata
       }
     }
 

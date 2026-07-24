@@ -52,6 +52,10 @@ export default function SchoolApplyPage() {
   const classType = searchParams.get('class') || 'free'
   const selectedClass = classes[classType] || classes.free
   
+  // 受講者区分。大人は保護者情報・学年を持たないためフォームを切り替える
+  const [studentType, setStudentType] = useState<'child' | 'adult'>('child')
+  const isAdult = studentType === 'adult'
+
   const [formData, setFormData] = useState({
     studentName: '',
     studentAge: '',
@@ -140,7 +144,8 @@ export default function SchoolApplyPage() {
         address?: string;
       } = {
         email: formData.email,
-        name: formData.parentName,
+        // 大人は本人が契約者。子どもの場合は保護者が契約者になる
+        name: isAdult ? formData.studentName : formData.parentName,
         phone: formData.phone
       }
       
@@ -166,12 +171,13 @@ export default function SchoolApplyPage() {
           customer_id: customer.id,
           class_type: selectedClass.id,
           class_name: selectedClass.name,
+          student_type: studentType,
           student_name: formData.studentName,
           student_age: parseInt(formData.studentAge),
-          student_grade: formData.studentGrade,
+          student_grade: isAdult ? null : formData.studentGrade,
           monthly_fee: selectedClass.price,
           registration_fee: selectedClass.registrationFee,
-          total_amount: totalAmount, // basicは入会金+初月月謝、freeは入会金のみ
+          total_amount: totalAmount, // 入会金 + 初月月謝
           notes: formData.notes,
           status: 'pending',
           payment_status: 'pending',
@@ -231,12 +237,9 @@ export default function SchoolApplyPage() {
     }
   }
 
-  // basicクラスは初月月謝も請求、freeクラスは入会金のみ
-  const totalAmount = selectedClass.id === 'basic'
-    ? selectedClass.registrationFee + selectedClass.price
-    : selectedClass.registrationFee
-  // 初回請求額を超える割引は適用しない（入会金無料キャンペーンで初回0円のときに
-  // 合計がマイナス表示になる・Stripeがエラーになるのを防ぐ）
+  // 無料トライアルは廃止したため、初回は「入会金 + 初月月謝」を必ず請求する
+  const totalAmount = selectedClass.registrationFee + selectedClass.price
+  // 初回請求額を超える割引は適用しない（合計がマイナスになる・Stripeがエラーになるのを防ぐ）
   const discountAmount = Math.min(couponValidation.discount_amount || 0, totalAmount)
   const finalAmount = totalAmount - discountAmount
   // 初回請求が0円のときはクーポンを適用する余地がないため入力欄を出さない
@@ -342,19 +345,55 @@ export default function SchoolApplyPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* 受講者区分 */}
+              <div className="bg-white rounded-2xl p-6 border-2 border-purple-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">受講されるのはどなたですか？</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {([
+                    { value: 'child', title: 'お子様', note: '18歳以下（保護者の方がお申込みください）' },
+                    { value: 'adult', title: '大人', note: '19歳以上（ご本人がお申込みください）' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setStudentType(opt.value)}
+                      className={`text-left p-5 rounded-xl border-2 transition-all ${
+                        studentType === opt.value
+                          ? 'border-purple-600 bg-purple-50 ring-2 ring-purple-200'
+                          : 'border-gray-200 bg-white hover:border-purple-300'
+                      }`}
+                    >
+                      <span className="flex items-center">
+                        <span
+                          className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center flex-shrink-0 ${
+                            studentType === opt.value ? 'border-purple-600 bg-purple-600' : 'border-gray-300'
+                          }`}
+                        >
+                          {studentType === opt.value && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <span className="text-lg font-bold text-gray-900">{opt.title}</span>
+                      </span>
+                      <span className="block mt-2 text-base text-gray-600">{opt.note}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Student Information */}
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
                 <div className="flex items-center mb-5">
                   <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-3">
                     <User className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">お子様の情報</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {isAdult ? '受講者ご本人の情報' : 'お子様の情報'}
+                  </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      お子様のお名前 <span className="text-red-500">*</span>
+                      {isAdult ? 'お名前' : 'お子様のお名前'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -362,7 +401,7 @@ export default function SchoolApplyPage() {
                       className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 transition-all"
                       value={formData.studentName}
                       onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                      placeholder="山田 花子"
+                      placeholder={isAdult ? '山田 太郎' : '山田 花子'}
                     />
                   </div>
 
@@ -373,15 +412,16 @@ export default function SchoolApplyPage() {
                     <input
                       type="number"
                       required
-                      min="5"
-                      max="18"
+                      min={isAdult ? 19 : 5}
+                      max={isAdult ? 120 : 18}
                       className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 transition-all"
                       value={formData.studentAge}
                       onChange={(e) => setFormData({ ...formData, studentAge: e.target.value })}
-                      placeholder="10"
+                      placeholder={isAdult ? '35' : '10'}
                     />
                   </div>
 
+                  {!isAdult && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       学年
@@ -394,19 +434,23 @@ export default function SchoolApplyPage() {
                       placeholder="小学4年生"
                     />
                   </div>
+                  )}
                 </div>
               </div>
 
-              {/* Parent Information */}
+              {/* Parent / Contact Information */}
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
                 <div className="flex items-center mb-5">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-3">
                     <User className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">保護者の情報</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {isAdult ? 'ご連絡先' : '保護者の情報'}
+                  </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {!isAdult && (
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       保護者のお名前 <span className="text-red-500">*</span>
@@ -420,6 +464,7 @@ export default function SchoolApplyPage() {
                       placeholder="山田 太郎"
                     />
                   </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -580,28 +625,10 @@ export default function SchoolApplyPage() {
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                    <div>
-                      <span className="text-gray-700 font-medium">初月月謝</span>
-                      {selectedClass.id === 'free' && (
-                        <span className="ml-2 text-xs bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full font-bold shadow-sm">入会無料特典</span>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      {selectedClass.id === 'free' ? (
-                        <>
-                          <span className="text-lg text-gray-400 line-through mr-2">
-                            ¥{selectedClass.price.toLocaleString()}
-                          </span>
-                          <span className="text-xl text-green-600 font-black">
-                            ¥0
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-xl font-bold text-gray-900">
-                          ¥{selectedClass.price.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-gray-700 font-medium">初月月謝</span>
+                    <span className="text-xl font-bold text-gray-900">
+                      ¥{selectedClass.price.toLocaleString()}
+                    </span>
                   </div>
 
                   {discountAmount > 0 && (
@@ -633,47 +660,33 @@ export default function SchoolApplyPage() {
                     <p className="text-sm text-blue-900 font-bold">お支払いについて</p>
                   </div>
                   <ul className="text-sm text-blue-800 space-y-2">
-                    {selectedClass.id === 'free' ? (
-                      <>
-                        {campaignActive && (
-                          <li className="flex items-start">
-                            <span className="text-blue-600 mr-2">✓</span>
-                            <span>
-                              入会金（通常¥{REGULAR_REGISTRATION_FEE.toLocaleString()}）は
-                              <span className="font-bold text-green-700">無料</span>
-                              です（{CAMPAIGN_END_LABEL}までのお申込み）
-                            </span>
-                          </li>
-                        )}
-                        <li className="flex items-start">
-                          <span className="text-blue-600 mr-2">✓</span>
-                          <span>初月（入会月）の月謝は<span className="font-bold text-green-700">無料</span>です</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-blue-600 mr-2">✓</span>
-                          <span>
-                            {campaignActive
-                              ? '本日のお支払いは0円です（お支払い方法のご登録のみ行います）'
-                              : '本日は入会金のみをお支払いいただきます'}
-                          </span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-blue-600 mr-2">✓</span>
-                          <span>翌月から月謝<span className="font-bold">¥{selectedClass.price.toLocaleString()}</span>が自動引き落としとなります</span>
-                        </li>
-                      </>
-                    ) : (
-                      <>
-                        <li className="flex items-start">
-                          <span className="text-blue-600 mr-2">✓</span>
-                          <span>本日は入会金と初月月謝をお支払いいただきます</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-blue-600 mr-2">✓</span>
-                          <span>翌月から月謝<span className="font-bold">¥{selectedClass.price.toLocaleString()}</span>が自動引き落としとなります</span>
-                        </li>
-                      </>
+                    {campaignActive && (
+                      <li className="flex items-start">
+                        <span className="text-blue-600 mr-2">✓</span>
+                        <span>
+                          入会金（通常¥{REGULAR_REGISTRATION_FEE.toLocaleString()}）は
+                          <span className="font-bold text-green-700">無料</span>
+                          です（{CAMPAIGN_END_LABEL}までのお申込み）
+                        </span>
+                      </li>
                     )}
+                    <li className="flex items-start">
+                      <span className="text-blue-600 mr-2">✓</span>
+                      <span>
+                        本日は
+                        {campaignActive ? '初月の月謝' : '入会金と初月月謝'}
+                        <span className="font-bold">¥{finalAmount.toLocaleString()}</span>
+                        をお支払いいただきます
+                      </span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-blue-600 mr-2">✓</span>
+                      <span>
+                        以後、毎月お申込み日と同じ日に月謝
+                        <span className="font-bold">¥{selectedClass.price.toLocaleString()}</span>
+                        が自動引き落としとなります
+                      </span>
+                    </li>
                   </ul>
                 </div>
               </div>

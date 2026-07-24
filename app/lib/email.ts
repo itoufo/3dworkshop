@@ -160,7 +160,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             <ol>
               <li>初回授業日について、別途メールでご案内いたします</li>
               <li>${classType === 'basic' ? '授業は土・日曜日に開催されます' : '開校日の中からご都合の良い日をお選びいただけます'}</li>
-              <li>月謝は${classType === 'free' ? '翌月から' : '今月から'}自動引き落としとなります</li>
+              <li>初月の月謝はお申込み時にお支払いいただいています。以後、毎月お申込み日と同じ日に自動引き落としとなります</li>
             </ol>
             
             <p style="margin-top: 30px;">ご不明な点がございましたら、お気軽にお問い合わせください。</p>
