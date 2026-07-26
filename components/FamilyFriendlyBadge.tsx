@@ -12,17 +12,23 @@ export default function FamilyFriendlyBadge({
 }: {
   className?: string
   tone?: 'default' | 'onColor'
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
 }) {
   const toneClass =
     tone === 'onColor'
       ? 'bg-white text-orange-600 ring-1 ring-orange-200'
       : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-2 ring-white/80'
-  const sizeClass = size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : 'px-3 py-1 text-xs'
+  const sizeClass =
+    size === 'sm'
+      ? 'px-2.5 py-0.5 text-[11px]'
+      : size === 'lg'
+        ? 'px-4 py-2 text-sm'
+        : 'px-3 py-1 text-xs'
+  const emojiClass = size === 'lg' ? 'text-lg leading-none' : 'text-sm leading-none'
   return (
     <span
       className={
-        'inline-flex items-center gap-1 rounded-full font-bold shadow-md whitespace-nowrap ' +
+        'inline-flex items-center gap-1.5 rounded-full font-bold shadow-md whitespace-nowrap ' +
         sizeClass +
         ' ' +
         toneClass +
@@ -30,7 +36,7 @@ export default function FamilyFriendlyBadge({
         className
       }
     >
-      <span aria-hidden className="text-sm leading-none">👨‍👩‍👧</span>
+      <span aria-hidden className={emojiClass}>👨‍👩‍👧</span>
       親子におすすめ
     </span>
   )
