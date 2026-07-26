@@ -205,7 +205,8 @@ export function generateBookingConfirmationEmail(
   participants?: number,
   minorCount?: number | null,
   minorGrades?: string | null,
-  productionNotes?: string | null
+  productionNotes?: string | null,
+  companionCount?: number | null
 ) {
   const subject = `予約確認: ${workshopTitle}`;
 
@@ -249,10 +250,11 @@ export function generateBookingConfirmationEmail(
             <p><strong>開始時間:</strong> ${time}</p>
             ${participants ? `<p><strong>人数:</strong> ${participants}名</p>` : ''}
             ${minorCount ? `<p><strong>高校生以下:</strong> ${minorCount}名${minorGrades ? `（${minorGrades}）` : ''}</p>` : ''}
+            ${companionCount ? `<p><strong>同伴者（付き添い）:</strong> ${companionCount}名（無料）</p>` : ''}
           </div>
           ${hasElementary ? `
           <div class="info-box" style="background-color: #fff8e1; border-left-color: #FFC107;">
-            <p>※小学生のご参加には同伴者（保護者）1名の付き添いが必要です（同伴者1名まで無料）。</p>
+            <p>※小学生のご参加には同伴者（保護者）1名の付き添いが必要です。${companionCount ? '同伴者1名まで無料・人数（席数）には含まれません。' : '付き添いの保護者は参加人数（1席分の料金）に含めてご予約ください。'}</p>
           </div>
           ` : ''}
           <div class="info-box">

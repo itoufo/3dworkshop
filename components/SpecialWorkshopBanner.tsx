@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { Sparkles, Calendar, ArrowRight } from 'lucide-react'
 import { getFeaturedWorkshop, getNearestUpcomingSession } from '@/lib/workshops'
 import { optimizeImageUrl } from '@/lib/image-optimization'
+import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
@@ -28,6 +29,7 @@ export default async function SpecialWorkshopBanner({
 
   const next = getNearestUpcomingSession(w)
   const href = `/workshops/${w.id}`
+  const isFamily = (w.sessions ?? []).some((s) => s.is_family_friendly)
 
   if (compact) {
     return (
@@ -38,7 +40,10 @@ export default async function SpecialWorkshopBanner({
         >
           <Sparkles className="w-5 h-5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold text-white/80">特別ワークショップ</div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white/80">特別ワークショップ</span>
+              {isFamily && <FamilyFriendlyBadge tone="onColor" className="!py-0.5 shadow-none" />}
+            </div>
             <div className="truncate font-bold text-base">{w.title}</div>
           </div>
           {next && (
@@ -78,10 +83,13 @@ export default async function SpecialWorkshopBanner({
             </div>
           )}
           <div className="flex flex-1 flex-col justify-center p-6 text-white md:p-10">
-            <span className="mb-3 inline-flex items-center gap-1.5 self-start rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold backdrop-blur">
-              <Sparkles className="w-4 h-4" />
-              特別ワークショップ
-            </span>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold backdrop-blur">
+                <Sparkles className="w-4 h-4" />
+                特別ワークショップ
+              </span>
+              {isFamily && <FamilyFriendlyBadge tone="onColor" />}
+            </div>
             <h2 className="mb-3 text-2xl font-bold leading-snug md:text-3xl">
               {w.title}
             </h2>

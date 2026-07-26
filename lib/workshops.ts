@@ -16,7 +16,7 @@ const SELECT_FOR_LISTING =
   'id, title, description, image_url, event_date, event_time, duration, location, ' +
   'max_participants, price, is_pinned, pin_order, category_id, ' +
   'category:workshop_categories(id, name, slug), ' +
-  'sessions:workshop_sessions(id, event_date, event_time, status)'
+  'sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)'
 
 function todayIso(): string {
   return new Date().toISOString().split('T')[0]

@@ -52,6 +52,8 @@ export interface WorkshopSession {
   max_participants: number | null
   manual_participants: number
   notes: string | null
+  // 親子向けの開催回か。true の日程は保護者同伴が無料・定員外
+  is_family_friendly?: boolean
   created_at: string
   updated_at: string
 }
@@ -134,6 +136,8 @@ export interface Booking {
   notes?: string
   minor_count?: number | null
   minor_grades?: string | null
+  // 同伴者（付き添いの保護者）: 親子向け日程で1名まで無料・定員にカウントしない
+  companion_count?: number | null
   created_at: string
   updated_at: string
   workshop?: Workshop

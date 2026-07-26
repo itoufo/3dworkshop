@@ -8,6 +8,7 @@ import { Calendar, Clock, MapPin, Users, Pin, ChevronLeft, ChevronRight, Sparkle
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { useRouter } from 'next/navigation'
 import PastWorkshopsAccordion from '@/components/PastWorkshopsAccordion'
+import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { gaEvent, gaWorkshopItem } from '@/lib/gtag'
 
 const ITEMS_PER_PAGE = 9
@@ -267,6 +268,7 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
                 const nearest = upcoming[0]
                 const isRequestOnly = (workshop.sessions ?? []).length === 0
                 const additionalCount = Math.max(0, upcoming.length - 1)
+                const isFamily = upcoming.some((s) => s.is_family_friendly)
                 return (
                   <div
                     key={workshop.id}
@@ -306,6 +308,12 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
                     {isRequestOnly && (
                       <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium rounded-full shadow">
                         開催リクエスト受付中
+                      </div>
+                    )}
+
+                    {!isRequestOnly && isFamily && (
+                      <div className="absolute top-4 right-4">
+                        <FamilyFriendlyBadge />
                       </div>
                     )}
 

@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import MobileCategoryFloatingCta from '@/components/MobileCategoryFloatingCta'
 import MediaCoverage from '@/components/MediaCoverage'
+import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
@@ -36,6 +37,7 @@ interface SessionRef {
   event_date: string
   event_time: string | null
   status: string
+  is_family_friendly: boolean
   workshop_id: string
   workshop_title: string
   workshop_price: number
@@ -87,7 +89,7 @@ export default async function CategoryPillarPage({ params }: Props) {
   // カテゴリ配下の workshops + sessions を取得
   const { data: workshops } = await supabase
     .from('workshops')
-    .select('id, title, description, rich_description, price, duration, max_participants, location, image_url, updated_at, sessions:workshop_sessions(id, event_date, event_time, status)')
+    .select('id, title, description, rich_description, price, duration, max_participants, location, image_url, updated_at, sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)')
     .eq('category_id', category.id)
     .eq('is_service', false)
     .eq('is_private', false)
@@ -99,13 +101,14 @@ export default async function CategoryPillarPage({ params }: Props) {
   const upcomingSessions: SessionRef[] = []
   const pastSessions: SessionRef[] = []
   for (const w of workshops || []) {
-    const sessions = (w.sessions || []) as Array<{ id: string; event_date: string; event_time: string | null; status: string }>
+    const sessions = (w.sessions || []) as Array<{ id: string; event_date: string; event_time: string | null; status: string; is_family_friendly?: boolean }>
     for (const s of sessions) {
       const ref: SessionRef = {
         id: s.id,
         event_date: s.event_date,
         event_time: s.event_time,
         status: s.status,
+        is_family_friendly: !!s.is_family_friendly,
         workshop_id: w.id,
         workshop_title: w.title,
         workshop_price: w.price,
@@ -310,6 +313,11 @@ export default async function CategoryPillarPage({ params }: Props) {
                                 最大{s.workshop_max_participants}名
                               </span>
                             </div>
+                            {s.is_family_friendly && (
+                              <div className="mb-3">
+                                <FamilyFriendlyBadge />
+                              </div>
+                            )}
                             <span className="flex items-center justify-center w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm rounded-full py-2.5 shadow group-hover:shadow-md transition-all">
                               この日程を予約する
                               <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />

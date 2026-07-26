@@ -5,6 +5,7 @@ import { Workshop, WorkshopSession } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import LoadingOverlay from '@/components/LoadingOverlay'
+import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight, ChevronDown } from 'lucide-react'
 import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
 
@@ -60,7 +61,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     gender: '',
     hasMinors: false,
     minorCount: 1,
-    minorGrades: [''] as string[]
+    minorGrades: [''] as string[],
+    // 同伴者（付き添いの保護者）: 親子向け日程でのみ1名まで無料・料金/定員に含めない
+    companionCount: 0
   })
   const [couponOpen, setCouponOpen] = useState(false)
   const [couponCode, setCouponCode] = useState('')
@@ -102,6 +105,22 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const earlyBird = availability?.early_bird
   const earlyBirdActive = !!earlyBird && earlyBird.enabled && earlyBird.remaining > 0 && earlyBird.discount > 0
   const earlyBirdDiscount = earlyBirdActive ? earlyBird!.discount * booking.participants : 0
+
+  // 親子向け日程かどうか。true のとき保護者の同伴が無料・定員外になる
+  const isFamilySession = !!selectedSession?.is_family_friendly
+  const hasElementary = booking.hasMinors && booking.minorGrades.some((g) => ELEMENTARY_OR_YOUNGER_RE.test(g))
+
+  // 親子向け日程で小学生以下がいる場合は、同伴保護者を既定で1名（無料・定員外）立てる
+  useEffect(() => {
+    if (!isFamilySession || !hasElementary) return
+    setBooking((prev) => (prev.companionCount === 0 ? { ...prev, companionCount: 1 } : prev))
+  }, [isFamilySession, hasElementary])
+
+  // 非親子向け日程では同伴者の無料枠がないため、同伴人数をリセット（参加人数に含める運用）
+  useEffect(() => {
+    if (isFamilySession) return
+    setBooking((prev) => (prev.companionCount !== 0 ? { ...prev, companionCount: 0 } : prev))
+  }, [isFamilySession])
 
   useEffect(() => {
     if (!isPastWorkshop) {
@@ -312,7 +331,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           status: 'pending',
           payment_status: 'pending',
           minor_count: booking.hasMinors ? booking.minorCount : null,
-          minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null
+          minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null,
+          // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
+          companion_count: isFamilySession ? booking.companionCount : 0
         })
         .select()
         .single()
@@ -492,6 +513,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                           <div className="font-medium text-gray-900">{dateLabel}</div>
                           {timeLabel && <div className="text-gray-600 text-xs">{timeLabel}</div>}
                         </div>
+                        {s.is_family_friendly && <FamilyFriendlyBadge className="ml-2 flex-shrink-0" />}
                       </label>
                     )
                   })}
@@ -515,6 +537,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                     </span>
                   </div>
                 )}
+                {selectedSession.is_family_friendly && <FamilyFriendlyBadge />}
               </>
             ) : workshop.event_date ? (
               <div className="flex items-center text-sm text-gray-700">
@@ -648,6 +671,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 </option>
               ))}
             </select>
+            {isFamilySession ? (
+              <p className="mt-2 text-xs text-gray-500">
+                制作にご参加される方の人数です。付き添いのみの保護者は含めず、下の「同伴者（付き添い）」でご指定ください（1名まで無料）。
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-gray-500">
+                付き添いの保護者も参加される場合は、この参加人数に含めてください（1名につき1席分の料金がかかります）。
+              </p>
+            )}
           </div>
 
           {/* Name */}
@@ -774,12 +806,36 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   ※参加対象は小学生以上です。未就学のお子様はご参加いただけません。
                 </p>
 
-                {booking.minorGrades.some((g) => ELEMENTARY_OR_YOUNGER_RE.test(g)) && (
+                {hasElementary && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-                    小学生の参加者がいる場合、同伴者（保護者）1名の付き添いが必要です。同伴者1名までは無料です。
+                    {isFamilySession
+                      ? '小学生の参加者がいる場合、保護者1名の付き添いが必要です。この日程は親子向けのため、付き添いの保護者1名は無料・定員外です（下の「同伴者（付き添い）」でご指定ください）。'
+                      : '小学生の参加者がいる場合、保護者の付き添いが必要です。付き添いの保護者も上の「参加人数」に含めてください（1名につき1席分の料金がかかります）。'}
                   </div>
                 )}
               </>
+            )}
+
+            {/* 同伴者（付き添いの保護者）: 親子向け日程のみ 1名まで無料・定員外 */}
+            {isFamilySession && (
+              <div className="pt-2 border-t border-gray-100">
+                <label htmlFor="booking-companion-count" className="block text-sm font-medium text-gray-700 mb-2">
+                  同伴者（付き添いの保護者）
+                  <span className="ml-2 text-xs font-normal text-purple-700">親子向け日程・無料</span>
+                </label>
+                <select
+                  id="booking-companion-count"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                  value={booking.companionCount}
+                  onChange={(e) => setBooking({ ...booking, companionCount: parseInt(e.target.value) })}
+                >
+                  <option value={0}>なし</option>
+                  <option value={1}>1名</option>
+                </select>
+                <p className="mt-2 text-xs text-gray-500">
+                  ご自身は制作せず、付き添いのみの保護者の方です。1名まで無料で、上の「参加人数」（料金・残席）には含めません。2名以上で付き添われる場合は、2人目以降を「参加人数」に含めてください。
+                </p>
+              </div>
             )}
           </div>
 
@@ -900,6 +956,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   ¥{(workshop.price * booking.participants).toLocaleString()}
                 </span>
               </div>
+              {isFamilySession && booking.companionCount > 0 && (
+                <div className="flex justify-between items-center text-purple-700">
+                  <span>同伴者（付き添い）× {booking.companionCount}名</span>
+                  <span>無料</span>
+                </div>
+              )}
               {earlyBirdActive && (
                 <div className="flex justify-between items-center text-pink-600">
                   <span>早割（1名¥{earlyBird!.discount.toLocaleString()}引き × {booking.participants}名）</span>

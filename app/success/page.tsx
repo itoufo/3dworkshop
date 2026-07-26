@@ -29,6 +29,7 @@ interface Booking {
   booking_date: string
   booking_time: string
   participants: number
+  companion_count?: number | null
   total_amount: number
   status: string
   payment_status: string
@@ -153,6 +154,12 @@ function SuccessContent() {
                 <dt className="text-gray-600">参加人数</dt>
                 <dd className="font-medium">{booking.participants}名</dd>
               </div>
+              {booking.companion_count != null && booking.companion_count > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">同伴者（付き添い）</dt>
+                  <dd className="font-medium">{booking.companion_count}名（無料）</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-gray-600">お名前</dt>
                 <dd className="font-medium">{booking.customer?.name}</dd>

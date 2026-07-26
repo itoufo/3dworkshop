@@ -15,6 +15,7 @@ type DraftSession = {
   max_participants: string
   manual_participants: string
   notes: string
+  is_family_friendly: boolean
 }
 
 const emptyDraft: DraftSession = {
@@ -23,6 +24,7 @@ const emptyDraft: DraftSession = {
   max_participants: '',
   manual_participants: '0',
   notes: '',
+  is_family_friendly: false,
 }
 
 export default function WorkshopSessionsEditor({ workshopId }: Props) {
@@ -65,6 +67,7 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
       max_participants: draft.max_participants ? parseInt(draft.max_participants) : null,
       manual_participants: parseInt(draft.manual_participants) || 0,
       notes: draft.notes || null,
+      is_family_friendly: draft.is_family_friendly,
       status: 'scheduled',
     })
     setSavingId(null)
@@ -191,6 +194,15 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
             />
           </div>
+          <label className="flex items-center mb-3 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={draft.is_family_friendly}
+              onChange={(e) => setDraft({ ...draft, is_family_friendly: e.target.checked })}
+              className="w-4 h-4 mr-2 accent-purple-600"
+            />
+            親子向け（保護者同伴 無料・定員外／「親子におすすめ！」表示）
+          </label>
           <div className="flex space-x-2">
             <button
               type="button"
@@ -244,6 +256,7 @@ function SessionRow({ session, saving, onUpdate, onCancel, onReactivate, onDelet
     max_participants: session.max_participants?.toString() || '',
     manual_participants: session.manual_participants?.toString() || '0',
     notes: session.notes || '',
+    is_family_friendly: !!session.is_family_friendly,
   })
 
   const isCancelled = session.status === 'cancelled'
@@ -255,6 +268,7 @@ function SessionRow({ session, saving, onUpdate, onCancel, onReactivate, onDelet
       max_participants: local.max_participants ? parseInt(local.max_participants) : null,
       manual_participants: parseInt(local.manual_participants) || 0,
       notes: local.notes || null,
+      is_family_friendly: local.is_family_friendly,
     })
     setEditing(false)
   }
@@ -297,6 +311,15 @@ function SessionRow({ session, saving, onUpdate, onCancel, onReactivate, onDelet
           onChange={(e) => setLocal({ ...local, notes: e.target.value })}
           className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded mb-2"
         />
+        <label className="flex items-center mb-2 text-sm text-gray-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={local.is_family_friendly}
+            onChange={(e) => setLocal({ ...local, is_family_friendly: e.target.checked })}
+            className="w-4 h-4 mr-2 accent-purple-600"
+          />
+          親子向け（保護者同伴 無料・定員外）
+        </label>
         <div className="flex space-x-2">
           <button
             type="button"
@@ -335,11 +358,14 @@ function SessionRow({ session, saving, onUpdate, onCancel, onReactivate, onDelet
             <span className="ml-1 text-orange-600">+{session.manual_participants}手動</span>
           )}
         </div>
-        <div>
+        <div className="flex items-center gap-1">
           {isCancelled ? (
             <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">キャンセル</span>
           ) : (
             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">開催予定</span>
+          )}
+          {session.is_family_friendly && (
+            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded">親子向け</span>
           )}
         </div>
       </div>

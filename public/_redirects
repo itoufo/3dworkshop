@@ -6,3 +6,6 @@ https://3dworkshop.netlify.app/* https://3dlab.jp/:splat 301!
 
 # Redirect from www to non-www
 https://www.3dlab.jp/* https://3dlab.jp/:splat 301!
+
+# 「親子向け」カテゴリを通常カテゴリへ統合（親子向けは日程フラグで表現）。旧URLを301で寄せる。
+/workshops/category/family-ai3d-printer-original-work /workshops/category/ai3d-printer-original-work-workshop 301!
