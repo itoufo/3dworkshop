@@ -31,6 +31,7 @@ interface Booking {
   participants: number
   companion_count?: number | null
   total_amount: number
+  discount_amount?: number | null
   status: string
   payment_status: string
   workshop?: Workshop
@@ -78,10 +79,13 @@ function SuccessContent() {
       if (data.booking && !sessionStorage.getItem(purchaseKey)) {
         sessionStorage.setItem(purchaseKey, '1')
         const b: Booking = data.booking
+        // 実際の請求額（割引後）を送る。クーポン/早割で total_amount と実売上がずれるため、
+        // ROAS が過大にならないよう discount_amount を差し引く（Stripe 実請求と一致）。
+        const netValue = Math.max(0, b.total_amount - (b.discount_amount ?? 0))
         gaEvent('purchase', {
           transaction_id: b.id,
           currency: GA_CURRENCY,
-          value: b.total_amount,
+          value: netValue,
           items: [{
             item_id: b.workshop_id,
             item_name: b.workshop?.title,

@@ -356,7 +356,13 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         }),
       })
 
-      const { sessionId } = await response.json()
+      const data = await response.json()
+      const sessionId = data?.sessionId
+      // セッション作成失敗を握りつぶさない（sessionId が無いまま先へ進むと
+      // リダイレクトされず「処理中…」で固まるため、明示的にエラー化する）
+      if (!response.ok || !sessionId) {
+        throw new Error(data?.error || '決済ページの作成に失敗しました')
+      }
 
       // GA4: begin_checkout（Stripe へリダイレクトする直前）
       gaEvent('begin_checkout', {
@@ -369,12 +375,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       checkoutStartedRef.current = true // 決済へ進んだので離脱としてカウントしない
 
       const stripe = await stripePromise
-      await stripe?.redirectToCheckout({ sessionId })
+      if (!stripe) throw new Error('決済モジュールの読み込みに失敗しました')
+      // redirectToCheckout は失敗しても例外を投げず { error } を返すため戻り値を検証する
+      const { error: redirectError } = await stripe.redirectToCheckout({ sessionId })
+      if (redirectError) throw redirectError
 
-    } catch {
-      console.error('Error creating booking')
+    } catch (err) {
+      console.error('Error creating booking', err)
       gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'checkout' })
-      alert('予約の作成中にエラーが発生しました。')
+      alert('予約の作成中にエラーが発生しました。お手数ですが、少し時間をおいて再度お試しください。')
       setSubmitting(false)
     }
   }
@@ -658,6 +667,37 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             </div>
 
             <div className="p-6">
+        {/* 冒頭サマリ: 開いた瞬間に「価格・残席・所要・（親子回は同伴無料）」を提示し、
+            入力に進む理由を先に見せる（開いて即離脱の対策） */}
+        <div className="mb-5 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 p-4">
+          <div className="flex items-end justify-between">
+            <span className="text-sm text-gray-600">参加費（1名あたり）</span>
+            <span className="text-2xl font-black text-gray-900">¥{workshop.price.toLocaleString()}</span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+            {workshop.duration ? (
+              <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-gray-700">
+                <Clock className="w-3.5 h-3.5 mr-1 text-purple-500" />所要 {workshop.duration}分
+              </span>
+            ) : null}
+            {availability && !availability.is_full && (
+              <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-gray-700">
+                <Users className="w-3.5 h-3.5 mr-1 text-purple-500" />残り{availability.available_spots}名
+              </span>
+            )}
+            {earlyBirdActive && (
+              <span className="inline-flex items-center rounded-full bg-pink-100 text-pink-700 px-3 py-1 font-bold">
+                早割 1名¥{earlyBird!.discount.toLocaleString()}引き
+              </span>
+            )}
+            {isFamilySession && (
+              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 font-bold">
+                👨‍👩‍👧 保護者同伴 無料
+              </span>
+            )}
+          </div>
+          <p className="mt-3 text-xs text-gray-500">下記フォームにご入力のうえ、決済へお進みください（所要1〜2分）。</p>
+        </div>
         <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-4">
           {/* Participants */}
           <div>
