@@ -299,12 +299,6 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
                       </div>
                     )}
 
-                    {isFamily && (
-                      <div className="absolute top-4 left-4">
-                        <FamilyFriendlyBadge size="lg" />
-                      </div>
-                    )}
-
                     {isRequestOnly && (
                       <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium rounded-full shadow">
                         開催リクエスト受付中
@@ -312,6 +306,11 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
                     )}
 
                     <div className="p-6">
+                      {isFamily && (
+                        <div className="mb-3">
+                          <FamilyFriendlyBadge size="lg" />
+                        </div>
+                      )}
                       <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 flex items-center">
                         {workshop.title}
                         {workshop.is_pinned && (
