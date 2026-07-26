@@ -537,7 +537,6 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                     </span>
                   </div>
                 )}
-                {selectedSession.is_family_friendly && <FamilyFriendlyBadge />}
               </>
             ) : workshop.event_date ? (
               <div className="flex items-center text-sm text-gray-700">
@@ -549,6 +548,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 </span>
               </div>
             ) : null}
+            {isFamilySession && (
+              <div className="flex items-start gap-2 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 px-3 py-2.5">
+                <span aria-hidden className="text-xl leading-none">👨‍👩‍👧</span>
+                <div className="text-sm leading-snug">
+                  <p className="font-bold text-orange-700">親子におすすめの回です</p>
+                  <p className="text-orange-800/80 text-xs mt-0.5">
+                    保護者1名の同伴が<span className="font-bold">無料</span>・定員に含みません。お子様の人数だけでご予約ください。
+                  </p>
+                </div>
+              </div>
+            )}
             {workshop.location && (
               <div className="flex items-center text-sm text-gray-700">
                 <MapPin className="w-4 h-4 mr-2 text-purple-600" />

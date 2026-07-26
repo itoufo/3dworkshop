@@ -1,34 +1,37 @@
-import { Users } from 'lucide-react'
-
 /**
  * 「親子におすすめ！」バッジ。
  * 親子向けの日程（workshop_sessions.is_family_friendly）に表示する。
- * - tone="default": amber→orange グラデ（白背景のカード・日程行向け）
+ * - tone="default": amber→orange グラデ＋白リング（白背景のカード・日程行向け。画像上でも視認できる）
  * - tone="onColor": 白背景・オレンジ文字（色付き背景のバナー向け）
- * className で配置・サイズを上書きできる。
+ * size="md"（既定）/ "sm"（小さめ）。className で配置を上書きできる。
  */
 export default function FamilyFriendlyBadge({
   className = '',
   tone = 'default',
+  size = 'md',
 }: {
   className?: string
   tone?: 'default' | 'onColor'
+  size?: 'sm' | 'md'
 }) {
   const toneClass =
     tone === 'onColor'
-      ? 'bg-white text-orange-600'
-      : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+      ? 'bg-white text-orange-600 ring-1 ring-orange-200'
+      : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-2 ring-white/80'
+  const sizeClass = size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : 'px-3 py-1 text-xs'
   return (
     <span
       className={
-        'inline-flex items-center gap-1 rounded-full font-medium shadow px-3 py-1 text-xs ' +
+        'inline-flex items-center gap-1 rounded-full font-bold shadow-md whitespace-nowrap ' +
+        sizeClass +
+        ' ' +
         toneClass +
         ' ' +
         className
       }
     >
-      <Users className="w-3 h-3" />
-      親子におすすめ！
+      <span aria-hidden className="text-sm leading-none">👨‍👩‍👧</span>
+      親子におすすめ
     </span>
   )
 }
