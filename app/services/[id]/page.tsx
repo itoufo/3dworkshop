@@ -51,23 +51,28 @@ export default async function ServicePage({ params }: PageProps) {
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              {service.image_url ? (
-                <div className="relative w-full aspect-square">
-                  <Image
-                    src={optimizeImageUrl(service.image_url, 80)}
-                    alt={service.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    priority
-                  />
-                </div>
-              ) : (
-                <div className="w-full aspect-square bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                  <Icon className="w-20 h-20 text-purple-300" />
-                </div>
-              )}
+            <div>
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                {service.image_url ? (
+                  <div className="relative w-full aspect-square">
+                    <Image
+                      src={optimizeImageUrl(service.image_url, 80)}
+                      alt={service.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      priority
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-square bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                    <Icon className="w-20 h-20 text-purple-300" />
+                  </div>
+                )}
+              </div>
+              <p className="mt-3 text-base text-gray-500">
+                ※ 各種製作画像はあくまでイメージです。実際の仕上がりは形状・素材・色味などにより異なる場合があります。
+              </p>
             </div>
             <div>
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-3 ${
