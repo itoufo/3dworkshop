@@ -128,6 +128,9 @@ export default function ProductsPage() {
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 STLファイルから高品質な3Dプリント制作を承ります。オリジナル商品のオーダーメイドもお気軽にご相談ください
               </p>
+              <p className="mt-4 text-base text-gray-500 max-w-2xl mx-auto">
+                ※ 各種製作画像はあくまでイメージです。実際の仕上がりは形状・素材・色味などにより異なる場合があります。
+              </p>
             </div>
 
             {/* Category Filter */}

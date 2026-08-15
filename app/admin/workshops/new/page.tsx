@@ -7,11 +7,27 @@ import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket } from 'lucide-react'
+import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
 })
+
+type SourceWorkshop = {
+  id: string
+  title: string
+  event_date: string | null
+  event_time: string | null
+  category_id: string | null
+}
+
+function formatSourceLabel(ws: SourceWorkshop) {
+  const date = ws.event_date
+    ? new Date(`${ws.event_date}T00:00:00`).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' })
+    : '日程未設定'
+  const time = ws.event_time ? ` ${ws.event_time.slice(0, 5)}` : ''
+  return `${date}${time} ｜ ${ws.title}`
+}
 
 export default function NewWorkshopPage() {
   const router = useRouter()
@@ -43,7 +59,51 @@ export default function NewWorkshopPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [navigating, setNavigating] = useState(false)
-  const [copyingFromCategory, setCopyingFromCategory] = useState(false)
+  const [copying, setCopying] = useState(false)
+  const [sourceWorkshops, setSourceWorkshops] = useState<SourceWorkshop[]>([])
+  const [sourceId, setSourceId] = useState('')
+
+  // 選択したイベントの内容をフォームに流し込む（日時は既に入力済みのものを保持）
+  async function applySource(id: string) {
+    setSourceId(id)
+    if (!id) return
+
+    setCopying(true)
+    try {
+      const { data: src } = await supabase
+        .from('workshops')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle()
+
+      if (!src) return
+
+      setWorkshop(prev => ({
+        title: src.title || '',
+        description: src.description || '',
+        rich_description: src.rich_description || '',
+        price: src.price?.toString() || '',
+        duration: src.duration?.toString() || '',
+        max_participants: src.max_participants?.toString() || '',
+        location: src.location || '',
+        image_url: src.image_url || '',
+        event_date: prev.event_date,
+        event_time: prev.event_time,
+        category_id: src.category_id || fromCategory || '',
+        show_features: src.show_features !== false,
+        is_private: src.is_private === true,
+        preview_password: src.preview_password || '',
+        collect_demographics: src.collect_demographics === true,
+        early_bird_enabled: src.early_bird_enabled === true,
+        early_bird_discount: src.early_bird_discount?.toString() || '',
+        early_bird_slots: src.early_bird_slots?.toString() || ''
+      }))
+      setImageFile(null)
+      setImagePreview(src.image_url || null)
+    } finally {
+      setCopying(false)
+    }
+  }
 
   useEffect(() => {
     async function init() {
@@ -55,53 +115,28 @@ export default function NewWorkshopPage() {
 
       if (cats) setCategories(cats)
 
-      // from_categoryが指定されている場合、直近の通常公開WSをコピー（ピン留めの特別回・サービスは雛形にしない）
-      if (fromCategory) {
-        setCopyingFromCategory(true)
-        const { data: latestWs } = await supabase
-          .from('workshops')
-          .select('*')
-          .eq('category_id', fromCategory)
-          .eq('is_private', false)
-          .eq('is_pinned', false)   // ピン留めの特別回（例: 夏休み親子特別回）は雛形にしない
-          .eq('is_service', false)  // サービスも雛形にしない
-          .order('event_date', { ascending: false })
-          .limit(1)
-          .maybeSingle()
+      // コピー元として選べるイベント一覧（サービスは除外）
+      const { data: list } = await supabase
+        .from('workshops')
+        .select('id, title, event_date, event_time, category_id')
+        .eq('is_service', false)
+        .order('event_date', { ascending: false, nullsFirst: false })
 
-        if (latestWs) {
-          setWorkshop({
-            title: latestWs.title || '',
-            description: latestWs.description || '',
-            rich_description: latestWs.rich_description || '',
-            price: latestWs.price?.toString() || '',
-            duration: latestWs.duration?.toString() || '',
-            max_participants: latestWs.max_participants?.toString() || '',
-            location: latestWs.location || '',
-            image_url: latestWs.image_url || '',
-            event_date: '',
-            event_time: '',
-            category_id: fromCategory,
-            show_features: latestWs.show_features !== false,
-            is_private: latestWs.is_private === true,
-            preview_password: latestWs.preview_password || '',
-            collect_demographics: latestWs.collect_demographics === true,
-            early_bird_enabled: latestWs.early_bird_enabled === true,
-            early_bird_discount: latestWs.early_bird_discount?.toString() || '',
-            early_bird_slots: latestWs.early_bird_slots?.toString() || ''
-          })
-          if (latestWs.image_url) {
-            setImagePreview(latestWs.image_url)
-          }
-        } else {
-          // WSがなくてもカテゴリはセット
-          setWorkshop(prev => ({ ...prev, category_id: fromCategory }))
+      const options = (list || []) as SourceWorkshop[]
+      setSourceWorkshops(options)
+
+      if (fromCategory) {
+        // 日程追加：既定はそのカテゴリの直近イベント。あとから選び直せる
+        setWorkshop(prev => ({ ...prev, category_id: fromCategory }))
+        const defaultSource = options.find(ws => ws.category_id === fromCategory)
+        if (defaultSource) {
+          await applySource(defaultSource.id)
         }
-        setCopyingFromCategory(false)
       }
     }
 
     init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromCategory])
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -228,7 +263,7 @@ export default function NewWorkshopPage() {
     <>
       {navigating && <LoadingOverlay message="管理画面へ戻っています..." />}
       {uploading && <LoadingOverlay message="ワークショップを作成しています..." />}
-      {copyingFromCategory && <LoadingOverlay message="カテゴリから内容をコピーしています..." />}
+      {copying && <LoadingOverlay message="コピー元の内容を読み込んでいます..." />}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
         onClick={handleBack}
@@ -242,13 +277,51 @@ export default function NewWorkshopPage() {
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
           <h2 className="text-2xl font-bold text-white">3DLab 新規ワークショップ作成</h2>
           <p className="text-white/80 mt-1">
-            {fromCategory ? '日程追加：日時を設定して保存してください' : '新しいワークショップの情報を入力してください'}
+            {fromCategory ? '日程追加：コピー元を選び、日時を設定して保存してください' : '新しいワークショップの情報を入力してください'}
           </p>
         </div>
 
         <div className="p-8">
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* コピー元イベント選択 */}
+            <div className="bg-indigo-50 rounded-xl p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                <Copy className="w-5 h-5 mr-2 text-indigo-600" />
+                コピー元イベント
+              </h3>
+              <div>
+                <select
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900 bg-white"
+                  value={sourceId}
+                  onChange={(e) => applySource(e.target.value)}
+                >
+                  <option value="">コピーしない（空から作成）</option>
+                  {categories.map((cat) => {
+                    const items = sourceWorkshops.filter((ws) => ws.category_id === cat.id)
+                    if (items.length === 0) return null
+                    return (
+                      <optgroup key={cat.id} label={cat.name}>
+                        {items.map((ws) => (
+                          <option key={ws.id} value={ws.id}>{formatSourceLabel(ws)}</option>
+                        ))}
+                      </optgroup>
+                    )
+                  })}
+                  {sourceWorkshops.some((ws) => !ws.category_id) && (
+                    <optgroup label="カテゴリなし">
+                      {sourceWorkshops.filter((ws) => !ws.category_id).map((ws) => (
+                        <option key={ws.id} value={ws.id}>{formatSourceLabel(ws)}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  選んだイベントのタイトル・本文・価格・定員・場所・画像・各種設定をコピーします（開催日時はコピーしません）。選び直すと入力内容は上書きされます
+                </p>
+              </div>
+            </div>
+
             {/* カテゴリ選択 */}
             <div className="bg-green-50 rounded-xl p-6 space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
