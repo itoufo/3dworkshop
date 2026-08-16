@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Calendar, Users, Tag, BookOpen, Settings, Package, ChevronRight } from 'lucide-react'
+import { Home, Calendar, Users, Tag, BookOpen, Settings, Package, MessageCircle, ChevronRight } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: 'ダッシュボード', icon: Home },
@@ -11,6 +11,7 @@ const navItems = [
   { href: '/admin/bookings', label: '予約管理', icon: Users },
   { href: '/admin/coupons', label: 'クーポン', icon: Tag },
   { href: '/admin/products', label: '商品管理', icon: Package },
+  { href: '/admin/chat-knowledge', label: 'チャットの知識', icon: MessageCircle },
   { href: '/admin/settings', label: '設定', icon: Settings },
 ]
 
