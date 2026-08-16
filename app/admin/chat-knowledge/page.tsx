@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Cookies from 'js-cookie'
 import {
   AlertTriangle,
   Loader2,
@@ -114,7 +115,12 @@ export default function ChatKnowledgePage() {
     try {
       const r = await fetch('/api/admin/chat-knowledge')
       if (r.status === 401) {
-        setError('セッションが切れています。一度ログアウトして、パスワードを入れ直してください。')
+        // ⚠ ここで「ログインし直してください」と出して終わらない。
+        //   この機能を入れた直後は、画面上はログイン済みなのに書き込み用の cookie だけが
+        //   無い状態になる（admin_session はこの変更後の初回ログインで配られるため）。
+        //   人手で気づける状態ではないので、画面側の cookie を捨ててログイン画面に戻す。
+        Cookies.remove('admin_auth')
+        location.reload()
         return
       }
       const data = await r.json()
