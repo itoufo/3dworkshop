@@ -30,8 +30,17 @@ export async function GET() {
 
   if (error) {
     console.error('[admin/chat-knowledge] list', error.message)
-    // migration 未適用がいちばん多い。画面に理由をそのまま出す
-    return Response.json({ error: 'db_error', message: error.message }, { status: 500 })
+    // migration 未適用がいちばん多い。原因と次の一手を画面に出す
+    const missing = error.code === '42P01' || error.code === 'PGRST205'
+    return Response.json(
+      {
+        error: 'db_error',
+        message: missing
+          ? 'chat_knowledge テーブルがありません。supabase/migrations/20260816_add_chat_knowledge.sql を実行してください。'
+          : error.message,
+      },
+      { status: 500 },
+    )
   }
 
   return Response.json({ items: data ?? [] })

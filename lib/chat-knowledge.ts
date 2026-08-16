@@ -92,6 +92,20 @@ export async function embedText(text: string): Promise<number[] | null> {
 
 type Chunk = { title: string; body: string }
 
+/**
+ * 知識テーブルがまだ無い＝ migration を流す前の状態。
+ * ⚠ これを「障害」として扱わない。来訪者には「準備中」と出したい（電話番号を案内する）。
+ *   「うまく答えられませんでした」を出すと、直せる設定漏れが不具合に見える。
+ */
+export class KnowledgeUnavailableError extends Error {}
+
+/** PostgREST が「そのテーブル/関数は無い」と言っているか */
+function isMissingRelation(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false
+  // 42P01 = undefined_table（Postgres）／PGRST205 = スキーマキャッシュに無い（PostgREST）
+  return error.code === '42P01' || error.code === 'PGRST205'
+}
+
 export type Retrieval = {
   chunks: Chunk[]
   /** vector = 類似検索が効いた / fallback = 埋め込みが無いので公開分を全部渡した */
@@ -115,6 +129,9 @@ export async function retrieveKnowledge(question: string): Promise<Retrieval> {
     .eq('is_pinned', true)
     .order('sort_order', { ascending: true })
 
+  if (isMissingRelation(pinnedError)) {
+    throw new KnowledgeUnavailableError('chat_knowledge テーブルがありません。migration を適用してください。')
+  }
   if (pinnedError) throw pinnedError
 
   const head: Chunk[] = pinned ?? []
@@ -142,6 +159,9 @@ export async function retrieveKnowledge(question: string): Promise<Retrieval> {
     .eq('is_pinned', false)
     .order('sort_order', { ascending: true })
 
+  if (isMissingRelation(allError)) {
+    throw new KnowledgeUnavailableError('chat_knowledge テーブルがありません。migration を適用してください。')
+  }
   if (allError) throw allError
 
   const rest: Chunk[] = []

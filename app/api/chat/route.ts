@@ -1,4 +1,9 @@
-import { buildSystemPrompt, completeChat, retrieveKnowledge } from '@/lib/chat-knowledge'
+import {
+  KnowledgeUnavailableError,
+  buildSystemPrompt,
+  completeChat,
+  retrieveKnowledge,
+} from '@/lib/chat-knowledge'
 
 /**
  * 来訪者向けチャットの API。
@@ -91,6 +96,11 @@ export async function POST(req: Request) {
 
     return Response.json({ reply, retrieval: mode })
   } catch (e) {
+    if (e instanceof KnowledgeUnavailableError) {
+      // migration 未適用。障害ではなく未設定なので、来訪者には「準備中」を出す
+      console.error('[chat]', e.message)
+      return Response.json({ error: 'not_configured' }, { status: 503 })
+    }
     console.error('[chat]', e)
     return Response.json({ error: 'upstream' }, { status: 502 })
   }
