@@ -36,11 +36,23 @@ CREATE INDEX IF NOT EXISTS idx_chat_knowledge_published
 
 ALTER TABLE public.chat_knowledge ENABLE ROW LEVEL SECURITY;
 
+-- ⚠ 権限は明示的に与える。Supabase の既定権限（ALTER DEFAULT PRIVILEGES）に頼ると、
+--   migration をどのロールで流したかによって付いたり付かなかったりする。
+--   2026-08-16 にローカル Supabase で確認: CLI から流すと service_role に権限が付かず、
+--   チャットが permission denied for table chat_knowledge で 502 になった。
+-- ⚠ anon / authenticated からは全部剥がす。Supabase の既定権限は GRANT ALL なので、
+--   放っておくと TRUNCATE まで付く。**TRUNCATE は RLS を迂回する**ので、
+--   「RLS を有効にしたから安全」は成り立たない（2026-08-16 にローカルで確認）。
+REVOKE ALL ON public.chat_knowledge FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.chat_knowledge TO service_role;
+
 -- 類似検索。ピン留めは検索を通さず常に入れるので、ここでは除外する。
 CREATE OR REPLACE FUNCTION public.match_chat_knowledge(
   query_embedding VECTOR(1536),
-  match_count INTEGER DEFAULT 6,
-  min_similarity DOUBLE PRECISION DEFAULT 0.15
+  -- ⚠ 既定値は lib/chat-knowledge.ts の MATCH_COUNT / MIN_SIMILARITY と揃えてある。
+  --   実測の根拠はそちらのコメントに書いた。片方だけ変えないこと。
+  match_count INTEGER DEFAULT 4,
+  min_similarity DOUBLE PRECISION DEFAULT 0.25
 )
 RETURNS TABLE (
   id UUID,
@@ -110,7 +122,7 @@ INSERT INTO public.chat_knowledge (title, body, tags, is_pinned, is_published, s
 ),
 (
   '料金（すべて税込）',
-  E'- 体験ワークショップ: 12,000円 / 1回（所要2時間）\n  ⚠ 8月に募集済みの回だけは、募集時の価格（5,000円・10,000円）のまま実施する。12,000円は9月開催分から。日付を聞かれたら、この違いを正確に伝える。\n- 3DLabスクール: 月謝 17,000円（月2回・1回120分）。入会金 22,000円は2026年9月30日まで0円。スクール生は有料版AIが使い放題、ワークショップに30%OFFで参加できる。\n- 3Dプリント制作: 1点から受ける。金額は内容によるので見積り。\n⚠ 合計金額の掛け算をしない。人数分・回数分の合計を自分で計算して答えない。',
+  E'- 体験ワークショップ: 12,000円 / 1回（所要2時間）\n  ⚠ 8月に募集済みの回だけは、募集時の価格（5,000円・10,000円）のまま実施する。12,000円は9月開催分から。日付を聞かれたら、この違いを正確に伝える。\n- 3DLabスクール: 月謝 17,000円（月2回・1回120分）。入会金 22,000円は2026年9月30日まで0円。スクール生は有料版AIが使い放題、ワークショップに30%OFFで参加できる。\n- 3Dプリント制作: 1点から受ける。金額は内容によるので見積り。\n⚠ 合計金額の掛け算をしない。人数分・回数分の合計を自分で計算して答えない。\n⚠ 大人／子ども、団体、学割といった料金の区別は決まっていない。区別があるともないとも言わず、「料金の区分についてはお問い合わせください」と答える。（2026-08-16 の検証で、書いていない「大人・子ども共に12,000円」を断定したため明記）',
   ARRAY['料金'], TRUE, TRUE, 30
 ),
 (

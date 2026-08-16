@@ -17,8 +17,23 @@ export const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embed
 export const EMBEDDING_DIMENSIONS = 1536 // ⚠ migration の VECTOR(1536) と揃っている。変えるなら両方
 
 const CHAT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const MATCH_COUNT = 6
-const MIN_SIMILARITY = 0.15
+/**
+ * 検索の効き。⚠ 勘で決めない。2026-08-16 に text-embedding-3-small で実測した分布:
+ *
+ *   質問                  正解の項目   2番目   無関係な項目
+ *   料金はいくらですか      0.457       0.190   〜0.15
+ *   駐車場はありますか      0.403       0.292   〜0.19
+ *   何歳から参加できますか  0.529       0.281   〜0.17
+ *   猫の飼い方を教えて       —          —      最高 0.294  ← 雑談の上限
+ *   今日の天気は？           —          —      最高 0.219
+ *
+ * 正解は 0.40 以上に出て、雑音は 0.30 未満に収まる。既定の 0.15 では10件中7件が通り、
+ * 実質「全件渡し」になっていた（＝RAG にした意味が無く、費用も上がる）。
+ * ⚠ 0.30 まで上げると雑音は消えるが、2番目に関係する項目まで落ちる。
+ *   問い合わせ窓口では「知識があるのに分かりかねます」のほうが損なので、0.25 に置く。
+ */
+const MATCH_COUNT = 4
+const MIN_SIMILARITY = 0.25
 const FALLBACK_MAX_CHARS = 8000 // 検索が使えないとき、全件を渡す上限
 
 export type KnowledgeRow = {
@@ -144,10 +159,25 @@ export async function retrieveKnowledge(question: string): Promise<Retrieval> {
       min_similarity: MIN_SIMILARITY,
     })
     if (error) {
-      // migration 未適用など。答えられなくするより、全件渡してでも答える
+      // 関数が無いなど。答えられなくするより、全件渡してでも答える
       console.error('[chat-knowledge] match_chat_knowledge', error.message)
+    } else if ((matched ?? []).length > 0) {
+      return { chunks: [...head, ...(matched as Chunk[])], mode: 'vector' }
     } else {
-      return { chunks: [...head, ...((matched ?? []) as Chunk[])], mode: 'vector' }
+      // 0件だった。ここで「関係する知識が無い」と決めつけない。
+      // ⚠ migration 直後は誰にも埋め込みが無く、検索は必ず0件になる。
+      //   それを「見つからなかった」と扱うと、DB に答えがあるのにピン留め以外
+      //   全部に「分かりかねます」と答える（2026-08-16 にローカルで再現）。
+      const { count } = await supabase
+        .from('chat_knowledge')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .eq('is_pinned', false)
+        .not('embedding', 'is', null)
+
+      // ベクトルがあるうえでの0件なら、本当に関係する知識が無い
+      if ((count ?? 0) > 0) return { chunks: head, mode: 'vector' }
+      // 1件も無いなら検索が成立していない。下の全件渡しへ落とす
     }
   }
 
