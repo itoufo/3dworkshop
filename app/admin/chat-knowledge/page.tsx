@@ -45,6 +45,13 @@ type Draft = {
   sort_order: number
 }
 
+/**
+ * 裏取りが済んでいない項目に付けるタグ。
+ * ⚠ 「未確認だから非公開」にしない。非公開にすると聞かれても答えられず、
+ *   直す動機も生まれないまま忘れられる。公開したうえで、ここで目立たせて直せるようにする。
+ */
+const NEEDS_CHECK = '要確認'
+
 const EMPTY: Draft = {
   title: '',
   body: '',
@@ -162,6 +169,25 @@ export default function ChatKnowledgePage() {
     }
   }
 
+  /** 「要確認」を外すだけ。本文を直さずに確認だけ済んだ場合に使う */
+  async function markChecked(item: Item) {
+    setBusyId(item.id)
+    try {
+      const r = await fetch(`/api/admin/chat-knowledge/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: item.tags.filter((t) => t !== NEEDS_CHECK) }),
+      })
+      if (!r.ok) {
+        setNotice('更新に失敗しました。')
+        return
+      }
+      await load()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   async function remove(item: Item) {
     if (!confirm(`「${item.title}」を削除します。よろしいですか？`)) return
     setBusyId(item.id)
@@ -224,6 +250,7 @@ export default function ChatKnowledgePage() {
   }
 
   const stale = items.filter(needsReembed).length
+  const unchecked = items.filter((i) => i.tags.includes(NEEDS_CHECK))
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
@@ -264,6 +291,22 @@ export default function ChatKnowledgePage() {
             {stale} 件のベクトルが本文とズレています。この状態でも回答はできますが、検索が効かず全件を渡す動作になります。
             「ベクトルを作り直す」を押してください。
           </p>
+        </div>
+      )}
+
+      {unchecked.length > 0 && (
+        <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+          <p className="flex items-start gap-2 font-medium">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            裏取りが済んでいない項目が {unchecked.length} 件あります（ボットはすでにこの内容で答えます）
+          </p>
+          <ul className="mt-2 ml-6 list-disc space-y-1">
+            {unchecked.map((i) => (
+              <li key={i.id}>
+                {i.title} — 内容が正しければ「確認済みにする」、違っていれば「編集」で直してください
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -364,6 +407,11 @@ export default function ChatKnowledgePage() {
                           非公開
                         </span>
                       )}
+                      {item.tags.includes(NEEDS_CHECK) && (
+                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-800">
+                          要確認
+                        </span>
+                      )}
                       {needsReembed(item) && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                           未ベクトル化
@@ -376,6 +424,15 @@ export default function ChatKnowledgePage() {
                     )}
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    {item.tags.includes(NEEDS_CHECK) && (
+                      <button
+                        onClick={() => markChecked(item)}
+                        disabled={busyId === item.id}
+                        className="rounded-lg px-3 py-1.5 text-sm text-sky-700 hover:bg-sky-50 disabled:opacity-50"
+                      >
+                        確認済みにする
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setEditingId(item.id)

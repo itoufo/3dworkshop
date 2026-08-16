@@ -66,8 +66,15 @@ AS $$
 $$;
 
 -- ⚠ SECURITY INVOKER のまま（既定）。呼び出し元の RLS が効くので、
---   anon キーから叩かれても 0 件になる。DEFINER に変えないこと。
-REVOKE EXECUTE ON FUNCTION public.match_chat_knowledge(VECTOR, INTEGER, DOUBLE PRECISION) FROM anon, authenticated;
+--   仮に実行されても anon には 0 件しか返らない。DEFINER に変えないこと。
+--
+-- ⚠ PUBLIC から先に剥がすこと。Postgres は関数の EXECUTE を既定で PUBLIC に与えるので、
+--   anon / authenticated だけ REVOKE しても PUBLIC 経由で実行できてしまう
+--   （2026-08-16 に Docker で確認: FROM anon だけでは anon が実行できた）。
+REVOKE EXECUTE ON FUNCTION public.match_chat_knowledge(VECTOR, INTEGER, DOUBLE PRECISION)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.match_chat_knowledge(VECTOR, INTEGER, DOUBLE PRECISION)
+  TO service_role;
 
 -- ---------------------------------------------------------------------------
 -- 初期データ
@@ -75,9 +82,20 @@ REVOKE EXECUTE ON FUNCTION public.match_chat_knowledge(VECTOR, INTEGER, DOUBLE P
 -- 出所は公式サイトと 2026-08 時点のヒアリング。⚠ 投入しただけでは埋め込みが無いので、
 -- 管理画面の「ベクトルを作り直す」を一度押すまでは検索が効かず、全件を渡す動作になる。
 --
--- ⚠ 裏取りが済んでいない数字（アンケート満足度・営業時間）は is_published = FALSE で入れてある。
---   ゆうさんが確認したら管理画面で公開に切り替える。
+-- ⚠ 裏取りが済んでいない項目には `要確認` タグを付けてある。公開はされている（ボットも答える）が、
+--   管理画面の一覧で目立つように出て、そのまま直せる。確認が済んだらタグを外す。
+--   ⚠ 「未確認だから」と本文に注記を書き足さないこと。本文はそのまま LLM に渡るので、
+--     ボットが「これは未確認の情報ですが」と喋り出す。管理上の但し書きはタグで持つ。
 -- ---------------------------------------------------------------------------
+
+-- ⚠ 空のときだけ入れる。SQL エディタで2回流されても複製しないため
+--   （複製すると同じ内容が2回 system に入り、費用も倍になる）。
+DO $seed$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.chat_knowledge) THEN
+  RAISE NOTICE 'chat_knowledge に既にデータがあるため初期データは投入しません';
+  RETURN;
+END IF;
 
 INSERT INTO public.chat_knowledge (title, body, tags, is_pinned, is_published, sort_order) VALUES
 (
@@ -121,12 +139,14 @@ INSERT INTO public.chat_knowledge (title, body, tags, is_pinned, is_published, s
   ARRAY['実績'], FALSE, TRUE, 80
 ),
 (
-  '体験者アンケートの満足度（未確認）',
-  E'体験者アンケートの満足度 95%（回答80名）。\n⚠ 出所の裏取りが済んでいないため未公開にしてある。確認が取れるまでボットに答えさせない。',
-  ARRAY['実績', '要確認'], FALSE, FALSE, 90
+  '体験者アンケートの満足度',
+  '体験者アンケートの満足度は95%（回答80名）。',
+  ARRAY['実績', '要確認'], FALSE, TRUE, 90
 ),
 (
-  '営業時間（未確認）',
-  E'公式サイトのスクール案内には 10:00〜19:00・火曜定休 と書かれている。\n⚠ 構造化データ（トップページ）では 10:00〜20:00 になっており、どちらが正しいか未確認。\nワークショップの回ごとの開始時間は日程によって違うので、予約ページで確認してもらう。',
-  ARRAY['営業時間', '要確認'], FALSE, FALSE, 100
+  '営業時間',
+  E'10:00〜19:00・火曜定休。\nワークショップの回ごとの開始時間は日程によって違うので、予約ページで確認してもらう。',
+  ARRAY['営業時間', '要確認'], FALSE, TRUE, 100
 );
+END
+$seed$;
