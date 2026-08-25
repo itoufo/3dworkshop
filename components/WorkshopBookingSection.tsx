@@ -8,6 +8,7 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight, ChevronDown } from 'lucide-react'
 import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
+import { formatPrice, isFreePrice } from '@/lib/price'
 
 function todayIso(): string {
   const d = new Date()
@@ -100,6 +101,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       remaining: number
     } | null
   } | null>(null)
+
+  // 参加費0円の回（無料の特別開催など）。Stripe は最低¥50のため決済自体を通さない
+  const isFree = isFreePrice(workshop.price)
 
   // 早割: 残り組数がある間は「1名あたり割引 × 参加人数」を適用（金額の確定はサーバー側）
   const earlyBird = availability?.early_bird
@@ -340,6 +344,35 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
       if (bookingError) throw bookingError
 
+      // 無料回は Stripe を通さず、その場で予約を確定して完了画面へ送る
+      if (isFree) {
+        const freeRes = await fetch('/api/create-free-booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: bookingData.id }),
+        })
+        const freeData = await freeRes.json()
+
+        if (!freeRes.ok || !freeData?.booking) {
+          gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'free_confirm' })
+          alert(freeData?.error || '予約の確定に失敗しました。お手数ですが、少し時間をおいて再度お試しください。')
+          setSubmitting(false)
+          return
+        }
+
+        // GA4: 有料回の begin_checkout と同じ地点（申込の確定操作）で計測する
+        gaEvent('begin_checkout', {
+          currency: GA_CURRENCY,
+          value: 0,
+          participants: booking.participants,
+          items: [gaWorkshopItem(workshop, booking.participants)],
+        })
+        checkoutStartedRef.current = true
+
+        window.location.href = `/success?booking_id=${bookingData.id}`
+        return
+      }
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -457,13 +490,13 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
   return (
     <>
-      {submitting && <LoadingOverlay message="決済画面へ移動しています..." />}
+      {submitting && <LoadingOverlay message={isFree ? '予約を確定しています...' : '決済画面へ移動しています...'} />}
       <div id="booking-form" className="bg-white rounded-2xl shadow-xl overflow-hidden sticky top-24">
         {/* Price Header */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 text-white">
           <p className="text-sm text-white/80 mb-1">参加費（1名あたり）</p>
           <div className="flex items-end justify-between">
-            <span className="text-3xl font-bold">¥{workshop.price.toLocaleString()}</span>
+            <span className="text-3xl font-bold">{formatPrice(workshop.price)}</span>
             {availability && (
               availability.is_full ? (
                 <span className="inline-flex items-center px-3 py-1 bg-red-500 rounded-full text-sm font-bold">
@@ -619,7 +652,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <div className="mt-4 space-y-1.5 text-xs text-gray-500">
               <div className="flex items-center justify-center">
                 <Shield className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
-                安全な決済はStripeで処理されます
+                {isFree ? '参加費はかかりません（お支払いなし）' : '安全な決済はStripeで処理されます'}
               </div>
               <div className="flex items-center justify-center">
                 <Clock className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
@@ -672,7 +705,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         <div className="mb-5 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 p-4">
           <div className="flex items-end justify-between">
             <span className="text-sm text-gray-600">参加費（1名あたり）</span>
-            <span className="text-2xl font-black text-gray-900">¥{workshop.price.toLocaleString()}</span>
+            <span className="text-2xl font-black text-gray-900">{formatPrice(workshop.price)}</span>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             {workshop.duration ? (
@@ -696,7 +729,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               </span>
             )}
           </div>
-          <p className="mt-3 text-xs text-gray-500">下記フォームにご入力のうえ、決済へお進みください（所要1〜2分）。</p>
+          <p className="mt-3 text-xs text-gray-500">
+            {isFree
+              ? '下記フォームにご入力のうえ、そのままご予約を確定してください（所要1〜2分・お支払いはありません）。'
+              : '下記フォームにご入力のうえ、決済へお進みください（所要1〜2分）。'}
+          </p>
         </div>
         <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-4">
           {/* Participants */}
@@ -928,7 +965,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             </div>
           )}
 
-          {/* Coupon Code (アコーディオン) */}
+          {/* Coupon Code (アコーディオン)。無料回は割引対象が無いので出さない */}
+          {!isFree && (
           <div className="border border-gray-200 rounded-xl overflow-hidden">
             <button
               type="button"
@@ -996,6 +1034,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               </div>
             )}
           </div>
+          )}
 
           {/* Price Summary */}
           <div className="border-t border-gray-200 pt-6">
@@ -1003,7 +1042,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">参加費 × {booking.participants}名</span>
                 <span className="text-lg text-gray-900">
-                  ¥{(workshop.price * booking.participants).toLocaleString()}
+                  {formatPrice(workshop.price * booking.participants)}
                 </span>
               </div>
               {isFamilySession && booking.companionCount > 0 && (
@@ -1027,16 +1066,20 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                 <span className="text-gray-900 font-semibold">合計金額</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  ¥{Math.max(0, (workshop.price * booking.participants) - earlyBirdDiscount - (couponValidation.discount_amount || 0)).toLocaleString()}
+                  {formatPrice(Math.max(0, (workshop.price * booking.participants) - earlyBirdDiscount - (couponValidation.discount_amount || 0)))}
                 </span>
               </div>
             </div>
             <div className="space-y-1 mb-6">
               <p className="text-xs text-gray-500">
-                ※ 料金には材料費・設備使用料が含まれています
+                {isFree
+                  ? '※ 参加費・材料費ともに無料です。当日のお支払いはありません'
+                  : '※ 料金には材料費・設備使用料が含まれています'}
               </p>
               <p className="text-xs text-gray-500">
-                ※ 開催日の前日まで無料でキャンセル・全額返金いたします
+                {isFree
+                  ? '※ ご都合が悪くなった場合は、席をお譲りできるようお早めにご連絡ください'
+                  : '※ 開催日の前日まで無料でキャンセル・全額返金いたします'}
               </p>
             </div>
 
@@ -1045,12 +1088,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               disabled={submitting}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? '処理中...' : '決済画面へ進む'}
+              {submitting ? '処理中...' : isFree ? '予約を確定する' : '決済画面へ進む'}
             </button>
 
             <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
               <Shield className="w-4 h-4 mr-1" />
-              安全な決済はStripeで処理されます
+              {isFree ? 'お支払いは発生しません' : '安全な決済はStripeで処理されます'}
             </div>
           </div>
         </form>

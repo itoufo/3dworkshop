@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import { gaEvent, GA_CURRENCY } from '@/lib/gtag'
+import { formatPrice } from '@/lib/price'
 
 interface Customer {
   id: string
@@ -46,24 +47,27 @@ function SuccessContent() {
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id')
+    // 無料ワークショップは Stripe を経由しないため booking_id で戻ってくる
+    const bookingId = searchParams.get('booking_id')
 
-    if (sessionId) {
-      confirmPayment(sessionId)
+    if (sessionId || bookingId) {
+      confirmPayment(sessionId, bookingId)
     } else {
       setError('セッション情報が見つかりません')
       setLoading(false)
     }
   }, [searchParams])
 
-  async function confirmPayment(sessionId: string) {
+  async function confirmPayment(sessionId: string | null, bookingId: string | null) {
     try {
       // APIエンドポイントを呼び出してStripeセッションを検証し、予約を確定
+      // （無料回は決済済みではなく、確定済みの予約を booking_id で読み出すだけ）
       const response = await fetch('/api/confirm-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId })
+        body: JSON.stringify(sessionId ? { sessionId } : { bookingId })
       })
 
       const data = await response.json()
@@ -74,8 +78,9 @@ function SuccessContent() {
 
       setBooking(data.booking)
 
-      // GA4: purchase。session_id 単位で1回だけ送り、リロード/再描画の二重計上を防ぐ
-      const purchaseKey = `ga_purchase_${sessionId}`
+      // GA4: purchase。session_id（無料回は booking_id）単位で1回だけ送り、
+      // リロード/再描画の二重計上を防ぐ
+      const purchaseKey = `ga_purchase_${sessionId || bookingId}`
       if (data.booking && !sessionStorage.getItem(purchaseKey)) {
         sessionStorage.setItem(purchaseKey, '1')
         const b: Booking = data.booking
@@ -174,7 +179,7 @@ function SuccessContent() {
               </div>
               <div className="flex justify-between pt-3 border-t">
                 <dt className="text-gray-900 font-semibold">合計金額</dt>
-                <dd className="font-bold text-xl">¥{booking.total_amount.toLocaleString()}</dd>
+                <dd className="font-bold text-xl">{formatPrice(booking.total_amount)}</dd>
               </div>
             </dl>
           </div>

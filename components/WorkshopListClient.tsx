@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import PastWorkshopsAccordion from '@/components/PastWorkshopsAccordion'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { gaEvent, gaWorkshopItem } from '@/lib/gtag'
+import { formatPrice } from '@/lib/price'
 
 const ITEMS_PER_PAGE = 9
 
@@ -362,7 +363,7 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
                         <div>
                           <p className="text-sm text-gray-500">参加費</p>
                           <p className="text-2xl font-bold text-gray-900">
-                            ¥{workshop.price.toLocaleString()}
+                            {formatPrice(workshop.price)}
                           </p>
                         </div>
                         <div className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-sm font-medium group-hover:shadow-lg transition-all duration-300">

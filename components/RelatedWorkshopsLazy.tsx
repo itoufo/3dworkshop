@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Calendar } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import type { Workshop } from '@/types'
+import { formatPrice } from '@/lib/price'
 
 interface Props {
   workshopId: string
@@ -115,7 +116,7 @@ export default function RelatedWorkshopsLazy({ workshopId, categoryId }: Props) 
                     })}
                   </p>
                 )}
-                <p className="text-lg font-bold text-gray-900 mt-2">¥{rw.price.toLocaleString()}</p>
+                <p className="text-lg font-bold text-gray-900 mt-2">{formatPrice(rw.price)}</p>
               </div>
             </Link>
           )

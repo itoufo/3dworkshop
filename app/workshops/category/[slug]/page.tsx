@@ -13,6 +13,7 @@ import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
 import Footer from '@/components/Footer'
 import { optimizeRichContentImages } from '@/lib/rich-content'
+import { formatPrice } from '@/lib/price'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -298,7 +299,7 @@ export default async function CategoryPillarPage({ params }: Props) {
                                 {formatDateLong(s.event_date)}
                               </span>
                               <span className="text-base font-bold text-purple-700 flex-shrink-0">
-                                ¥{s.workshop_price.toLocaleString()}
+                                {formatPrice(s.workshop_price)}
                               </span>
                             </div>
                             <div className="text-sm text-gray-600 flex items-center gap-3 mb-3">

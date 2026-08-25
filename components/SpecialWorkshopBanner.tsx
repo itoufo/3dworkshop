@@ -4,6 +4,7 @@ import { Sparkles, Calendar, ArrowRight } from 'lucide-react'
 import { getFeaturedWorkshop, getNearestUpcomingSession } from '@/lib/workshops'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
+import { formatPrice } from '@/lib/price'
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
@@ -100,7 +101,7 @@ export default async function SpecialWorkshopBanner({
                   {formatDate(next.event_date)} 開催
                 </span>
               )}
-              <span className="font-bold">¥{w.price.toLocaleString()}〜</span>
+              <span className="font-bold">{formatPrice(w.price)}{w.price > 0 ? '〜' : ''}</span>
             </div>
             <span className="inline-flex items-center gap-2 self-start rounded-xl bg-white px-6 py-3 text-base font-bold text-purple-700 shadow-lg transition-transform group-hover:scale-105">
               詳細・お申し込み

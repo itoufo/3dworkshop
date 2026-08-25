@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Calendar, Clock, Users, ArrowRight, Sparkles, X } from 'lucide-react'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
+import { formatPrice } from '@/lib/price'
 
 interface SessionRef {
   id: string
@@ -124,7 +125,7 @@ export default function MobileCategoryFloatingCta({ categorySlug, upcomingSessio
                           {formatDateLong(s.event_date)}
                         </span>
                         <span className="text-base font-bold text-purple-700 flex-shrink-0">
-                          ¥{s.workshop_price.toLocaleString()}
+                          {formatPrice(s.workshop_price)}
                         </span>
                       </div>
                       <div className="text-sm text-gray-600 flex items-center gap-3 mb-3">

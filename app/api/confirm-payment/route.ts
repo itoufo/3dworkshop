@@ -8,7 +8,35 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId } = await request.json()
+    const { sessionId, bookingId: freeBookingId } = await request.json()
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not available')
+    }
+
+    // 無料ワークショップは Stripe を経由しないため sessionId が無い。
+    // 確定済みの予約を booking_id で引いて完了画面に返すだけ（ここでは何も更新しない）。
+    if (!sessionId && freeBookingId) {
+      const { data: freeBooking, error: freeError } = await supabaseAdmin
+        .from('bookings')
+        .select(`
+          *,
+          workshop:workshops(*),
+          customer:customers(*)
+        `)
+        .eq('id', freeBookingId)
+        .single()
+
+      if (freeError || !freeBooking) {
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+      }
+      // 有料の予約を決済なしで完了扱いにしない
+      if ((freeBooking.workshop?.price ?? 0) > 0 || freeBooking.status !== 'confirmed') {
+        return NextResponse.json({ error: 'Booking not confirmed' }, { status: 400 })
+      }
+
+      return NextResponse.json({ success: true, booking: freeBooking })
+    }
 
     if (!sessionId) {
       return NextResponse.json(
