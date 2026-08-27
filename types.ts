@@ -113,6 +113,7 @@ export interface Booking {
   customer_id: string
   coupon_id?: string | null
   booking_date: string | null
+  booking_time?: string | null
   participants: number
   total_amount: number
   discount_amount?: number
@@ -126,6 +127,8 @@ export interface Booking {
   updated_at?: string
   // Joined fields (when using Supabase .select() with relations)
   workshop?: Workshop
+  // 予約が紐づく開催回。複数開催のワークショップでは workshop.event_* ではなくこちらが正
+  workshop_session?: WorkshopSession | null
   customer?: Customer
   coupon?: Coupon
 }

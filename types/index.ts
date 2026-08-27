@@ -141,6 +141,8 @@ export interface Booking {
   created_at: string
   updated_at: string
   workshop?: Workshop
+  // 予約が紐づく開催回。複数開催のワークショップでは workshop.event_* ではなくこちらが正
+  workshop_session?: WorkshopSession | null
   customer?: Customer
   coupon?: Coupon
 }

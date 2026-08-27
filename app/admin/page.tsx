@@ -91,6 +91,7 @@ export default function AdminDashboard() {
         .select(`
           *,
           workshop:workshops(*),
+          workshop_session:workshop_sessions(*),
           customer:customers(*),
           coupon:coupons(*)
         `)
@@ -641,33 +642,41 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {booking.workshop?.event_date ? (
-                        <div>
-                          <div className="text-sm text-gray-900 font-medium">
-                            {new Date(booking.workshop.event_date).toLocaleDateString('ja-JP', {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit'
-                            })}
-                          </div>
-                          {booking.workshop?.event_time && (
-                            <div className="text-xs text-gray-500">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {booking.workshop.event_time.slice(0, 5)}
+                      {(() => {
+                        // 予約は「開催回(workshop_sessions)」に紐づく。workshops 側の
+                        // event_date/event_time は複数開催のときの代表値でしかなく、
+                        // 全予約が同じ時刻に見えてしまうため、回ごとの日時を優先する。
+                        const eventDate =
+                          booking.workshop_session?.event_date
+                          || booking.booking_date
+                          || booking.workshop?.event_date
+                        const eventTime =
+                          booking.workshop_session?.event_time
+                          || booking.booking_time
+                          || booking.workshop?.event_time
+
+                        if (!eventDate) {
+                          return <span className="text-sm text-gray-400">未設定</span>
+                        }
+
+                        return (
+                          <div>
+                            <div className="text-sm text-gray-900 font-medium">
+                              {new Date(`${eventDate}T00:00:00`).toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                              })}
                             </div>
-                          )}
-                        </div>
-                      ) : booking.booking_date ? (
-                        <div className="text-sm text-gray-900 font-medium">
-                          {new Date(booking.booking_date).toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">未設定</span>
-                      )}
+                            {eventTime && (
+                              <div className="text-xs text-gray-500">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {eventTime.slice(0, 5)}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-4 max-w-[200px]">
                       <div
