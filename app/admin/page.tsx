@@ -6,8 +6,9 @@ import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle, BellRing } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle, BellRing, ClipboardList } from 'lucide-react'
 import PushNotificationPanel from '@/components/admin/PushNotificationPanel'
+import SurveyPanel from '@/components/admin/SurveyPanel'
 
 interface BlogPost {
   id: string
@@ -64,7 +65,7 @@ export default function AdminDashboard() {
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests' | 'notifications'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests' | 'notifications' | 'surveys'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const [showCancelled, setShowCancelled] = useState(false)
   const [hideInternal, setHideInternal] = useState(true)
@@ -525,6 +526,17 @@ export default function AdminDashboard() {
             >
               <BellRing className="w-4 h-4 inline mr-2" />
               通知
+            </button>
+            <button
+              onClick={() => setActiveTab('surveys')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
+                activeTab === 'surveys'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4 inline mr-2" />
+              アンケート
             </button>
             {/* ⚠ これだけ別ページ。タブではなく遷移する（知識の編集は独立した画面） */}
             <button
@@ -1562,6 +1574,8 @@ export default function AdminDashboard() {
       )}
 
       {activeTab === 'notifications' && <PushNotificationPanel />}
+
+      {activeTab === 'surveys' && <SurveyPanel />}
       </div>
     </>
   )

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
-import type { PushTopic } from '@/lib/push'
+import { isAllowedEndpoint, type PushTopic } from '@/lib/push'
 
 // ブラウザの購読情報を保存する。
 // push_subscriptions は RLS で匿名キーを締め出しているので、
@@ -10,44 +10,19 @@ import type { PushTopic } from '@/lib/push'
 export const runtime = 'nodejs'
 
 /**
- * 受け付ける配信先のホスト。
- *
- * ⚠ 「https で始まる」だけでは通してはいけない。ここに入った URL は、
- *   以降の配信のたびにサーバーが外向きに POST する先になる。
- *   任意のホストを登録できると、3DLab のサーバーを踏み台にして
- *   狙った相手へリクエストを撒ける（2026-08-31 のレビューで指摘）。
- *   配信先はブラウザベンダーのプッシュサーバーに限られるので、そこだけ許す。
- */
-const ALLOWED_ENDPOINT_HOSTS = [
-  '.googleapis.com', // Chrome / Edge (FCM)
-  '.mozilla.com', // Firefox
-  '.push.apple.com', // Safari / iOS
-  '.notify.windows.com', // Edge (WNS)
-]
-
-/**
  * 登録できる配信区分。
  * ⚠ クライアントに選ばせない。ここでサーバーが決める。
  *   画面の文言（PushSubscribeButton）と、この配列を必ず揃えること。
+ *
+ * ⚠ 'daily_survey' をここに足さないこと。来訪時のプロンプトで許可した人は
+ *   「新しい開催日程」の約束で許可している。毎日届く通知は /survey の切り替えから
+ *   明示的に足してもらう（app/api/push/topics）。
  */
 const SUBSCRIBE_TOPICS: PushTopic[] = ['workshop_schedule', 'announcement']
 
 /** 1つの接続元から短時間に大量登録されないようにする */
 const WINDOW_MS = 10 * 60 * 1000
 const MAX_SUBSCRIBES = 10
-
-function isAllowedEndpoint(endpoint: string): boolean {
-  let url: URL
-  try {
-    url = new URL(endpoint)
-  } catch {
-    return false
-  }
-  if (url.protocol !== 'https:') return false
-  return ALLOWED_ENDPOINT_HOSTS.some(
-    (suffix) => url.hostname === suffix.slice(1) || url.hostname.endsWith(suffix)
-  )
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,6 +56,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '購読情報の形式が不正です' }, { status: 400 })
     }
 
+    // ⚠ 再登録で topics を SUBSCRIBE_TOPICS に上書きしないこと。
+    //   このルートは sw.js の pushsubscriptionchange や PushAutoPrompt からも呼ばれる。
+    //   上書きすると、/survey で明示的に足してもらった 'daily_survey' が
+    //   本人の知らないうちに外れ、翌日から通知が止まる（本人には「オン」に見えたまま）。
+    //   既定は足しつつ、既に持っている区分は残す＝和集合にする。
+    const { data: existing } = await supabaseAdmin
+      .from('push_subscriptions')
+      .select('topics')
+      .eq('endpoint', endpoint)
+      .maybeSingle()
+
+    const topics = Array.from(
+      new Set([...(existing?.topics || []), ...SUBSCRIBE_TOPICS])
+    )
+
     // ⚠ upsert なので、同じ endpoint での再登録は既存行を上書きする。
     //   endpoint は本人のブラウザしか知り得ない値なので鍵として成立するが、
     //   万一漏れた場合に他人の鍵を書き換えられるのは避けられない。
@@ -90,7 +80,7 @@ export async function POST(request: NextRequest) {
         endpoint,
         p256dh,
         auth,
-        topics: SUBSCRIBE_TOPICS,
+        topics,
         user_agent: request.headers.get('user-agent')?.slice(0, 500) || null,
         is_active: true,
         failure_count: 0,

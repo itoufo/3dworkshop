@@ -33,6 +33,12 @@ interface BlogPost {
   updated_at?: string
 }
 
+interface Survey {
+  slug: string
+  updated_at?: string
+  publish_date?: string | null
+}
+
 interface SitemapUrl {
   loc: string
   lastmod?: string
@@ -67,6 +73,18 @@ const staticPages: SitemapUrl[] = [
     lastmod: new Date().toISOString(),
     changefreq: 'daily',
     priority: 0.8,
+  },
+  {
+    loc: '/survey',
+    lastmod: new Date().toISOString(),
+    changefreq: 'daily',
+    priority: 0.7,
+  },
+  {
+    loc: '/survey/archive',
+    lastmod: new Date().toISOString(),
+    changefreq: 'daily',
+    priority: 0.6,
   },
   {
     loc: '/school',
@@ -177,6 +195,41 @@ function generateWorkshopUrls(workshops: Workshop[]): SitemapUrl[] {
 }
 
 /**
+ * アンケートの設問を取得。
+ * ⚠ draft は含めない。1日1問ずつ増える資産なので、公開済み(live/closed)だけを出す
+ */
+async function fetchSurveys(): Promise<Survey[]> {
+  try {
+    const { data, error } = await supabase
+      .from('surveys')
+      .select('slug, updated_at, publish_date')
+      .in('status', ['live', 'closed'])
+      .order('publish_date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching surveys:', error)
+      return []
+    }
+    return data || []
+  } catch (error) {
+    console.error('Error fetching surveys:', error)
+    return []
+  }
+}
+
+/**
+ * アンケートURLリストを生成
+ */
+function generateSurveyUrls(surveys: Survey[]): SitemapUrl[] {
+  return surveys.map((survey) => ({
+    loc: `/survey/${survey.slug}`,
+    lastmod: survey.updated_at || new Date().toISOString(),
+    changefreq: 'monthly' as const,
+    priority: 0.6,
+  }))
+}
+
+/**
  * ブログURLリストを生成
  */
 function generateBlogUrls(blogPosts: BlogPost[]): SitemapUrl[] {
@@ -234,18 +287,21 @@ async function main() {
 
   // データ取得
   console.log('📡 Fetching data from Supabase...')
-  const [workshops, blogPosts] = await Promise.all([
+  const [workshops, blogPosts, surveys] = await Promise.all([
     fetchWorkshops(),
     fetchBlogPosts(),
+    fetchSurveys(),
   ])
 
   console.log(`✨ Found ${workshops.length} workshops`)
   console.log(`✨ Found ${blogPosts.length} blog posts`)
+  console.log(`✨ Found ${surveys.length} surveys`)
 
   // URL生成
   const workshopUrls = generateWorkshopUrls(workshops)
   const blogUrls = generateBlogUrls(blogPosts)
-  const allUrls = [...staticPages, ...workshopUrls, ...blogUrls]
+  const surveyUrls = generateSurveyUrls(surveys)
+  const allUrls = [...staticPages, ...workshopUrls, ...blogUrls, ...surveyUrls]
 
   console.log(`📝 Total URLs: ${allUrls.length}`)
 

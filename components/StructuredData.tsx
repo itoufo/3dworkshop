@@ -194,6 +194,45 @@ export function BlogArticleSchema(article: {
   };
 }
 
+// アンケート設問用のQuestion構造化データ
+//
+// 過去問を1問1URLで残すのが目的なので、URL は必ず個別ページ（/survey/<slug>）を指す。
+// acceptedAnswer は使わない。「正解」があるクイズではなく意見を聞くアンケートで、
+// 多数派の選択肢を正解として出すと検索結果に誤った断定が並ぶ。選択肢は suggestedAnswer で並べる。
+export function SurveyQuestionSchema(survey: {
+  slug: string;
+  question: string;
+  description?: string | null;
+  option_a: string;
+  option_b: string;
+  created_at?: string;
+  count_a?: number;
+  count_b?: number;
+}) {
+  const url = `https://3dlab.jp/survey/${survey.slug}`;
+  const answerCount = (survey.count_a || 0) + (survey.count_b || 0);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Question",
+    "name": survey.question,
+    "text": survey.description || survey.question,
+    "url": url,
+    "inLanguage": "ja",
+    ...(survey.created_at && { "dateCreated": survey.created_at }),
+    "answerCount": answerCount,
+    "suggestedAnswer": [
+      { "@type": "Answer", "text": survey.option_a, "url": url },
+      { "@type": "Answer", "text": survey.option_b, "url": url },
+    ],
+    "author": {
+      "@type": "Organization",
+      "name": "3DLab - 3Dプリンタ教室",
+      "url": "https://3dlab.jp"
+    }
+  };
+}
+
 // パンくずリスト用のBreadcrumbList構造化データ
 export function BreadcrumbListSchema(items: Array<{ name: string; url: string }>) {
   return {
