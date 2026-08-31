@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## ドキュメント
+
+- [チャットボット（RAG）](docs/chatbot.md) — サイト右下の問い合わせチャットと、管理画面からの知識編集。
+  **本番反映の手順**（作業4つ・15〜20分）もここにある
+- [メール設定](docs/email-setup.md) / [SEO チェックリスト](docs/seo-checklist.md) / [サイトマップ](docs/SITEMAP.md)
+
 ## Getting Started
 
 First, run the development server:

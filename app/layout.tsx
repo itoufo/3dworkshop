@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GA_MEASUREMENT_ID } from "@/lib/gtag";
+import ChatWidget from "@/components/ChatWidget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -165,6 +166,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        {/* 問い合わせチャット。⚠ /admin では自分で非表示にする（ChatWidget 内で判定） */}
+        <ChatWidget />
       </body>
     </html>
   );

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle } from 'lucide-react'
 
 interface BlogPost {
   id: string
@@ -513,6 +513,14 @@ export default function AdminDashboard() {
                   {workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length}
                 </span>
               )}
+            </button>
+            {/* ⚠ これだけ別ページ。タブではなく遷移する（知識の編集は独立した画面） */}
+            <button
+              onClick={() => router.push('/admin/chat-knowledge')}
+              className="flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            >
+              <MessageCircle className="w-4 h-4 inline mr-2" />
+              チャットの知識
             </button>
           </nav>
         </div>
