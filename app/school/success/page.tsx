@@ -163,7 +163,7 @@ export default function SchoolSuccessPage() {
               <p className="text-sm text-gray-600 mb-2">お問い合わせ</p>
               <p className="font-medium text-gray-900">080-9453-0911</p>
               <p className="text-gray-500 text-xs">※「3DLabを見た」とお伝えください</p>
-              <p className="font-medium text-gray-900">y-sato@sunu25.com</p>
+              <p className="font-medium text-gray-900">3dlab@sunu25.com</p>
             </div>
 
             {/* Action Buttons */}

@@ -215,7 +215,7 @@ export default function RecruitPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
-                    href="mailto:y-sato@sunu25.com?subject=アルバイト応募"
+                    href="mailto:3dlab@sunu25.com?subject=アルバイト応募"
                     className="inline-block bg-white text-purple-600 font-bold px-6 py-3 rounded-full hover:bg-purple-50 transition-colors text-center"
                   >
                     メールで応募

@@ -41,7 +41,7 @@ export function generateSchoolEnrollmentEmail(
           
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
-            <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+            <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
             <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
           </div>
         </div>

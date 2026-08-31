@@ -178,7 +178,7 @@ export default function TermsPage() {
                   <p className="mt-3 font-semibold mb-2">代表取締役</p>
                   <p>伊東優</p>
                   <p className="mt-3 font-semibold mb-2">お問い合わせ</p>
-                  <p>メール：y-sato@sunu25.com</p>
+                  <p>メール：3dlab@sunu25.com</p>
                   <p>電話：080-9453-0911</p>
                 </div>
               </section>

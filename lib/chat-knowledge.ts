@@ -12,7 +12,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  *   これは知識ではなく安全装置で、管理画面から緩められると値引きや空席を勝手に約束し始める。
  */
 
-export const CONTACT = '080-9453-0911（「3DLabのサイトを見た」とお伝えください）／ y-sato@sunu25.com'
+export const CONTACT = '080-9453-0911（「3DLabのサイトを見た」とお伝えください）／ 3dlab@sunu25.com'
 
 export const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
 export const EMBEDDING_DIMENSIONS = 1536 // ⚠ migration の VECTOR(1536) と揃っている。変えるなら両方

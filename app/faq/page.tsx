@@ -103,7 +103,7 @@ export default function FaqPage() {
             <p className="text-base text-gray-600 mb-10">
               ワークショップ・スクール・オーダーメイド制作について、よくいただくご質問をまとめました。
               このほかご不明な点は、お気軽に
-              <a href="mailto:y-sato@sunu25.com" className="text-purple-600 hover:text-purple-700 font-medium">
+              <a href="mailto:3dlab@sunu25.com" className="text-purple-600 hover:text-purple-700 font-medium">
                 お問い合わせ
               </a>
               ください。

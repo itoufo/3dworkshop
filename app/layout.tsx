@@ -78,7 +78,7 @@ export default function RootLayout({
     "description": "東京・秋葉原の3Dプリンター・スリーディープリンター体験イベント。湯島駅から徒歩1分。御徒町・秋葉原・御茶ノ水から徒歩圏内。",
     "url": "https://3dlab.jp",
     "telephone": "080-9453-0911",
-    "email": "y-sato@sunu25.com",
+    "email": "3dlab@sunu25.com",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "文京区",

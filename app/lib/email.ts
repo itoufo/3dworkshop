@@ -165,7 +165,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             
             <p style="margin-top: 30px;">ご不明な点がございましたら、お気軽にお問い合わせください。</p>
             <p>
-              📧 y-sato@sunu25.com<br>
+              📧 3dlab@sunu25.com<br>
               📞 080-9453-0911
             </p>
           </div>
@@ -303,7 +303,7 @@ export function generateBookingConfirmationEmail(
 
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
-            <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+            <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
             <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
           </div>
         </div>
@@ -370,7 +370,7 @@ export function generate3DPrintingRequestEmail(
 
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
-            <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+            <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
             <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
           </div>
         </div>
@@ -452,7 +452,7 @@ export function generateServiceOrderConfirmationEmail(input: {
 
         <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
           <h3 style="margin-top:0;">お問い合わせ先</h3>
-          <p><strong>メール:</strong> <a href="mailto:y-sato@sunu25.com">y-sato@sunu25.com</a></p>
+          <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
           <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
         </div>
 
