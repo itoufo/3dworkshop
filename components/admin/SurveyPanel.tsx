@@ -113,6 +113,10 @@ export default function SurveyPanel() {
       setPending((rows) => rows.filter((r) => r.id !== id))
       setStock((n) => Math.max(0, n - 1))
       setMessage('削除しました')
+    } catch {
+      // ⚠ 握りつぶさない。何も出ないと「押したのに消えていない」だけが残り、
+      //   消えたのか失敗したのか管理者に判断できない
+      setMessage('削除に失敗しました（通信エラー）')
     } finally {
       setSavingId(null)
     }

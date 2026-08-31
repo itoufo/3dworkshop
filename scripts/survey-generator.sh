@@ -133,15 +133,18 @@ ${CATEGORIES}
 ${EXISTING}"
 
 log "Claude CLI 実行開始（${GENERATE_COUNT}問）..."
-RAW=$("$CLAUDE_BIN" --print --max-budget-usd "$MAX_BUDGET_USD" "$PROMPT" 2>&1) || {
-  log "ERROR: Claude CLI が異常終了しました"
+# ⚠ stderr を stdout に混ぜない。CLI の警告が1行でも [ を含むと、下の sed の範囲が
+#   そこから始まって JSON の手前に文が入り、正しい配列が返っていても全部捨ててしまう
+ERR_FILE="$LOG_DIR/survey-generator-stderr.txt"
+RAW=$("$CLAUDE_BIN" --print --max-budget-usd "$MAX_BUDGET_USD" "$PROMPT" 2>"$ERR_FILE") || {
+  log "ERROR: Claude CLI が異常終了しました（stderr: $ERR_FILE）"
   echo "$RAW" > "$LOG_DIR/survey-generator-output.txt"
   exit 1
 }
 echo "$RAW" > "$LOG_DIR/survey-generator-output.txt"
 
-# コードフェンスが付いてきても拾えるように、最初の [ から最後の ] までを取る
-JSON=$(printf '%s' "$RAW" | sed -n '/\[/,/\]$/p')
+# コードフェンスが付いてきても拾えるように、行頭の [ から行頭の ] までを取る
+JSON=$(printf '%s' "$RAW" | sed -n '/^[[:space:]]*\[/,/^[[:space:]]*\]/p')
 if ! printf '%s' "$JSON" | jq -e 'type == "array" and length > 0' >/dev/null 2>&1; then
   log "ERROR: JSON配列として読めませんでした。$LOG_DIR/survey-generator-output.txt を確認してください"
   exit 1

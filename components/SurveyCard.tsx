@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import SurveyPieChart from './SurveyPieChart'
 import SurveyShareButtons from './SurveyShareButtons'
@@ -38,6 +39,8 @@ export default function SurveyCard({ survey, readOnly = false, showShare = false
   const [choice, setChoice] = useState<'a' | 'b' | null>(null)
   const [submitting, setSubmitting] = useState<'a' | 'b' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [closedMidVote, setClosedMidVote] = useState(false)
+  const router = useRouter()
 
   // ⚠ localStorage はサーバーには無い。最初の描画はサーバーと同じ「未回答」にして、
   //   マウント後に読む。ここで直接読むと hydration が食い違う
@@ -46,7 +49,7 @@ export default function SurveyCard({ survey, readOnly = false, showShare = false
     setChoice(getAnsweredChoice(survey.id))
   }, [survey.id, readOnly])
 
-  const revealed = readOnly || choice !== null
+  const revealed = readOnly || closedMidVote || choice !== null
   const pct = percentages(counts)
 
   async function vote(picked: 'a' | 'b') {
@@ -67,6 +70,16 @@ export default function SurveyCard({ survey, readOnly = false, showShare = false
       const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
+        // ⚠ 締切と同時に押した人を行き止まりにしない。このページは最大5分キャッシュされるので、
+        //   12:00 の切り替え直後は「投票できる見た目のまま締切済み」になりうる。
+        //   ボタンを押した動機は結果を見ることなので、エラーだけ出して終わらせず結果を出す。
+        if (response.status === 409) {
+          setClosedMidVote(true)
+          setError('この質問は受付を終了しました。結果をご覧ください。')
+          // 手元の集計はキャッシュ時点のものなので、確定値に差し替える
+          router.refresh()
+          return
+        }
         setError(data.error || '回答の送信に失敗しました。時間をおいてお試しください。')
         return
       }

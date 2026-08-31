@@ -15,8 +15,12 @@ import {
   votePercentages,
 } from '@/lib/surveys'
 
-// 締切済みの設問は中身が変わらないので長めでよい
-export const revalidate = 3600
+/**
+ * ⚠ 締切済みだけのページではない。今日の設問への直リンク（共有ボタンの遷移先）でもあるので、
+ *   長くしない。12:00 に締切へ変わったあとも古い HTML が残ると、
+ *   投票ボタンを押せてしまい 409 で行き止まりになる。/survey と揃える。
+ */
+export const revalidate = 300
 
 interface PageProps {
   params: Promise<{ slug: string }>

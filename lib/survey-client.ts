@@ -9,6 +9,22 @@ const ANSWERED_KEY = '3dlab_survey_answers'
 /** 記憶しておく回答の数。⚠ 上限を持たせる。毎日1問なので、無いと際限なく伸びる */
 const MAX_REMEMBERED = 60
 
+/** crypto.randomUUID があればそれを使い、無ければ同じ形の文字列を自前で作る */
+function randomUuid(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+  } catch {
+    // 呼べない環境。下のフォールバックへ
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16)
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 /**
  * この端末の匿名 ID。無ければ作って保存する。
  *
@@ -17,7 +33,10 @@ const MAX_REMEMBERED = 60
  *   投票そのものはできるほうがよい。
  */
 export function getDeviceId(): string {
-  const fresh = crypto.randomUUID()
+  // ⚠ crypto.randomUUID は安全なコンテキストでないと存在しない（古い Safari も同様）。
+  //   try の外で呼ぶと、localStorage を守るための catch に届く前に落ちて、
+  //   呼び出し側では「通信エラー」に化けて投票そのものができなくなる
+  const fresh = randomUuid()
   try {
     const existing = localStorage.getItem(DEVICE_KEY)
     if (existing) return existing

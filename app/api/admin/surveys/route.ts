@@ -82,6 +82,21 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'id が必要です' }, { status: 400 })
     }
 
+    // 変更の可否は今の状態で決まるので、先に現物を読む
+    const { data: current, error: currentError } = await supabaseAdmin
+      .from('surveys')
+      .select('status')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (currentError) {
+      console.error('admin surveys lookup failed:', currentError.message)
+      return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 })
+    }
+    if (!current) {
+      return NextResponse.json({ error: '設問が見つかりません' }, { status: 404 })
+    }
+
     // ⚠ 受け取った body をそのまま渡さない。count_a / count_b / finalized_at まで
     //   書き換えられると、集計が survey_answers の行数と食い違う
     const patch: Record<string, unknown> = {}
@@ -113,6 +128,14 @@ export async function PATCH(request: NextRequest) {
     if (patch.slug === 'archive') {
       return NextResponse.json({ error: 'slug に archive は使えません' }, { status: 400 })
     }
+    // ⚠ 公開済みの slug は変えさせない。DELETE を draft 限定にしているのと同じ理由で、
+    //   共有された X / LINE のリンクと、サイトマップで送った URL が全部 404 になる
+    if ('slug' in patch && current.status !== 'draft') {
+      return NextResponse.json(
+        { error: '公開済みの設問の slug は変更できません（共有されたリンクが 404 になります）' },
+        { status: 409 }
+      )
+    }
 
     if ('publish_date' in body) {
       const value = body.publish_date
@@ -122,6 +145,16 @@ export async function PATCH(request: NextRequest) {
         patch.publish_date = value
       } else {
         return NextResponse.json({ error: '公開日は YYYY-MM-DD 形式で指定してください' }, { status: 400 })
+      }
+
+      // ⚠ 受付中の設問から公開日を外させない。cron は「今日ではない live」を締めるので
+      //   締められはするが、締まった瞬間に別の設問が今日ぶんとして立ち、
+      //   その日の回答が中途半端に分かれる。外したいならまず締めてもらう
+      if (patch.publish_date === null && current.status === 'live') {
+        return NextResponse.json(
+          { error: '受付中の設問からは公開日を外せません。先に締切にしてください' },
+          { status: 409 }
+        )
       }
     }
 
