@@ -102,7 +102,7 @@ https://www.miraipage.net/prof/yuho_ito/contact
 
 **ワークショップのお申し込み・ご相談**
 3DLab
-- メール: y-sato@sunu25.com
+- メール: 3dlab@sunu25.com
 - 電話: 080-9453-0911
 - 申込ページ: https://3dlab.jp/workshops/b46da2da-07c0-4115-a0c8-9e08bea4e71f
 

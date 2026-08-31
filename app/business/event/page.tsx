@@ -87,7 +87,7 @@ const serviceJsonLd = {
     '@type': 'LocalBusiness',
     name: '3DLab',
     telephone: '+81-80-9453-0911',
-    email: 'y-sato@sunu25.com',
+    email: '3dlab@sunu25.com',
     address: {
       '@type': 'PostalAddress',
       streetAddress: '湯島3-14-8 加田湯島ビル 5F',

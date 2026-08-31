@@ -229,7 +229,7 @@ export default function HomePage() {
                       <ArrowRight className="w-5 h-5" />
                     </Link>
                     <a
-                      href="mailto:y-sato@sunu25.com?subject=3Dプリント制作のご相談"
+                      href="mailto:3dlab@sunu25.com?subject=3Dプリント制作のご相談"
                       className="inline-flex items-center justify-center gap-2 bg-white/20 backdrop-blur text-white font-bold px-8 py-4 rounded-xl hover:bg-white/30 transition-colors"
                     >
                       <MessageCircle className="w-5 h-5" />

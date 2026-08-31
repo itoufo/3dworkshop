@@ -50,8 +50,8 @@ const items: { label: string; value: React.ReactNode }[] = [
   {
     label: 'メールアドレス',
     value: (
-      <a href="mailto:y-sato@sunu25.com" className="text-purple-600 hover:text-purple-700">
-        y-sato@sunu25.com
+      <a href="mailto:3dlab@sunu25.com" className="text-purple-600 hover:text-purple-700">
+        3dlab@sunu25.com
       </a>
     ),
   },

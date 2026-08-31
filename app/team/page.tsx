@@ -507,7 +507,7 @@ export default function TeamPage() {
                     株式会社sunU
                   </a>
                   <a
-                    href="mailto:y-sato@sunu25.com"
+                    href="mailto:3dlab@sunu25.com"
                     className="inline-flex items-center gap-2 bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-4 py-2 rounded-full text-sm font-medium transition-colors"
                   >
                     <Mail className="w-4 h-4" />

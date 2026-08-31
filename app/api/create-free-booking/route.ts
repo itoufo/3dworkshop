@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
       const emailResult = await sendEmail({
         to: customer.email,
-        cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com', 'nanzinaniwa6@gmail.com'],
+        cc: ['yuho.ito@walker.co.jp', '3dlab@sunu25.com', 'nanzinaniwa6@gmail.com'],
         subject: emailContent.subject,
         html: emailContent.html,
       })

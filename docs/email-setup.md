@@ -100,5 +100,5 @@ SMTP_PASS=your-ses-smtp-password
 `/app/api/stripe-webhook/route.ts`の以下の部分を編集：
 
 ```typescript
-cc: ['yuho.ito@walker.co.jp', 'y-sato@sunu25.com'],  // 管理者のメールアドレス
+cc: ['yuho.ito@walker.co.jp', '3dlab@sunu25.com'],  // 管理者のメールアドレス
 ```

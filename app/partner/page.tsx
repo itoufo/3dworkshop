@@ -318,13 +318,13 @@ export default function PartnerPage() {
             </a>
 
             <a
-              href="mailto:y-sato@sunu25.com"
+              href="mailto:3dlab@sunu25.com"
               className="flex items-center justify-center p-6 bg-pink-50 rounded-2xl hover:bg-pink-100 transition-colors"
             >
               <Mail className="w-6 h-6 text-pink-600 mr-3" />
               <div>
                 <p className="text-sm text-gray-500">メール</p>
-                <p className="text-lg font-bold text-pink-700">y-sato@sunu25.com</p>
+                <p className="text-lg font-bold text-pink-700">3dlab@sunu25.com</p>
               </div>
             </a>
           </div>

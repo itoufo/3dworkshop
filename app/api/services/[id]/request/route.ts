@@ -3,7 +3,7 @@ import { createHash } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendEmail, generateServiceRequestEmail } from '@/app/lib/email'
 
-const ADMIN_TO = 'y-sato@sunu25.com'
+const ADMIN_TO = '3dlab@sunu25.com'
 const ADMIN_CC = ['yuho.ito@walker.co.jp', 'nanzinaniwa6@gmail.com']
 
 // インメモリ簡易レートリミット (30秒)

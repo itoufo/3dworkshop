@@ -24,8 +24,8 @@ export default function Footer() {
           <div className="text-center space-y-2">
             <p className="text-sm">
               <span className="text-gray-400">お問い合わせ：</span>
-              <a href="mailto:y-sato@sunu25.com" className="text-purple-400 hover:text-purple-300 ml-2">
-                y-sato@sunu25.com
+              <a href="mailto:3dlab@sunu25.com" className="text-purple-400 hover:text-purple-300 ml-2">
+                3dlab@sunu25.com
               </a>
             </p>
             <p className="text-sm">
