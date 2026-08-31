@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { GA_MEASUREMENT_ID } from "@/lib/gtag";
 import ChatWidget from "@/components/ChatWidget";
 import PWARegister from "@/components/PWARegister";
+import PushAutoPrompt from "@/components/PushAutoPrompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -186,6 +187,8 @@ export default function RootLayout({
         {/* 問い合わせチャット。⚠ /admin では自分で非表示にする（ChatWidget 内で判定） */}
         <ChatWidget />
         <PWARegister />
+        {/* 来訪時に通知をうながす。⚠ /admin では自分で非表示にする（PushAutoPrompt 内で判定） */}
+        <PushAutoPrompt />
       </body>
     </html>
   );
