@@ -36,7 +36,7 @@ export interface PushSendResult {
   total: number
 }
 
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:y-sato@sunu25.com'
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:3dlab@sunu25.com'
 
 /**
  * VAPID キーが揃っているか。未設定なら通知機能は無効（サイト自体は動く）。
