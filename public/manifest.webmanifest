@@ -33,6 +33,12 @@
   ],
   "shortcuts": [
     {
+      "name": "今日のアンケート",
+      "short_name": "アンケート",
+      "url": "/survey?utm_source=pwa",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "ワークショップ一覧",
       "short_name": "ワークショップ",
       "url": "/workshops?utm_source=pwa",

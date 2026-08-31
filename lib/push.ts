@@ -10,8 +10,13 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  * ⚠ この列を「あるだけで誰も読まない」状態にしない。読まないなら、
  *   フッターの「新しい開催日程が追加されたときだけお届けします」が嘘になる
  *   （管理画面の手動配信が同じ全員に飛ぶため。2026-08-31 のレビューで指摘）。
+ *
+ * ⚠ 'daily_survey'（毎日のアンケート）は、購読時の既定には入れないこと。
+ *   来訪時の PushAutoPrompt で許可した人は「新しい開催日程」の約束で許可している。
+ *   毎日届く通知はそれとは別の合意なので、/survey の切り替えから明示的に足してもらう
+ *   （app/api/push/topics）。既定に入れると、日程だけを望んだ全員に毎日飛ぶ。
  */
-export type PushTopic = 'workshop_schedule' | 'announcement'
+export type PushTopic = 'workshop_schedule' | 'announcement' | 'daily_survey'
 
 /** 1回の fetch で扱う購読数。⚠ 全件を一度に並列で投げない（下の sendPushToAll のコメント） */
 const SEND_BATCH_SIZE = 50
@@ -37,6 +42,39 @@ export interface PushSendResult {
 }
 
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:3dlab@sunu25.com'
+
+/**
+ * 受け付ける配信先のホスト。
+ *
+ * ⚠ 「https で始まる」だけでは通してはいけない。ここに入った URL は、
+ *   以降の配信のたびにサーバーが外向きに POST する先になる。
+ *   任意のホストを登録できると、3DLab のサーバーを踏み台にして
+ *   狙った相手へリクエストを撒ける（2026-08-31 のレビューで指摘）。
+ *   配信先はブラウザベンダーのプッシュサーバーに限られるので、そこだけ許す。
+ */
+const ALLOWED_ENDPOINT_HOSTS = [
+  '.googleapis.com', // Chrome / Edge (FCM)
+  '.mozilla.com', // Firefox
+  '.push.apple.com', // Safari / iOS
+  '.notify.windows.com', // Edge (WNS)
+]
+
+/**
+ * 購読の endpoint として受け付けてよい URL か。
+ * ⚠ endpoint を受け取るルートは必ずこれを通すこと（subscribe だけでなく topics も）。
+ */
+export function isAllowedEndpoint(endpoint: string): boolean {
+  let url: URL
+  try {
+    url = new URL(endpoint)
+  } catch {
+    return false
+  }
+  if (url.protocol !== 'https:') return false
+  return ALLOWED_ENDPOINT_HOSTS.some(
+    (suffix) => url.hostname === suffix.slice(1) || url.hostname.endsWith(suffix)
+  )
+}
 
 /**
  * VAPID キーが揃っているか。未設定なら通知機能は無効（サイト自体は動く）。
@@ -176,7 +214,7 @@ export async function sendPushToAll(payload: PushPayload, topic: PushTopic): Pro
  *   件数は送信後に更新する。
  */
 export async function sendAndLogPush(params: {
-  kind: 'workshop_schedule' | 'manual'
+  kind: 'workshop_schedule' | 'manual' | 'daily_survey'
   payload: PushPayload
   topic: PushTopic
   workshopId?: string | null

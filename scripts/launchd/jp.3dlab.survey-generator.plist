@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  アンケート設問の在庫を切らさないための定期実行。
+
+  在庫が7問を下回っているときだけ生成するので（survey-generator.sh の MIN_STOCK）、
+  毎週動かしても実際に Claude を呼ぶのは3〜4週に1回程度。
+
+  インストール:
+    cp scripts/launchd/jp.3dlab.survey-generator.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/jp.3dlab.survey-generator.plist
+
+  取り外し:
+    launchctl unload ~/Library/LaunchAgents/jp.3dlab.survey-generator.plist
+    rm ~/Library/LaunchAgents/jp.3dlab.survey-generator.plist
+
+  ⚠ PATH は明示すること。launchd はログインシェルの設定を読まないので、
+    書かないと claude も node も見つからない（既存の jp.3dlab.article-writer と同じ理由）。
+  ⚠ パスは環境に合わせて書き換えること。
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>jp.3dlab.survey-generator</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/yuho/Dev/3dworkshop/scripts/survey-generator.sh</string>
+	</array>
+
+	<key>WorkingDirectory</key>
+	<string>/Users/yuho/Dev/3dworkshop</string>
+
+	<!-- 毎週月曜 6:00。記事生成（7:00 / 8:00）とぶつけない -->
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key>
+		<integer>1</integer>
+		<key>Hour</key>
+		<integer>6</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/Users/yuho/.nvm/versions/node/v24.6.0/bin:/opt/homebrew/opt/postgresql@15/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>HOME</key>
+		<string>/Users/yuho</string>
+	</dict>
+
+	<!--
+	  ⚠ StandardOutPath をスクリプトの LOG_FILE と同じにしないこと。
+	    survey-generator.sh は tee でログに書きつつ stdout にも出すので、
+	    同じファイルを指すと全行が2回ずつ記録される（既存の article-writer も同じ状態）。
+	    ここは「スクリプトのログ処理が始まる前に落ちた場合」の受け皿として別にする。
+	-->
+	<key>StandardOutPath</key>
+	<string>/Users/yuho/Library/Logs/3dworkshop/survey-generator.launchd.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/yuho/Library/Logs/3dworkshop/survey-generator.error.log</string>
+</dict>
+</plist>

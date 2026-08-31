@@ -78,6 +78,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
     {
+      url: `${baseUrl}/survey`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/survey/archive`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.6,
+    },
+    {
       url: `${baseUrl}/terms`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
@@ -145,7 +157,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-    return [...staticPages, ...workshopPages, ...categoryPages, ...blogPages]
+    // アンケートの個別ページを動的に追加。
+    // ⚠ draft は含めない。1日1問ずつ増える資産なので、公開済み(live/closed)だけを出す
+    const { data: surveys } = await supabase
+      .from('surveys')
+      .select('slug, updated_at, publish_date')
+      .in('status', ['live', 'closed'])
+      .order('publish_date', { ascending: false })
+
+    const surveyPages: MetadataRoute.Sitemap = (surveys || []).map((survey) => ({
+      url: `${baseUrl}/survey/${survey.slug}`,
+      lastModified: survey.updated_at ? new Date(survey.updated_at) : new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    }))
+
+    return [...staticPages, ...workshopPages, ...categoryPages, ...blogPages, ...surveyPages]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return staticPages
