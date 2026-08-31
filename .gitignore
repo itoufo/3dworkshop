@@ -70,6 +70,15 @@ temp/
 
 # Generated GA4 reports
 /outputs/ga4-report-*.md
+/outputs/ads-report-*.md
 
 # Local Netlify folder
 .netlify
+
+# ローカル実行の副産物。⚠ ここを空けておくと `git add -A` で丸ごと入る
+#   （logs/ には MCP のログが数百KB単位で溜まる）
+logs/
+cache/
+
+# supabase CLI がローカルに作る作業ファイル（プロジェクト参照・接続URL・各種バージョン）
+supabase/.temp/

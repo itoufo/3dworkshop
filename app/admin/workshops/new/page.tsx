@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { notifyWorkshopSchedule } from '@/lib/notify-schedule'
 import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
@@ -238,7 +239,21 @@ export default function NewWorkshopPage() {
         }
       }
 
-      alert('ワークショップを追加しました')
+      // 開催日つきで作成した場合は「日程追加」なので、通知を必ず送る。
+      // 限定公開のワークショップはサーバー側で送信対象外になる。
+      let notifyNote = ''
+      if (insertedWorkshop && workshop.event_date) {
+        const notifyResult = await notifyWorkshopSchedule({
+          workshopId: insertedWorkshop.id,
+          eventDate: workshop.event_date,
+          eventTime: workshop.event_time || null,
+        })
+        notifyNote = notifyResult.ok
+          ? `\n${notifyResult.message}`
+          : `\n\n⚠ 通知の送信に失敗しました: ${notifyResult.message}\n編集画面の開催日程一覧から「通知を送る」で再送してください。`
+      }
+
+      alert(`ワークショップを追加しました${notifyNote}`)
       setNavigating(true)
       // 開催日未指定の場合は編集画面に飛ばしてセッション設定を促す
       if (insertedWorkshop && !workshop.event_date) {

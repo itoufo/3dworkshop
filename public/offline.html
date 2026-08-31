@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>オフラインです | 3DLab</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: linear-gradient(to bottom, #faf5ff, #ffffff 40%, #fdf2f8);
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+        color: #1f2937;
+      }
+      .card {
+        max-width: 420px;
+        width: 100%;
+        background: #fff;
+        border-radius: 24px;
+        padding: 40px 28px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      }
+      img { width: 120px; height: auto; margin-bottom: 24px; }
+      h1 { font-size: 22px; margin: 0 0 12px; }
+      p { font-size: 16px; line-height: 1.7; color: #4b5563; margin: 0 0 24px; }
+      button {
+        display: inline-block;
+        padding: 14px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(to right, #9333ea, #db2777);
+        border: none;
+        border-radius: 9999px;
+        cursor: pointer;
+      }
+      .contact { margin-top: 24px; font-size: 15px; color: #6b7280; }
+      .contact a { color: #9333ea; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="/logo.png" alt="3DLab" />
+      <h1>インターネットに接続できません</h1>
+      <p>
+        電波の届く場所に移動して、もう一度お試しください。<br />
+        予約状況や開催日程は、最新の情報をお見せするためにオンラインでのみ表示しています。
+      </p>
+      <button onclick="location.reload()">再読み込み</button>
+      <p class="contact">
+        お急ぎの方は <a href="tel:080-9453-0911">080-9453-0911</a>
+      </p>
+    </div>
+  </body>
+</html>

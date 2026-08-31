@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle, BellRing } from 'lucide-react'
+import PushNotificationPanel from '@/components/admin/PushNotificationPanel'
 
 interface BlogPost {
   id: string
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests' | 'notifications'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const [showCancelled, setShowCancelled] = useState(false)
   const [hideInternal, setHideInternal] = useState(true)
@@ -73,7 +74,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests'].includes(tab)) {
+    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests', 'notifications'].includes(tab)) {
       setActiveTab(tab as typeof activeTab)
     }
     setBookingWorkshopFilter(searchParams.get('workshop_id'))
@@ -513,6 +514,17 @@ export default function AdminDashboard() {
                   {workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
+                activeTab === 'notifications'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <BellRing className="w-4 h-4 inline mr-2" />
+              通知
             </button>
             {/* ⚠ これだけ別ページ。タブではなく遷移する（知識の編集は独立した画面） */}
             <button
@@ -1548,6 +1560,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {activeTab === 'notifications' && <PushNotificationPanel />}
       </div>
     </>
   )
