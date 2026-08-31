@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GA_MEASUREMENT_ID } from "@/lib/gtag";
 import ChatWidget from "@/components/ChatWidget";
+import PWARegister from "@/components/PWARegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,8 +48,15 @@ export const metadata: Metadata = {
     description: "東京・秋葉原の3Dプリンター体験イベント。湯島駅徒歩1分。初心者向けワークショップからスリーディープリンター技術まで学べます。",
     images: ['/og-image.jpg'],
   },
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.ico",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "3DLab",
+    statusBarStyle: "default",
   },
   verification: {
     google: 'googlef1a18aca7d0b5114',
@@ -64,6 +72,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  // ホーム画面から起動したときのアドレスバー・ステータスバーの色（ブランドの purple-600）
+  themeColor: "#9333ea",
 };
 
 export default function RootLayout({
@@ -120,6 +133,10 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <meta name="google-adsense-account" content="ca-pub-5260394871552210" />
+        {/* iOS でホーム画面から全画面起動させる旧来のタグ。
+            Next.js が出す mobile-web-app-capable は Safari が見ないため、こちらも明示する。
+            iOS は全画面（standalone）で起動していないと通知を購読できない。 */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="preconnect" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
         <link rel="dns-prefetch" href="https://vvmrivgbofwktbhwyewy.supabase.co" />
         {/* heatmap スクリプト配信元（別 Supabase プロジェクト） */}
@@ -168,6 +185,7 @@ export default function RootLayout({
         {children}
         {/* 問い合わせチャット。⚠ /admin では自分で非表示にする（ChatWidget 内で判定） */}
         <ChatWidget />
+        <PWARegister />
       </body>
     </html>
   );

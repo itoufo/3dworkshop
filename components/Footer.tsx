@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import PushSubscribeButton from './PushSubscribeButton'
 
 export default function Footer() {
   return (
@@ -17,6 +18,11 @@ export default function Footer() {
           <p className="text-sm text-gray-400">
             湯島駅・御徒町駅・秋葉原駅・御茶ノ水駅 からアクセス可能
           </p>
+        </div>
+
+        {/* 開催日程の通知 */}
+        <div className="border-t border-gray-800 pt-6 mb-6">
+          <PushSubscribeButton />
         </div>
 
         {/* Contact Information */}
