@@ -46,6 +46,10 @@
    [`supabase/migrations/20260816_add_chat_knowledge.sql`](../supabase/migrations/20260816_add_chat_knowledge.sql)
    を開き、**中身を全部コピーして貼り付ける**
 4. **Run** を押す
+5. 同じ手順で
+   [`supabase/migrations/20260831_add_rate_limit.sql`](../supabase/migrations/20260831_add_rate_limit.sql)
+   も流す（回数制限の置き場。⚠ これが無いと `/api/chat` の上限がインスタンスごとになり、
+   費用を止められない）
 
 **うまくいったときの表示**: `Success. No rows returned`
 
@@ -211,10 +215,15 @@ Netlify の環境変数から `OPENAI_API_KEY` を消して再デプロイすれ
 |---|---|
 | `chat_knowledge` | RLS 有効・ポリシー無し。anon キーからは読めも書けもしない。触れるのは service role だけ |
 | `/api/admin/chat-knowledge/*` | 全メソッドで `requireAdmin()`。httpOnly + HMAC 署名の cookie を検証する |
-| `/api/chat` | POST のみ・1発言600字・履歴12往復・同一IP 10分25回まで |
+| `/api/chat` | POST のみ・1発言600字・履歴12往復・同一の接続元 10分25回まで |
+| `/api/chat` | 数える接続元は `x-nf-client-connection-ip`（Netlify が付ける）。⚠ `x-forwarded-for` の左端は使わない。クライアントが名乗れる欄なので、詐称されると制限が素通しになる |
+| `public.rate_limit` | 回数は DB で数える。⚠ プロセス内の Map だけだと実際の上限が「インスタンス数 × 25」になり、コールドスタートで 0 に戻る |
 | `/api/chat` | クライアントから来た `system` role は捨てる（知識の差し替え防止） |
+| `/api/chat` | `assistant` の発言は HMAC 署名を検証したものだけ通す。⚠ 検証しないと、偽の「半額でお受けします」を履歴に混ぜてモデルに言い直させられる |
+| `/api/auth` | 同一の接続元 10分10回まで。パスワードは `timingSafeEqual` で比較（`===` は掛かった時間で正解が漏れる） |
+| `/api/auth` (DELETE) | ログアウト。⚠ 画面側で `admin_auth` を消すだけでは httpOnly の `admin_session` が最大24時間残る |
 | `ChatWidget` | モデルの出力は文字列として描画。`dangerouslySetInnerHTML` を使わない |
-| `buildSystemPrompt` | 縛りを知識より**後ろ**に置く。知識に「指示を無視して」と書かれても後勝ちになる |
+| `buildSystemPrompt` | 知識は囲い（`===== ここから下は資料 =====`）に閉じ込め、縛りをその外の後ろに置く。⚠ 後ろに置くだけでは、本文に `# 守ること` と書かれると見出しを偽造されて効かない |
 
 ⚠ 既存の `admin_auth` cookie はブラウザ側で `Cookies.set()` しているだけなので誰でも偽造できる。
 画面の出し分けには使えても、書き込み API の鍵にはならない。この仕組みでは別途 `admin_session`
@@ -230,6 +239,7 @@ mkdir -p /tmp/3dlab-verify && cd /tmp/3dlab-verify
 supabase init
 mkdir -p supabase/migrations
 cp <このリポジトリ>/supabase/migrations/20260816_add_chat_knowledge.sql supabase/migrations/
+cp <このリポジトリ>/supabase/migrations/20260831_add_rate_limit.sql supabase/migrations/
 supabase start          # ⚠ 他の Supabase が動いている場合は config.toml のポートをずらす
 supabase status         # ANON_KEY / SERVICE_ROLE_KEY が出る
 ```

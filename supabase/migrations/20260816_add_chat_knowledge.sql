@@ -43,7 +43,9 @@ ALTER TABLE public.chat_knowledge ENABLE ROW LEVEL SECURITY;
 -- ⚠ anon / authenticated からは全部剥がす。Supabase の既定権限は GRANT ALL なので、
 --   放っておくと TRUNCATE まで付く。**TRUNCATE は RLS を迂回する**ので、
 --   「RLS を有効にしたから安全」は成り立たない（2026-08-16 にローカルで確認）。
-REVOKE ALL ON public.chat_knowledge FROM anon, authenticated;
+-- ⚠ PUBLIC も一緒に剥がす。下の関数のところに書いたのと同じ理由で、
+--   anon / authenticated だけ REVOKE しても PUBLIC 経由で残る（2026-08-31 のレビューで指摘）。
+REVOKE ALL ON public.chat_knowledge FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.chat_knowledge TO service_role;
 
 -- 類似検索。ピン留めは検索を通さず常に入れるので、ここでは除外する。

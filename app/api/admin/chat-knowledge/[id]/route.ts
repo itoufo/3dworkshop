@@ -52,8 +52,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const source = knowledgeSourceText(title, body)
     const embedding = await embedText(source)
 
-    patch.embedding = embedding
-    patch.embedding_source = embedding ? source : null
+    if (embedding) {
+      patch.embedding = embedding
+      patch.embedding_source = source
+    }
+    // ⚠ 失敗したときに embedding を null で上書きしない。
+    //   embedText は失敗しても投げずに null を返す（キー未設定・429・タイムアウト全部）。
+    //   ここで null を書くと、OpenAI が詰まっている間にタイトルの誤字を直しただけで
+    //   使えていたベクトルが消え、その項目は検索に出てこなくなる（2026-08-31 のレビューで指摘）。
+    //   触らずに置けば embedding_source が本文とズレたままになるので、
+    //   needsReembedding が true を返し「ベクトルを作り直す」で拾える。
   }
 
   const { data, error } = await supabaseAdmin!

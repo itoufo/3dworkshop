@@ -48,7 +48,15 @@ export default function AdminLayout({
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // ⚠ admin_auth を消すだけでは足りない。書き込み API の鍵は httpOnly の admin_session で、
+    //   JS からは消せない。サーバーに消してもらわないと、ログアウト後も最大24時間
+    //   知識の書き換えができる状態が残る
+    try {
+      await fetch('/api/auth', { method: 'DELETE' })
+    } catch {
+      // 消せなくても画面は閉じる。cookie は失効時刻で切れる
+    }
     Cookies.remove('admin_auth')
     setIsAuthenticated(false)
     router.push('/')

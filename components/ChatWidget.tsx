@@ -8,8 +8,10 @@ import { MessageCircle, Send, X } from 'lucide-react'
  * 問い合わせチャット。
  *
  * ⚠ 答えを作るのはサーバー（/api/chat）。ここには知識もAPIキーも持たない。
- * ⚠ 会話は保存しない。リロードで消える。個人情報を預かる口にしないため、
- *   氏名や住所を入れさせる導線はここに作らない（申し込みはフォームへ）。
+ * ⚠ 会話はこのサイトには保存しない（リロードで消える）。ただし答えを作るために
+ *   入力内容は外部のAIサービス（OpenAI）へ送られる。「保存しない＝どこにも出ない」ではない。
+ *   画面下にその旨を出してある。消したらプライバシーの説明が実態とズレる。
+ * ⚠ 個人情報を預かる口にしないため、氏名や住所を入れさせる導線はここに作らない（申し込みはフォームへ）。
  * ⚠ モデルの出力は文字列としてそのまま描く。dangerouslySetInnerHTML を使わない。
  *
  * スマホではカテゴリページに追従CTA（MobileCategoryFloatingCta）が出る。重ならないよう、
@@ -34,7 +36,13 @@ const FAILED = 'うまく答えられませんでした。お手数ですが 080
 const BUSY = '少し間をおいてからお試しください。'
 const OFF = 'ただいまチャットを準備中です。080-9453-0911 までお問い合わせください。'
 
-type Msg = { role: 'user' | 'assistant'; content: string }
+/**
+ * ⚠ assistant には signature を持たせ、次のリクエストでそのまま送り返す。
+ *   サーバーは署名の合わない assistant の発言を捨てる（偽の「半額でお受けします」を
+ *   履歴に混ぜられないようにするため）。エラー時の定型文には署名が無いので、
+ *   サーバー側では捨てられる＝モデルには渡らない。それで正しい
+ */
+type Msg = { role: 'user' | 'assistant'; content: string; signature?: string }
 
 export default function ChatWidget() {
   const pathname = usePathname()
@@ -127,6 +135,7 @@ export default function ChatWidget() {
     setBusy(true)
 
     let reply = FAILED
+    let signature: string | undefined
     try {
       const r = await fetch('/api/chat', {
         method: 'POST',
@@ -136,11 +145,14 @@ export default function ChatWidget() {
       const data = await r.json().catch(() => ({}))
       if (r.status === 429) reply = BUSY
       else if (r.status === 503) reply = OFF
-      else if (r.ok && data.reply) reply = data.reply
+      else if (r.ok && data.reply) {
+        reply = data.reply
+        signature = typeof data.signature === 'string' ? data.signature : undefined
+      }
     } catch {
       // reply は FAILED のまま
     } finally {
-      setHistory((h) => [...h, { role: 'assistant', content: reply }])
+      setHistory((h) => [...h, { role: 'assistant', content: reply, signature }])
       setBusy(false)
       inputRef.current?.focus()
     }
@@ -334,6 +346,12 @@ export default function ChatWidget() {
 
         <p className="border-t border-gray-100 px-3 py-2 text-[11px] leading-tight text-gray-500">
           AIの回答です。日程・空席・最終的な金額は予約ページとお電話でご確認ください。
+          <br />
+          入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信されます。氏名・住所・電話番号などは入力しないでください（
+          <a href="/privacy" className="underline hover:text-gray-700">
+            プライバシーポリシー
+          </a>
+          ）。
         </p>
       </div>
     </>

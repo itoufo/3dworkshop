@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { embedText, knowledgeSourceText, needsReembedding } from '@/lib/chat-knowledge'
+import { embedTexts, knowledgeSourceText, needsReembedding } from '@/lib/chat-knowledge'
 
 /**
  * ベクトルの作り直し。
@@ -15,7 +15,10 @@ import { embedText, knowledgeSourceText, needsReembedding } from '@/lib/chat-kno
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+
+// ⚠ maxDuration は Vercel の設定で、このサイトの Netlify では効かない（netlify.toml + @netlify/plugin-nextjs）。
+//   置いても実行時間は伸びないので、時間内に終わるように埋め込みをまとめて作る。
+const BATCH_SIZE = 32
 
 export async function POST(req: Request) {
   const denied = await requireAdmin()
@@ -45,22 +48,30 @@ export async function POST(req: Request) {
   let updated = 0
   const failed: string[] = []
 
-  // ⚠ 直列で回す。並列にすると件数次第で OpenAI のレート制限に当たり、
-  //   一部だけ更新された中途半端な状態になる。数十件なら直列で十分速い
-  for (const row of targets) {
-    const source = knowledgeSourceText(row.title, row.body)
-    const embedding = await embedText(source)
-    if (!embedding) {
-      failed.push(row.title)
-      continue
-    }
-    const { error: updateError } = await supabaseAdmin!
-      .from('chat_knowledge')
-      .update({ embedding, embedding_source: source })
-      .eq('id', row.id)
+  // ⚠ 1件ずつ OpenAI を叩かない。件数ぶん往復することになり、
+  //   Netlify の実行時間上限に当たって途中で切れる（どこまで終わったかも分からない）。
+  //   embeddings API は input に配列を取れるので、まとめて作る。
+  // ⚠ バッチ同士は直列のまま。並列にするとレート制限に当たって半端に終わる
+  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+    const batch = targets.slice(i, i + BATCH_SIZE)
+    const sources = batch.map((row) => knowledgeSourceText(row.title, row.body))
+    const embeddings = await embedTexts(sources)
 
-    if (updateError) failed.push(row.title)
-    else updated += 1
+    for (let j = 0; j < batch.length; j += 1) {
+      const row = batch[j]
+      const embedding = embeddings[j]
+      if (!embedding) {
+        failed.push(row.title)
+        continue
+      }
+      const { error: updateError } = await supabaseAdmin!
+        .from('chat_knowledge')
+        .update({ embedding, embedding_source: sources[j] })
+        .eq('id', row.id)
+
+      if (updateError) failed.push(row.title)
+      else updated += 1
+    }
   }
 
   return Response.json({ total: targets.length, updated, failed })

@@ -23,6 +23,8 @@ import {
  * ⚠ 「固定」を増やしすぎない。固定した項目は毎回 system に入るので、
  *   増やすほど1問あたりの費用が上がり、関係ない話題にも混ざる。
  *   料金・受け渡しのように「抜けると間違った案内になる」ものだけに付ける。
+ *   上限は lib/chat-knowledge.ts の MAX_PINNED_ROWS / MAX_PINNED_CHARS。
+ *   超えた分はボットに渡らず、サーバーのログに警告が出る。
  */
 
 type Item = {
@@ -555,7 +557,10 @@ function Editor({
               onChange={(e) => setDraft({ ...draft, is_pinned: e.target.checked })}
               className="h-4 w-4 rounded border-gray-300 text-purple-600"
             />
-            常に渡す（検索に関係なく毎回入れる。料金・受け渡しなど、抜けると間違った案内になるものだけ）
+            {/* ⚠ 8件 / 6000字 は lib/chat-knowledge.ts の MAX_PINNED_ROWS / MAX_PINNED_CHARS と揃えてある。
+                この画面は 'use client' で、あちらは supabase-admin を読むため import できない。片方だけ変えないこと */}
+            常に渡す（検索に関係なく毎回入れる。料金・受け渡しなど、抜けると間違った案内になるものだけ。
+            合計8件・6000字まで。超えた分は渡りません）
           </label>
         </div>
 

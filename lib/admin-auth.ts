@@ -24,8 +24,26 @@ import { cookies } from 'next/headers'
 const COOKIE_NAME = 'admin_session'
 const TTL_MS = 24 * 60 * 60 * 1000 // 1日。/admin の admin_auth cookie と揃える
 
+/** cookie を消す側（ログアウト）でも使うので名前を出しておく */
+export const ADMIN_SESSION_COOKIE = COOKIE_NAME
+
 function sign(expiresAt: number, secret: string): string {
   return createHmac('sha256', secret).update(String(expiresAt)).digest('hex')
+}
+
+/**
+ * パスワードが合っているか。
+ * ⚠ === で比べない。文字列比較は先頭から順に見るので、掛かった時間で正解が漏れる。
+ *   ここは唯一「何度でも当て推量を投げられる」入口なので、回数制限も呼び出し側で必ず掛けること。
+ */
+export function verifyAdminPassword(input: unknown): boolean {
+  const secret = process.env.ADMIN_PASSWORD
+  if (!secret || typeof input !== 'string' || !input) return false
+
+  const a = Buffer.from(input, 'utf8')
+  const b = Buffer.from(secret, 'utf8')
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
 }
 
 /** ログイン成功時に配る cookie の値 */
