@@ -48,7 +48,7 @@ function sessionSecret(): string {
 
 export function passwordProblem(password: unknown): string | null {
   if (typeof password !== 'string') return 'パスワードを入力してください'
-  if (password.length < 10) return 'パスワードは10文字以上にしてください'
+  if (password.length < 8) return 'パスワードは8文字以上にしてください'
   if (password.length > 200) return 'パスワードが長すぎます'
   // 数字だけ・同じ文字だけのような、破られやすいものを弾く
   if (/^(.)\1+$/.test(password)) return '同じ文字だけのパスワードは使えません'
