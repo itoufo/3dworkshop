@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import MediaCoverage from '@/components/MediaCoverage'
 import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
+import TopSurveyBanner from '@/components/TopSurveyBanner'
 import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
 
 // 特別WSバナーの掲載元(ピン留めWS)を反映するため ISR（1時間）
@@ -182,6 +183,9 @@ export default function HomePage() {
         </div>
       </section>
 
+
+      {/* 今日のアンケート（受付中の設問がある時のみ表示） */}
+      <TopSurveyBanner />
 
       {/* 1点から制作依頼 CTA */}
       <section className="py-12 px-4 sm:px-6 lg:px-8">
