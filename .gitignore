@@ -82,3 +82,11 @@ cache/
 
 # supabase CLI がローカルに作る作業ファイル（プロジェクト参照・接続URL・各種バージョン）
 supabase/.temp/
+
+# 画像生成・分析ツールの出力（press-release の完成画像だけは残す）
+/outputs/ga4-modal-funnel-*.md
+/outputs/metadata.json
+/outputs/edited/
+
+# 商品企画の下書き（公開物ではない）
+/product-design/
