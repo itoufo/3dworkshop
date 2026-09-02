@@ -44,7 +44,7 @@ A レコードを `75.2.60.5` に戻せば数分で元通りになる。
 | ファイル | 変更 |
 |---|---|
 | `vercel.json` | 新規。静的アセットのキャッシュヘッダ・旧カテゴリURLの 301・関数の地域・`*.vercel.app` の noindex |
-| `next.config.js` | 「本番以外は noindex」の判定を Vercel（`VERCEL_ENV`）にも対応させた |
+| `next.config.js` | 「本番以外は noindex」の判定を Vercel（`VERCEL_ENV`）にも対応させた／画像キャッシュを31日に |
 | `lib/rate-limit.ts` | 回数制限が数える接続元IPに、Vercel が付ける `x-vercel-forwarded-for` を追加 |
 | `app/api/admin/chat-knowledge/reembed/route.ts` | `maxDuration = 300` を追加（Vercel でのみ効く） |
 | `scripts/vercel-env-sync.sh` | 新規。Netlify の環境変数を Vercel へ移すスクリプト |
@@ -86,7 +86,7 @@ printf '%s' 'whsec_...'   | vercel env add STRIPE_WEBHOOK_SECRET preview
 | `OPENAI_API_KEY` | Netlify 側で**空**だった。つまり今のチャットボットは本番で「準備中」を返している。Vercel でも同じ状態になる。使いたいなら値を入れる |
 | Stripe の Webhook 送信先 | Stripe ダッシュボードの送信先が `https://3dlab.jp/api/stripe-webhook` であること。ドメインが変わらないので、切替後もそのまま動く |
 | Web Push の公開鍵 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` は Netlify と一致していることを確認済み。**この値が変わると既存の通知購読が全部無効になる**ので、絶対に別の値を入れないこと |
-| 画像最適化の課金 | Netlify の画像CDNは定額に含まれていたが、Vercel は変換回数で課金される。`next.config.js` の `minimumCacheTTL` が 86400（1日）なので、同じ画像が毎日変換され直す。**2678400（31日）に上げると変換回数が約30分の1になる**。上げると画像を差し替えたときの反映が最大31日遅れる（画像URLが変わる運用なら影響なし）。切替前に決めておく |
+| 画像最適化の課金 | Netlify の画像CDNは定額に含まれていたが、Vercel は変換回数で課金される。**対応済み**: `next.config.js` の `minimumCacheTTL` を 86400（1日）から 2678400（31日）に上げた。差し替え時の反映遅れは起きない（`lib/supabase-storage.ts` が毎回ユニークなファイル名を振るので、画像を差し替えれば必ず別URLになる） |
 
 ---
 
@@ -219,5 +219,5 @@ Netlify のサイト（`3dworkshop` / `aafb1975-ba24-4165-a612-3d661949a2aa`）�
 | 詐称できない接続元IPのヘッダ | `x-nf-client-connection-ip` | `x-vercel-forwarded-for` | `lib/rate-limit.ts` で両方見る |
 | 関数の実行時間上限 | 指定不可（プラグインが無視する） | `maxDuration` で指定可 | reembed に 300 秒を指定 |
 | 関数を動かす地域 | 既定は米国 | `vercel.json` の `regions` | `sin1`（Supabase と同じ地域） |
-| 画像最適化 | Netlify Image CDN（定額に含まれる） | Vercel Image Optimization（変換回数で課金） | `minimumCacheTTL` を上げるか検討（上記 2-2） |
+| 画像最適化 | Netlify Image CDN（定額に含まれる） | Vercel Image Optimization（変換回数で課金） | `minimumCacheTTL` を 31日に変更済み |
 | ビルド時のシークレット走査 | `SECRETS_SCAN_ENABLED` | 無い | 移送しない |
