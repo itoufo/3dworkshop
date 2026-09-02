@@ -1051,3 +1051,107 @@ export function generateSupportAutoReplyEmail(input: {
 
   return { subject, html };
 }
+
+/** 会員登録のメール確認 */
+export function generateCustomerVerifyEmail(input: { name: string; verifyUrl: string; validHours: number }) {
+  const subject = '【3DLab】メールアドレスのご確認';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;color:#333;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(to right,#9333ea,#ec4899);color:#fff;padding:24px;text-align:center;border-radius:10px;">
+          <h2 style="margin:0;">メールアドレスのご確認</h2>
+        </div>
+
+        <p>${escapeHtml(input.name)} 様</p>
+        <p>3DLab の会員登録ありがとうございます。<br>
+        下のボタンを押して、メールアドレスのご確認を完了してください。</p>
+
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${escapeHtml(input.verifyUrl)}" style="display:inline-block;background:#9333ea;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:16px;">メールアドレスを確認する</a>
+        </div>
+
+        <p style="font-size:14px;color:#6b7280;">
+          このリンクは${input.validHours}時間で使えなくなります。<br>
+          ボタンが押せない場合は、次のURLをブラウザに貼り付けてください。<br>
+          <span style="word-break:break-all;">${escapeHtml(input.verifyUrl)}</span>
+        </p>
+
+        <div style="background:#fff7ed;border-left:4px solid #f59e0b;padding:14px;margin:20px 0;border-radius:4px;font-size:14px;">
+          お心当たりがない場合は、このメールを破棄してください。確認が完了しない限り、アカウントは有効になりません。
+        </div>
+
+        <div style="text-align:center;padding:20px;color:#666;font-size:12px;"><p>3DLab（株式会社ウォーカー）</p></div>
+      </div>
+    </body>
+    </html>
+  `;
+  return { subject, html };
+}
+
+/** パスワード再設定 */
+export function generateCustomerPasswordResetEmail(input: {
+  name: string;
+  resetUrl: string;
+  validMinutes: number;
+}) {
+  const subject = '【3DLab】パスワードの再設定';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;color:#333;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(to right,#9333ea,#ec4899);color:#fff;padding:24px;text-align:center;border-radius:10px;">
+          <h2 style="margin:0;">パスワードの再設定</h2>
+        </div>
+
+        <p>${escapeHtml(input.name)} 様</p>
+        <p>パスワード再設定のご依頼を承りました。下のボタンから新しいパスワードを設定してください。</p>
+
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${escapeHtml(input.resetUrl)}" style="display:inline-block;background:#9333ea;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:16px;">パスワードを再設定する</a>
+        </div>
+
+        <p style="font-size:14px;color:#6b7280;">
+          このリンクは${input.validMinutes}分で使えなくなります。<br>
+          <span style="word-break:break-all;">${escapeHtml(input.resetUrl)}</span>
+        </p>
+
+        <div style="background:#fff7ed;border-left:4px solid #f59e0b;padding:14px;margin:20px 0;border-radius:4px;font-size:14px;">
+          お心当たりがない場合は、このメールを破棄してください。パスワードは変更されません。
+        </div>
+
+        <div style="text-align:center;padding:20px;color:#666;font-size:12px;"><p>3DLab（株式会社ウォーカー）</p></div>
+      </div>
+    </body>
+    </html>
+  `;
+  return { subject, html };
+}
+
+/** すでに登録済みのメールアドレスで登録しようとしたとき（存在を漏らさないため必ず送る） */
+export function generateCustomerAlreadyRegisteredEmail(input: { name: string; loginUrl: string; resetUrl: string }) {
+  const subject = '【3DLab】会員登録のお手続きについて';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;color:#333;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <p>${escapeHtml(input.name)} 様</p>
+        <p>このメールアドレスでの会員登録のお申し込みを受け取りましたが、<strong>すでに登録済み</strong>です。</p>
+        <p>
+          ログインはこちら：<a href="${escapeHtml(input.loginUrl)}">${escapeHtml(input.loginUrl)}</a><br>
+          パスワードをお忘れの場合：<a href="${escapeHtml(input.resetUrl)}">${escapeHtml(input.resetUrl)}</a>
+        </p>
+        <p style="font-size:14px;color:#6b7280;">お心当たりがない場合は、このメールを破棄してください。アカウントには何の変更もありません。</p>
+        <div style="text-align:center;padding:20px;color:#666;font-size:12px;"><p>3DLab（株式会社ウォーカー）</p></div>
+      </div>
+    </body>
+    </html>
+  `;
+  return { subject, html };
+}
