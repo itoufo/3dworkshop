@@ -48,6 +48,7 @@ A レコードを `75.2.60.5` に戻せば数分で元通りになる。
 | `lib/rate-limit.ts` | 回数制限が数える接続元IPに、Vercel が付ける `x-vercel-forwarded-for` を追加 |
 | `app/api/admin/chat-knowledge/reembed/route.ts` | `maxDuration = 300` を追加（Vercel でのみ効く） |
 | `scripts/vercel-env-sync.sh` | 新規。Netlify の環境変数を Vercel へ移すスクリプト |
+| `.vercelignore` | 新規。⚠ Vercel CLI は `.gitignore` ではなく**このファイル**を見る。無いと `vercel deploy` でローカルの `.env` がデプロイのソースに丸ごと入る |
 | 各所のコメント | 「Netlify が〜」という記述を、どちらの環境でも通じる書き方に直した |
 
 `netlify.toml` と `public/_redirects` は**わざと残している**。切り戻し先を壊さないため。
@@ -56,9 +57,15 @@ A レコードを `75.2.60.5` に戻せば数分で元通りになる。
 
 ## 2. 残っていること
 
-### 2-1. Stripe の鍵3本を Vercel に入れる（必須・これが無いと決済が動かない）
+### 2-1. Stripe の鍵3本を Vercel に入れる（必須・これが無いとビルドが通らない）
 
 Netlify がシークレット指定している変数は CLI から伏字でしか読めないため、自動で移送できなかった。
+
+⚠ これは実行時だけの問題ではない。`app/api/create-checkout-session/route.ts` などが
+モジュール読み込み時に `new Stripe(process.env.STRIPE_SECRET_KEY!)` を実行するので、
+**鍵が無いと `next build` の「Collecting page data」で落ちる**
+（`Error: Neither apiKey nor config.authenticator provided`）。
+GitHub 連携のビルドは、この3本を入れるまで赤いまま。
 
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_SECRET_KEY`
