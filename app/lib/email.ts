@@ -799,3 +799,137 @@ export function generateProductOrderConfirmationEmail(input: {
 
   return { subject, html };
 }
+
+export function generateCutterOrderEmail(input: {
+  customerName: string;
+  designTitle: string | null;
+  kind: 'download' | 'print';
+  quantity: number;
+  unitPrice: number;
+  shippingFee: number;
+  totalAmount: number;
+  notes?: string | null;
+  sizeText: string;
+  /** データ購入のときだけ渡す。ダウンロードページの URL */
+  downloadUrl?: string;
+  downloadValidDays?: number;
+  /** 発送のときだけ渡す */
+  shippingLeadTimeText?: string;
+  shippingName?: string | null;
+  shippingPhone?: string | null;
+  shippingAddressLines?: string[];
+  orderId: string;
+}) {
+  const esc = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+  const name = input.designTitle ? `オリジナルクッキー型「${input.designTitle}」` : 'オリジナルクッキー型';
+  const isPrint = input.kind === 'print';
+  const subject = isPrint
+    ? `【3DLab】クッキー型のご注文ありがとうございます（印刷して発送）`
+    : `【3DLab】クッキー型データのご購入ありがとうございます（ダウンロード）`;
+
+  const addressHtml = (input.shippingAddressLines ?? []).filter(Boolean).map(esc).join('<br>');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #f9fafb; border-left: 4px solid #9333ea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .cost-box { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .download { text-align: center; margin: 28px 0; }
+        .download a { display: inline-block; background: #9333ea; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: bold; font-size: 16px; }
+        .note { background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 4px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px 12px; }
+        td.label { color: #6b7280; width: 130px; vertical-align: top; }
+        td.value { color: #111827; }
+        .total { font-size: 20px; font-weight: bold; color: #9333ea; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">${isPrint ? 'ご注文ありがとうございます' : 'ご購入ありがとうございます'}</h2>
+        </div>
+        <p>${esc(input.customerName)} 様</p>
+        <p>${esc(name)}の${isPrint ? 'ご注文' : 'データのご購入'}とお支払いを承りました。</p>
+
+        ${
+          !isPrint && input.downloadUrl
+            ? `<div class="download">
+                 <a href="${esc(input.downloadUrl)}">STLファイルをダウンロード</a>
+               </div>
+               <div class="note">
+                 <strong>このリンクはあなた専用です。</strong>他の方に転送しないでください。<br>
+                 有効期限：発行から${input.downloadValidDays ?? 30}日間<br>
+                 ファイル形式：STL（3Dプリンター用。スライサーソフトに読み込んでご利用ください）<br>
+                 推奨設定：ノズル0.4mm／積層0.2mm／サポート不要（ふちを下にして印刷してください）<br>
+                 食品に触れる用途のため、PLA等の材料と衛生管理はご自身の判断でお願いします。
+               </div>`
+            : ''
+        }
+
+        <div class="info-box">
+          <h3 style="margin-top:0;">ご注文内容</h3>
+          <table>
+            <tr><td class="label">注文番号</td><td class="value">${esc(input.orderId)}</td></tr>
+            <tr><td class="label">内容</td><td class="value">${esc(name)}${isPrint ? '（印刷して発送）' : '（データ／STL）'}</td></tr>
+            <tr><td class="label">サイズ</td><td class="value">${esc(input.sizeText)}</td></tr>
+            <tr><td class="label">単価</td><td class="value">¥${input.unitPrice.toLocaleString()}</td></tr>
+            ${isPrint ? `<tr><td class="label">数量</td><td class="value">${input.quantity} 点</td></tr>` : ''}
+            ${isPrint ? `<tr><td class="label">送料</td><td class="value">${input.shippingFee > 0 ? `¥${input.shippingFee.toLocaleString()}` : '無料'}</td></tr>` : ''}
+            ${input.notes ? `<tr><td class="label">ご要望</td><td class="value">${esc(input.notes).replace(/\n/g, '<br>')}</td></tr>` : ''}
+          </table>
+        </div>
+
+        ${
+          isPrint && (addressHtml || input.shippingName)
+            ? `<div class="info-box">
+          <h3 style="margin-top:0;">お届け先</h3>
+          <table>
+            ${input.shippingName ? `<tr><td class="label">お名前</td><td class="value">${esc(input.shippingName)}</td></tr>` : ''}
+            ${input.shippingPhone ? `<tr><td class="label">電話番号</td><td class="value">${esc(input.shippingPhone)}</td></tr>` : ''}
+            ${addressHtml ? `<tr><td class="label">住所</td><td class="value">${addressHtml}</td></tr>` : ''}
+          </table>
+          ${input.shippingLeadTimeText ? `<p style="margin:8px 12px 0;">${esc(input.shippingLeadTimeText)}いたします。</p>` : ''}
+        </div>`
+            : ''
+        }
+
+        <div class="cost-box">
+          <table>
+            <tr>
+              <td class="label">お支払い金額</td>
+              <td class="value total">¥${input.totalAmount.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="font-size:13px;color:#6b7280;">
+          ${isPrint
+            ? 'オーダーメイドの製作物のため、お支払い後のキャンセル・返品はお受けできません。'
+            : 'デジタルデータの性質上、ご購入後の返品・返金はお受けできません。'}
+        </p>
+
+        <div class="footer">
+          <p>3DLab（株式会社ウォーカー）<br>
+          ご不明な点は本メールへの返信でお問い合わせください。</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
