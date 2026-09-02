@@ -1,0 +1,15 @@
+# ⚠ Vercel CLI (`vercel deploy`) は .gitignore ではなく**このファイル**を見る。
+#   ここに書かないと、ローカルの .env がデプロイのソースに丸ごと入る。
+#   （環境変数は Vercel 側に登録したものを使う。ファイルを持ち込まない）
+.env
+.env.*
+!.env.example
+
+# 他のホスティングのローカル状態
+.netlify
+
+# ローカル作業用（ビルドに要らない）
+outputs/
+temp/
+logs/
+cache/
