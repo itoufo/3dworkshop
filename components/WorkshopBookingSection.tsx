@@ -9,6 +9,8 @@ import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight, ChevronDown } from 'lucide-react'
 import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
 import { formatPrice, isFreePrice } from '@/lib/price'
+import RememberCustomerInfo from '@/components/RememberCustomerInfo'
+import { useCustomerProfile } from '@/lib/use-customer-profile'
 
 function todayIso(): string {
   const d = new Date()
@@ -66,6 +68,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     // 同伴者（付き添いの保護者）: 親子向け日程でのみ1名まで無料・料金/定員に含めない
     companionCount: 0
   })
+  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+    setBooking((b) => ({
+      ...b,
+      name: saved.name ?? b.name,
+      email: saved.email ?? b.email,
+      phone: saved.phone ?? b.phone,
+      age: saved.age ?? b.age,
+      gender: saved.gender ?? b.gender,
+    }))
+  })
+
   const [couponOpen, setCouponOpen] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [couponValidation, setCouponValidation] = useState<{
@@ -299,6 +312,13 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
     if (submitting) return
 
+    persist({
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      age: booking.age,
+      gender: booking.gender,
+    })
     setSubmitting(true)
 
     try {
@@ -1070,6 +1090,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 </span>
               </div>
             </div>
+            <div className="mb-6">
+              <RememberCustomerInfo
+                remember={remember}
+                onChange={setRemember}
+                hasSaved={hasSaved}
+                onForget={forget}
+              />
+            </div>
+
             <div className="space-y-1 mb-6">
               <p className="text-xs text-gray-500">
                 {isFree

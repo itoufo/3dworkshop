@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail, generateServiceOrderConfirmationEmail } from '@/app/lib/email'
+import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail, generateServiceOrderConfirmationEmail, generateProductionRequestPaymentEmail, generateProductOrderConfirmationEmail, generateCutterOrderEmail } from '@/app/lib/email'
+import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
+import { fulfillCutterOrder } from '@/lib/cookie-cutter/server'
+import { DOWNLOAD_VALID_DAYS } from '@/lib/cookie-cutter/pricing'
+import { siteUrl } from '@/lib/site-url'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
@@ -183,6 +187,239 @@ export async function POST(request: NextRequest) {
             } catch (mailErr) {
               console.error('Service order email send error:', mailErr)
             }
+          }
+
+          return NextResponse.json({ received: true })
+        }
+
+        // 物販 (products) の注文の処理。
+        // 配送先は Stripe Checkout で収集したものを保存し、在庫があれば数量分を引く。
+        if (type === 'product_order') {
+          const orderId = session.metadata?.order_id
+          if (!orderId) {
+            console.error('Product order: order_id not in metadata')
+            return NextResponse.json({ received: true })
+          }
+          if (!supabaseAdmin) {
+            throw new Error('Supabase admin client not available')
+          }
+
+          const collected = session.collected_information?.shipping_details
+          const address = collected?.address
+          const addressLines = address
+            ? [
+                address.postal_code ? `〒${address.postal_code}` : '',
+                `${address.state || ''}${address.city || ''}${address.line1 || ''}`,
+                address.line2 || '',
+              ].filter(Boolean)
+            : []
+
+          const { data: order, error: orderError } = await supabaseAdmin
+            .from('product_orders')
+            .update({
+              status: 'paid',
+              payment_status: 'paid',
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent as string,
+              shipping_name: collected?.name || null,
+              shipping_phone: session.customer_details?.phone || null,
+              shipping_address: address ? (address as unknown as Record<string, unknown>) : null,
+            })
+            .eq('id', orderId)
+            .select(`
+              *,
+              product:products(*),
+              customer:customers(*)
+            `)
+            .single()
+
+          if (orderError) {
+            console.error('Error updating product_order:', orderError)
+            throw orderError
+          }
+
+          // 在庫管理をしている商品 (stock_quantity が null でない) だけ数量を引く。
+          // 在庫を割らないよう、現在値が数量以上のときだけ更新する。
+          if (order?.product && order.product.stock_quantity !== null) {
+            const nextStock = Math.max(0, order.product.stock_quantity - order.quantity)
+            const { error: stockError } = await supabaseAdmin
+              .from('products')
+              .update({ stock_quantity: nextStock })
+              .eq('id', order.product_id)
+              .gte('stock_quantity', order.quantity)
+            if (stockError) {
+              console.error('Error decrementing product stock:', stockError)
+            }
+          }
+
+          if (order?.customer?.email && order?.product?.name) {
+            try {
+              const { subject, html } = generateProductOrderConfirmationEmail({
+                customerName: order.customer.name || 'お客様',
+                productName: order.product.name,
+                quantity: order.quantity,
+                unitPrice: order.unit_price,
+                shippingFee: order.shipping_fee ?? 0,
+                totalAmount: order.total_amount,
+                notes: order.notes,
+                shippingLeadTimeText: SHIPPING_LEAD_TIME_TEXT,
+                shippingName: collected?.name || null,
+                shippingPhone: session.customer_details?.phone || null,
+                shippingAddressLines: addressLines,
+                orderId: order.id,
+              })
+              const emailResult = await sendEmail({
+                to: order.customer.email,
+                cc: ['yuho.ito@walker.co.jp', '3dlab@sunu25.com', 'nanzinaniwa6@gmail.com'],
+                subject,
+                html,
+              })
+              if (!emailResult.success) {
+                console.error('Product order email failed:', emailResult.error)
+              }
+            } catch (mailErr) {
+              console.error('Product order email send error:', mailErr)
+            }
+          }
+
+          return NextResponse.json({ received: true })
+        }
+
+        // クッキー型の購入の処理。
+        // データ購入 (download) も発送 (print) も、ここで初めて STL を作る。
+        // ⚠ 作るのは決済が終わったこの時点。ブラウザで作ると開発者ツールから無料で取れる。
+        if (type === 'cutter_order') {
+          const orderId = session.metadata?.order_id
+          if (!orderId) {
+            console.error('Cutter order: order_id not in metadata')
+            return NextResponse.json({ received: true })
+          }
+          if (!supabaseAdmin) {
+            throw new Error('Supabase admin client not available')
+          }
+
+          const collected = session.collected_information?.shipping_details
+          const address = collected?.address
+          const addressLines = address
+            ? [
+                address.postal_code ? `〒${address.postal_code}` : '',
+                `${address.state || ''}${address.city || ''}${address.line1 || ''}`,
+                address.line2 || '',
+              ].filter(Boolean)
+            : []
+
+          const { data: order, error: orderError } = await supabaseAdmin
+            .from('cutter_orders')
+            .update({
+              status: 'paid',
+              payment_status: 'paid',
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent as string,
+              shipping_name: collected?.name || null,
+              shipping_phone: session.customer_details?.phone || null,
+              shipping_address: address ? (address as unknown as Record<string, unknown>) : null,
+            })
+            .eq('id', orderId)
+            .select(`
+              *,
+              design:cutter_designs(id, title, size_mm),
+              customer:customers(*)
+            `)
+            .single()
+
+          if (orderError) {
+            console.error('Error updating cutter_order:', orderError)
+            throw orderError
+          }
+
+          // STL を作って非公開バケットに置き、ダウンロード用の合言葉を発行する。
+          // 発送のみの注文でも作る（こちらが印刷するのに要るため）。
+          let downloadToken: string | null = null
+          try {
+            const result = await fulfillCutterOrder(orderId)
+            downloadToken = result.token
+          } catch (genErr) {
+            // ⚠ ここで失敗しても Webhook は 200 を返す。500 を返すと Stripe が再送し続け、
+            //   決済済みの注文が「未処理」のまま溜まる。人が気づけるようログに残す
+            console.error('Cutter STL generation failed for order', orderId, genErr)
+          }
+
+          const design = Array.isArray(order?.design) ? order.design[0] : order?.design
+          const size = (design?.size_mm ?? {}) as { width?: number; depth?: number; height?: number }
+          const sizeText =
+            size.width && size.depth
+              ? `約 ${size.width} × ${size.depth} × ${size.height ?? '-'} mm（ふち込み）`
+              : '—'
+
+          if (order?.customer?.email) {
+            try {
+              const baseUrl = siteUrl()
+              const { subject, html } = generateCutterOrderEmail({
+                customerName: order.customer.name || 'お客様',
+                designTitle: design?.title ?? null,
+                kind: order.kind,
+                quantity: order.quantity,
+                unitPrice: order.unit_price,
+                shippingFee: order.shipping_fee ?? 0,
+                totalAmount: order.total_amount,
+                notes: order.notes,
+                sizeText,
+                downloadUrl:
+                  order.kind === 'download' && downloadToken
+                    ? `${baseUrl}/api/cookie-cutter/download/${downloadToken}`
+                    : undefined,
+                downloadValidDays: DOWNLOAD_VALID_DAYS,
+                shippingLeadTimeText: order.kind === 'print' ? SHIPPING_LEAD_TIME_TEXT : undefined,
+                shippingName: collected?.name || null,
+                shippingPhone: session.customer_details?.phone || null,
+                shippingAddressLines: addressLines,
+                orderId: order.id,
+              })
+              const emailResult = await sendEmail({
+                to: order.customer.email,
+                cc: ['yuho.ito@walker.co.jp', '3dlab@sunu25.com', 'nanzinaniwa6@gmail.com'],
+                subject,
+                html,
+              })
+              if (!emailResult.success) {
+                console.error('Cutter order email failed:', emailResult.error)
+              }
+            } catch (mailErr) {
+              console.error('Cutter order email send error:', mailErr)
+            }
+          }
+
+          return NextResponse.json({ received: true })
+        }
+
+        // 制作依頼のお支払い (金額はお客様の手入力) の処理。
+        // 注文レコードを持たないため、metadata の内容をそのまま確認メールにして送る。
+        if (type === 'production_request') {
+          const email = session.customer_email || session.metadata?.email || ''
+          if (!email) {
+            console.error('production_request: email not found in session')
+            return NextResponse.json({ received: true })
+          }
+          try {
+            const { subject, html } = generateProductionRequestPaymentEmail({
+              customerName: session.metadata?.name || 'お客様',
+              email,
+              phone: session.metadata?.phone || null,
+              amount: session.amount_total ?? parseInt(session.metadata?.amount || '0'),
+              details: session.metadata?.details || null,
+              sessionId: session.id,
+            })
+            const emailResult = await sendEmail({
+              to: email,
+              cc: ['yuho.ito@walker.co.jp', '3dlab@sunu25.com', 'nanzinaniwa6@gmail.com'],
+              subject,
+              html,
+            })
+            if (!emailResult.success) {
+              console.error('Production request email failed:', emailResult.error)
+            }
+          } catch (mailErr) {
+            console.error('Production request email send error:', mailErr)
           }
 
           return NextResponse.json({ received: true })

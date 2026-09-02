@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { gaEvent } from '@/lib/gtag'
+import RememberCustomerInfo from '@/components/RememberCustomerInfo'
+import { useCustomerProfile } from '@/lib/use-customer-profile'
 
 interface Props {
   workshopId?: string
@@ -37,9 +39,19 @@ export default function WorkshopRequestForm({ workshopId, categorySlug }: Props)
     })
   }, [workshopId, categorySlug])
 
+  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+    setForm((f) => ({
+      ...f,
+      name: saved.name ?? f.name,
+      email: saved.email ?? f.email,
+      phone: saved.phone ?? f.phone,
+    }))
+  })
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErrorMsg(null)
+    persist({ name: form.name, email: form.email, phone: form.phone })
     setSubmitting(true)
     try {
       const res = await fetch(endpoint, {
@@ -163,6 +175,13 @@ export default function WorkshopRequestForm({ workshopId, categorySlug }: Props)
           placeholder="ご質問・ご希望があればお書きください"
         />
       </div>
+
+      <RememberCustomerInfo
+        remember={remember}
+        onChange={setRemember}
+        hasSaved={hasSaved}
+        onForget={forget}
+      />
 
       {errorMsg && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-xs">

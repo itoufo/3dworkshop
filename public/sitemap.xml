@@ -2,79 +2,343 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://3dlab.jp/</loc>
-    <lastmod>2026-07-14T14:12:38.611Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.497Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>1</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/workshops</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/workshops/categories</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://3dlab.jp/cookie-cutter</loc>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://3dlab.jp/blog</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://3dlab.jp/survey</loc>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/survey/archive</loc>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://3dlab.jp/school</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/business</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/business/event</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/business/training</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/faq</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/terms</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/privacy</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/tokushoho</loc>
-    <lastmod>2026-07-14T14:12:38.612Z</lastmod>
+    <lastmod>2026-09-02T15:47:08.498Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://3dlab.jp/workshops/8d7d24a5-5f06-469c-abb6-4c232ac8bef5</loc>
+    <lastmod>2026-09-02T06:32:34.195352+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/ce1b232a-f424-4065-adef-45c3b9383c9e</loc>
+    <lastmod>2026-09-02T06:32:13.649339+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/a9bda178-6625-46e9-bc99-31d335ce6f83</loc>
+    <lastmod>2026-09-02T06:31:33.060252+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/b3797fd2-6c8a-434e-9eda-04c6e3038fd1</loc>
+    <lastmod>2026-09-02T06:31:04.101582+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/5998f66b-2ef9-47aa-a508-1ce67fc237fe</loc>
+    <lastmod>2026-09-02T06:30:31.656139+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/3874a97b-cac1-42f0-a1c1-a0f113db4d45</loc>
+    <lastmod>2026-09-02T06:27:25.033937+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/d757f778-b671-4239-af85-79cfdf27c5a7</loc>
+    <lastmod>2026-09-02T06:27:01.863365+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/bcedd4c7-4425-46f4-80bf-f09133f80a3a</loc>
+    <lastmod>2026-09-02T06:26:41.887427+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/a81efbf2-bdd3-476e-abf1-a97f8a912206</loc>
+    <lastmod>2026-09-02T06:26:16.564458+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/9152a435-8555-4d3b-bfc6-7cc62f9e1d26</loc>
+    <lastmod>2026-09-02T06:25:50.581908+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/69a4f4fd-f1aa-451b-b65e-c6c4b1eef493</loc>
+    <lastmod>2026-09-02T06:25:30.169978+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/edf90ebf-b218-4e7b-aef7-f649d6a93718</loc>
+    <lastmod>2026-09-02T06:22:36.629065+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/8a0f025f-16c5-45ec-89b2-68de28d7bbbf</loc>
+    <lastmod>2026-09-02T06:22:07.948403+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/a7611fa8-8877-42dd-8548-f6ca56e82391</loc>
+    <lastmod>2026-09-02T06:21:28.981571+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/1b675d24-5198-43df-a14b-e9d2c59e8f22</loc>
+    <lastmod>2026-09-02T06:20:57.098376+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/b39c5a2b-22fc-4c15-a533-230fd7614120</loc>
+    <lastmod>2026-09-02T06:20:28.734359+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/970052a8-db2d-4f47-ae52-6e97deb57b26</loc>
+    <lastmod>2026-09-02T06:19:16.132233+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/90709e7b-9a96-4a8d-9972-b26f101b475d</loc>
+    <lastmod>2026-09-02T06:18:40.188979+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/3e1d98a3-ef56-41d7-a92c-d2396f1ebbd3</loc>
+    <lastmod>2026-09-02T06:18:11.997388+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/b7696bb5-373a-4c0a-90bf-567db14fe42a</loc>
+    <lastmod>2026-09-02T05:19:55.797001+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/f1362289-c9be-48be-b8c8-1b725dc9b964</loc>
+    <lastmod>2026-09-02T05:17:54.103477+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/a4bfaf05-8e18-4198-96eb-2d3f26289810</loc>
+    <lastmod>2026-09-02T05:17:20.544682+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/88b9579f-c3e0-4538-b2ab-f6a03cac31dd</loc>
+    <lastmod>2026-09-02T05:14:55.525322+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/99a30506-56d5-4cd0-bc25-9231d6ab3d7b</loc>
+    <lastmod>2026-09-02T05:11:01.39075+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/431fde9e-cf5e-4eb5-b70b-fb6a9d1d15c3</loc>
+    <lastmod>2026-09-02T05:11:01.39075+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/75eb6889-e7be-46ec-b980-778c9c7af462</loc>
+    <lastmod>2026-09-02T05:11:01.39075+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/b46da2da-07c0-4115-a0c8-9e08bea4e71f</loc>
+    <lastmod>2026-08-25T22:48:15.835661+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/df5dcafa-398d-41af-aa2d-88e18ed27c01</loc>
+    <lastmod>2026-08-19T00:09:02.148353+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/e2f2633b-ffff-47d8-b48c-0a5d4ce45305</loc>
+    <lastmod>2026-08-18T06:24:55.03641+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/12fb2a04-0604-494a-8cd7-efc85340f97a</loc>
+    <lastmod>2026-08-11T05:23:53.899104+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/6516a55d-795c-44e0-94d7-2377bbd81b4d</loc>
+    <lastmod>2026-08-10T02:41:29.439209+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/5b59c161-f8d5-4e8e-884c-5e272576f64e</loc>
+    <lastmod>2026-08-03T02:51:15.166059+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://3dlab.jp/workshops/1358f1b6-a988-4825-8d8c-16b64c3e573f</loc>
-    <lastmod>2026-07-12T02:08:41.394429+00:00</lastmod>
+    <lastmod>2026-08-02T04:39:41.033614+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/bbe1fd2e-abc2-44ea-b651-d4764f4d598b</loc>
+    <lastmod>2026-07-26T03:50:06.52749+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/ccc112bd-0ae8-4f4e-ba8c-08f94d9b7bd5</loc>
+    <lastmod>2026-07-26T03:50:06.52749+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/119f1d7b-bcda-4e0d-b7eb-9af675c844f7</loc>
+    <lastmod>2026-07-26T03:50:06.52749+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/ccfc620b-dbaf-48f4-8b6c-1e9700a6a62e</loc>
+    <lastmod>2026-07-26T03:50:06.52749+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/0d194f26-328d-41e0-bab8-8edea54bca0d</loc>
+    <lastmod>2026-07-25T13:11:09.761665+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/0158f1f1-bcb3-4feb-aee3-d3113c9e8df0</loc>
+    <lastmod>2026-07-25T09:18:22.273215+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/39833839-b72f-46d4-a8b1-6d7dd8a5fbc3</loc>
+    <lastmod>2026-07-25T09:14:59.129306+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/c8c91088-cfc5-4f6f-b20b-09d62187036e</loc>
+    <lastmod>2026-07-25T07:59:50.143124+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/27f111ed-4774-41c4-bc06-5b9542c75250</loc>
+    <lastmod>2026-07-15T11:51:04.446276+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -85,13 +349,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/6f579a6a-def3-4677-854c-226dcfc272ac</loc>
+    <loc>https://3dlab.jp/workshops/1f1dfd73-0076-467a-b46c-7c8db777a4cb</loc>
     <lastmod>2026-07-06T14:15:28.958804+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/1f1dfd73-0076-467a-b46c-7c8db777a4cb</loc>
+    <loc>https://3dlab.jp/workshops/6f579a6a-def3-4677-854c-226dcfc272ac</loc>
     <lastmod>2026-07-06T14:15:28.958804+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -193,12 +457,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/ccc112bd-0ae8-4f4e-ba8c-08f94d9b7bd5</loc>
-    <lastmod>2026-07-06T13:48:26.83788+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://3dlab.jp/workshops/559d9441-790b-4043-ac5c-5cabc641a6c8</loc>
     <lastmod>2026-07-06T13:48:26.83788+00:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -211,19 +469,19 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://3dlab.jp/workshops/6280ce96-55f3-4815-8223-5ac6ed445b34</loc>
+    <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://3dlab.jp/workshops/c07e79cb-5e61-4c6c-81e6-e7bcf2876687</loc>
     <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/c9f77d35-9d7d-4118-9400-a7325532dedf</loc>
-    <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/d5a05e74-5ab8-46c1-a908-12765fb4e33f</loc>
+    <loc>https://3dlab.jp/workshops/c092c4e4-c0e6-434a-a878-f484e21354d0</loc>
     <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -235,13 +493,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/6280ce96-55f3-4815-8223-5ac6ed445b34</loc>
-    <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/c092c4e4-c0e6-434a-a878-f484e21354d0</loc>
+    <loc>https://3dlab.jp/workshops/c9f77d35-9d7d-4118-9400-a7325532dedf</loc>
     <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -254,6 +506,12 @@
   </url>
   <url>
     <loc>https://3dlab.jp/workshops/616adbf4-b01b-4923-a183-3c899ce2b336</loc>
+    <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/d5a05e74-5ab8-46c1-a908-12765fb4e33f</loc>
     <lastmod>2026-07-06T13:44:11.803015+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -289,13 +547,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/aaeabf13-9a89-4d30-9443-00d0329a72fd</loc>
-    <lastmod>2026-05-13T09:56:14.401664+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/25c94f3d-e2d3-437d-a053-d75d212a5535</loc>
+    <loc>https://3dlab.jp/workshops/71604a62-34db-470f-a8fa-62250dc09329</loc>
     <lastmod>2026-05-13T09:56:14.401664+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -307,13 +559,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/71604a62-34db-470f-a8fa-62250dc09329</loc>
-    <lastmod>2026-05-13T09:56:14.401664+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/a297733b-f4df-44a1-9338-7ffea8dbd3e5</loc>
+    <loc>https://3dlab.jp/workshops/25c94f3d-e2d3-437d-a053-d75d212a5535</loc>
     <lastmod>2026-05-13T09:56:14.401664+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -325,13 +571,25 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/11be913a-ed3c-47d1-a2c2-f534796a1113</loc>
-    <lastmod>2026-02-17T22:45:48.119525+00:00</lastmod>
+    <loc>https://3dlab.jp/workshops/aaeabf13-9a89-4d30-9443-00d0329a72fd</loc>
+    <lastmod>2026-05-13T09:56:14.401664+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/a297733b-f4df-44a1-9338-7ffea8dbd3e5</loc>
+    <lastmod>2026-05-13T09:56:14.401664+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/workshops/5f2b580d-f66b-4e7a-8659-1afec2288355</loc>
+    <lastmod>2026-02-17T22:45:48.119525+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/11be913a-ed3c-47d1-a2c2-f534796a1113</loc>
     <lastmod>2026-02-17T22:45:48.119525+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -343,31 +601,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/bbe1fd2e-abc2-44ea-b651-d4764f4d598b</loc>
-    <lastmod>2026-02-17T22:45:46.932276+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/ccfc620b-dbaf-48f4-8b6c-1e9700a6a62e</loc>
-    <lastmod>2026-02-17T22:45:46.932276+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/119f1d7b-bcda-4e0d-b7eb-9af675c844f7</loc>
-    <lastmod>2026-02-17T22:45:46.932276+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/2efbcfab-709b-498e-99e8-9232104aff39</loc>
-    <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://3dlab.jp/workshops/562b558f-2748-4dd9-8c42-12c65d163d6a</loc>
+    <loc>https://3dlab.jp/workshops/d8cf37b0-b1be-4e84-a03f-c192a47185ed</loc>
     <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -379,19 +613,25 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/3ffeff37-a942-43e0-ade7-4ee6a7b701d2</loc>
-    <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://3dlab.jp/workshops/a5c04bc4-4680-4e33-a1fd-e00bcdd074a4</loc>
     <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://3dlab.jp/workshops/d8cf37b0-b1be-4e84-a03f-c192a47185ed</loc>
+    <loc>https://3dlab.jp/workshops/2efbcfab-709b-498e-99e8-9232104aff39</loc>
+    <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/3ffeff37-a942-43e0-ade7-4ee6a7b701d2</loc>
+    <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/workshops/562b558f-2748-4dd9-8c42-12c65d163d6a</loc>
     <lastmod>2026-02-17T22:45:45.914855+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -407,6 +647,444 @@
     <lastmod>2025-08-09T05:02:30.750136+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/digital-caliper-measuring-tools-for-3d-printing-2026</loc>
+    <lastmod>2026-09-01T23:03:30.967691+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/fablab-makerspace-3d-printer-japan-guide-2026</loc>
+    <lastmod>2026-09-01T22:02:59.280869+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-painting-tools-comparison-2026</loc>
+    <lastmod>2026-08-31T23:02:27.218859+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-beginner-tools-checklist</loc>
+    <lastmod>2026-08-31T22:02:52.684291+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-gas-mask-safety-gear-guide-2026</loc>
+    <lastmod>2026-08-30T23:05:13.17747+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/meshy-ai-formlabs-integration-text-to-3d-print-2026</loc>
+    <lastmod>2026-08-30T22:02:28.080945+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-kids-toys-safety-guide</loc>
+    <lastmod>2026-08-29T22:02:26.885357+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-smartphone-stand-cable-holder-diy</loc>
+    <lastmod>2026-08-28T22:02:09.554551+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/construction-3d-printer-japan-regulation-reform-2026</loc>
+    <lastmod>2026-08-27T22:03:29.185225+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-modeling-books-comparison-2026</loc>
+    <lastmod>2026-08-26T23:03:44.711041+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-family-workshop-guide-tokyo-2026</loc>
+    <lastmod>2026-08-26T22:02:57.239065+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/uv-curing-machine-guide-resin-3d-printer-2026</loc>
+    <lastmod>2026-08-25T23:05:37.664486+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/raise3d-t450-industrial-4wd-corexy-2026</loc>
+    <lastmod>2026-08-25T22:02:27.318724+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-nozzle-comparison-2026</loc>
+    <lastmod>2026-08-24T23:03:39.985739+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/summer-3d-printer-workshop-for-kids-2026</loc>
+    <lastmod>2026-08-24T22:02:50.571658+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/petg-filament-comparison-2026</loc>
+    <lastmod>2026-08-23T23:03:24.286086+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/creality-sparkx-i7-vs-i8-multicolor-comparison-2026</loc>
+    <lastmod>2026-08-23T22:02:48.407896+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/klipper-firmware-setup-guide-raspberry-pi</loc>
+    <lastmod>2026-08-22T22:02:43.31587+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/revopoint-pop-4-review-2026</loc>
+    <lastmod>2026-08-21T22:06:09.244622+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-soundproofing-guide-2026</loc>
+    <lastmod>2026-08-18T23:04:11.349818+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-print-painting-finishing-guide</loc>
+    <lastmod>2026-08-18T22:02:34.758925+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/abs-filament-comparison-2026</loc>
+    <lastmod>2026-08-17T23:04:02.931274+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/tinkercad-3d-modeling-beginners-guide</loc>
+    <lastmod>2026-08-17T22:02:09.261748+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/ender-3-v3-series-comparison-2026</loc>
+    <lastmod>2026-08-16T23:03:26.779555+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/abs-asa-filament-print-settings-warp-prevention-guide</loc>
+    <lastmod>2026-08-16T22:02:19.198941+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/slicer-comparison-cura-orcaslicer-bambu-studio-2026</loc>
+    <lastmod>2026-08-15T22:02:24.727278+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-useful-goods-20</loc>
+    <lastmod>2026-08-14T22:03:05.609653+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-n-gauge-diorama-guide</loc>
+    <lastmod>2026-08-13T22:02:44.571544+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-led-light-comparison-2026</loc>
+    <lastmod>2026-08-12T23:03:52.603986+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-failure-detection-ai-monitoring-guide</loc>
+    <lastmod>2026-08-12T22:02:56.481229+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/resin-3d-printer-under-50000-yen-best-4-2026</loc>
+    <lastmod>2026-08-11T23:04:01.583742+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/fusion-personal-free-setup-2026</loc>
+    <lastmod>2026-08-11T22:02:45.326168+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/tpu-flexible-filament-recommended-comparison-2026</loc>
+    <lastmod>2026-08-10T23:03:09.877667+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-nozzle-replacement-guide</loc>
+    <lastmod>2026-08-10T22:03:01.127258+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/pla-petg-filament-comparison-sunlu-esun-polymaker-bambu-lab-2026</loc>
+    <lastmod>2026-08-09T23:03:51.18421+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/ai-3d-model-generator-meshy-tripo-rodin-3dprint-guide-2026</loc>
+    <lastmod>2026-08-09T22:02:30.724369+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/elegoo-mars-5-ultra-9k-review</loc>
+    <lastmod>2026-08-08T22:03:21.400025+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-reverse-engineering-repair-diy</loc>
+    <lastmod>2026-08-07T22:02:14.794829+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/bambu-lab-a1-mini-review-2026</loc>
+    <lastmod>2026-08-04T23:05:42.454486+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/tokyo-making-experience-spots-for-adults-2026</loc>
+    <lastmod>2026-08-04T22:06:06.316896+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-resin-comparison-guide-2026</loc>
+    <lastmod>2026-08-03T23:03:35.008155+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/free-3d-modeling-software-guide-2026</loc>
+    <lastmod>2026-08-03T22:03:14.975819+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-school-guide-selection-curriculum-safety</loc>
+    <lastmod>2026-08-01T22:02:50.621858+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-disaster-preparedness-diy-models</loc>
+    <lastmod>2026-07-31T22:02:34.145422+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-monitoring-camera-recommended-2026</loc>
+    <lastmod>2026-07-30T23:03:42.527336+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printed-camp-gear-10-ideas</loc>
+    <lastmod>2026-07-30T22:03:56.271665+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-bed-adhesion-guide-2026</loc>
+    <lastmod>2026-07-29T23:03:39.467055+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/orcaslicer-2-4-new-features-guide-2026</loc>
+    <lastmod>2026-07-29T22:03:23.622812+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/special-pla-filament-silk-matte-wood-guide-2026</loc>
+    <lastmod>2026-07-28T23:04:40.473973+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-first-test-prints-top10</loc>
+    <lastmod>2026-07-28T22:02:53.585318+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/filament-dry-box-recommended-2026</loc>
+    <lastmod>2026-07-27T23:14:16.972857+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/petg-cf-filament-guide-carbon-fiber-comparison</loc>
+    <lastmod>2026-07-27T22:03:29.636151+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/bambu-lab-a1-mini-accessories-2026</loc>
+    <lastmod>2026-07-26T23:04:26.765558+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/meshy-ai-3d-printer-text-to-print-guide</loc>
+    <lastmod>2026-07-26T22:02:28.779759+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/cura-orcaslicer-prusaslicer-comparison-beginners-2026</loc>
+    <lastmod>2026-07-25T22:02:23.716184+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-side-business-products-platforms-income-2026</loc>
+    <lastmod>2026-07-24T22:04:10.375501+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-ventilation-exhaust-filter-guide</loc>
+    <lastmod>2026-07-23T23:04:03.735858+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-sellable-items-mercari-creema-2026</loc>
+    <lastmod>2026-07-23T22:03:03.371229+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/wash-and-cure-machine-comparison-2026</loc>
+    <lastmod>2026-07-22T23:04:42.442198+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-initial-cost-budget-2026</loc>
+    <lastmod>2026-07-22T22:03:01.792027+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/filament-dryer-electricity-cost-comparison-2026</loc>
+    <lastmod>2026-07-21T23:04:29.269308+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/fdm-layer-lines-removal-5-methods</loc>
+    <lastmod>2026-07-21T22:02:04.598505+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/large-format-3d-printer-300mm-comparison-2026</loc>
+    <lastmod>2026-07-20T23:04:13.157275+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-figure-making-guide</loc>
+    <lastmod>2026-07-20T22:02:40.421189+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/bambu-a1-vs-ender3-v3-vs-kobra3-comparison-2026</loc>
+    <lastmod>2026-07-19T23:03:53.06163+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-side-business-guide-2026</loc>
+    <lastmod>2026-07-19T22:02:15.932545+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/tokyo-digital-fabrication-workshop-for-adults-2026</loc>
+    <lastmod>2026-07-18T22:03:11.901361+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-industry-news-2026-h1</loc>
+    <lastmod>2026-07-17T22:02:54.837545+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/filament-storage-moisture-proof-box-guide-2026</loc>
+    <lastmod>2026-07-16T23:04:27.962723+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-architectural-model-guide</loc>
+    <lastmod>2026-07-16T22:02:23.485313+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-build-plate-comparison-2026</loc>
+    <lastmod>2026-07-15T23:05:37.812165+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/smartphone-3d-scan-app-comparison-print-guide</loc>
+    <lastmod>2026-07-15T22:02:42.562658+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-summer-research-ideas-2026</loc>
+    <lastmod>2026-07-14T22:02:38.420098+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://3dlab.jp/blog/3d-printer-beginner-tool-set-2026</loc>
@@ -1229,5 +1907,17 @@
     <lastmod>2025-11-07T01:34:38.435+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/blog/3d-printer-enclosure-guide-2025</loc>
+    <lastmod>2026-07-14T23:06:03.299751+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://3dlab.jp/survey/buy-or-rent-printer</loc>
+    <lastmod>2026-09-02T15:24:42.085316+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

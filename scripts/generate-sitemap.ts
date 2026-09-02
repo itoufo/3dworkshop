@@ -20,7 +20,17 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // サイトのベースURL
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://3dlab.jp'
+/**
+ * ⚠ NEXT_PUBLIC_APP_URL をそのまま使わないこと。
+ *   このリポジトリの .env にはローカル開発用の http://localhost:3000 が入っており、
+ *   手元で実行すると sitemap.xml 全体が localhost を指す状態で書き換わる。
+ *   https:// で始まる値だけを上書きとして認める。
+ */
+const CONFIGURED_URL = process.env.NEXT_PUBLIC_APP_URL
+const BASE_URL =
+  CONFIGURED_URL && CONFIGURED_URL.startsWith('https://')
+    ? CONFIGURED_URL.replace(/\/+$/, '')
+    : 'https://3dlab.jp'
 
 interface Workshop {
   id: string
@@ -37,6 +47,11 @@ interface Survey {
   slug: string
   updated_at?: string
   publish_date?: string | null
+}
+
+interface ProductRow {
+  id: string
+  updated_at?: string
 }
 
 interface SitemapUrl {
@@ -67,6 +82,12 @@ const staticPages: SitemapUrl[] = [
     lastmod: new Date().toISOString(),
     changefreq: 'weekly',
     priority: 0.85,
+  },
+  {
+    loc: '/cookie-cutter',
+    lastmod: new Date().toISOString(),
+    changefreq: 'weekly',
+    priority: 0.9,
   },
   {
     loc: '/blog',
@@ -242,6 +263,42 @@ function generateBlogUrls(blogPosts: BlogPost[]): SitemapUrl[] {
 }
 
 /**
+ * Supabaseから販売中の物販商品を取得（3Dプリント発注は専用ページがあるので除く）
+ */
+async function fetchProducts(): Promise<ProductRow[]> {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, updated_at')
+      .eq('is_active', true)
+      .neq('category', '3d_printing')
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching products:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error fetching products:', error)
+    return []
+  }
+}
+
+/**
+ * 商品URLリストを生成
+ */
+function generateProductUrls(products: ProductRow[]): SitemapUrl[] {
+  return products.map((product) => ({
+    loc: `/products/${product.id}`,
+    lastmod: product.updated_at || new Date().toISOString(),
+    changefreq: 'weekly' as const,
+    priority: 0.7,
+  }))
+}
+
+/**
  * XML形式のサイトマップを生成
  */
 function generateSitemapXml(urls: SitemapUrl[]): string {
@@ -287,21 +344,24 @@ async function main() {
 
   // データ取得
   console.log('📡 Fetching data from Supabase...')
-  const [workshops, blogPosts, surveys] = await Promise.all([
+  const [workshops, blogPosts, surveys, products] = await Promise.all([
     fetchWorkshops(),
     fetchBlogPosts(),
     fetchSurveys(),
+    fetchProducts(),
   ])
 
   console.log(`✨ Found ${workshops.length} workshops`)
   console.log(`✨ Found ${blogPosts.length} blog posts`)
   console.log(`✨ Found ${surveys.length} surveys`)
+  console.log(`✨ Found ${products.length} products`)
 
   // URL生成
   const workshopUrls = generateWorkshopUrls(workshops)
   const blogUrls = generateBlogUrls(blogPosts)
   const surveyUrls = generateSurveyUrls(surveys)
-  const allUrls = [...staticPages, ...workshopUrls, ...blogUrls, ...surveyUrls]
+  const productUrls = generateProductUrls(products)
+  const allUrls = [...staticPages, ...workshopUrls, ...blogUrls, ...surveyUrls, ...productUrls]
 
   console.log(`📝 Total URLs: ${allUrls.length}`)
 

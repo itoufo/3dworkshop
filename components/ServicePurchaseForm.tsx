@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
+import RememberCustomerInfo from '@/components/RememberCustomerInfo'
+import { useCustomerProfile } from '@/lib/use-customer-profile'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -25,6 +27,15 @@ export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice:
     notes: '',
   })
 
+  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+    setForm((f) => ({
+      ...f,
+      name: saved.name ?? f.name,
+      email: saved.email ?? f.email,
+      phone: saved.phone ?? f.phone,
+    }))
+  })
+
   const total = useMemo(() => form.unitPrice * form.quantity, [form.unitPrice, form.quantity])
 
   function decUnitPrice() {
@@ -41,6 +52,7 @@ export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice:
       setErrorMsg(`単価は最低 ¥${minUnitPrice.toLocaleString()} 以上に設定してください`)
       return
     }
+    persist({ name: form.name, email: form.email, phone: form.phone })
     setSubmitting(true)
     try {
       const res = await fetch(`/api/services/${serviceId}/checkout`, {
@@ -201,6 +213,13 @@ export default function ServicePurchaseForm({ serviceId, serviceType, unitPrice:
           </p>
         )}
       </div>
+
+      <RememberCustomerInfo
+        remember={remember}
+        onChange={setRemember}
+        hasSaved={hasSaved}
+        onForget={forget}
+      />
 
       {errorMsg && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
