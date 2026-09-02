@@ -39,7 +39,7 @@ export default function WorkshopRequestForm({ workshopId, categorySlug }: Props)
     })
   }, [workshopId, categorySlug])
 
-  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+  const { remember, setRemember, hasSaved, persist, forget, fromAccount } = useCustomerProfile((saved) => {
     setForm((f) => ({
       ...f,
       name: saved.name ?? f.name,
@@ -181,6 +181,7 @@ export default function WorkshopRequestForm({ workshopId, categorySlug }: Props)
         onChange={setRemember}
         hasSaved={hasSaved}
         onForget={forget}
+                fromAccount={fromAccount}
       />
 
       {errorMsg && (

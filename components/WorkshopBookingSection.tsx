@@ -68,7 +68,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     // 同伴者（付き添いの保護者）: 親子向け日程でのみ1名まで無料・料金/定員に含めない
     companionCount: 0
   })
-  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+  const { remember, setRemember, hasSaved, persist, forget, fromAccount } = useCustomerProfile((saved) => {
     setBooking((b) => ({
       ...b,
       name: saved.name ?? b.name,
@@ -1096,6 +1096,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 onChange={setRemember}
                 hasSaved={hasSaved}
                 onForget={forget}
+                fromAccount={fromAccount}
               />
             </div>
 

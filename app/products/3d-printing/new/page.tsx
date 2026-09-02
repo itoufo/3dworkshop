@@ -67,7 +67,7 @@ export default function New3DPrintingOrder() {
     phone: '',
   })
 
-  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+  const { remember, setRemember, hasSaved, persist, forget, fromAccount } = useCustomerProfile((saved) => {
     setCustomerInfo((c) => ({
       ...c,
       name: saved.name ?? c.name,
@@ -527,6 +527,7 @@ export default function New3DPrintingOrder() {
                 onChange={setRemember}
                 hasSaved={hasSaved}
                 onForget={forget}
+                fromAccount={fromAccount}
               />
 
               {/* 送信ボタン */}

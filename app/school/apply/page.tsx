@@ -82,7 +82,7 @@ export default function SchoolApplyPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   // 保護者のお名前・連絡先・住所はこの端末に保存し、次回の入力を省く（お子さまの情報は保存しない）
-  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+  const { remember, setRemember, hasSaved, persist, forget, fromAccount } = useCustomerProfile((saved) => {
     setFormData((f) => ({
       ...f,
       parentName: saved.name ?? f.parentName,
@@ -715,6 +715,7 @@ export default function SchoolApplyPage() {
                 onChange={setRemember}
                 hasSaved={hasSaved}
                 onForget={forget}
+                fromAccount={fromAccount}
               />
 
               {/* Terms Agreement */}
