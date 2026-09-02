@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { MessageCircle, Send, X } from 'lucide-react'
+import { Check, ChevronLeft, LifeBuoy, MessageCircle, Send, X } from 'lucide-react'
 
 /**
  * 問い合わせチャット。
@@ -11,7 +11,10 @@ import { MessageCircle, Send, X } from 'lucide-react'
  * ⚠ 会話はこのサイトには保存しない（リロードで消える）。ただし答えを作るために
  *   入力内容は外部のAIサービス（OpenAI）へ送られる。「保存しない＝どこにも出ない」ではない。
  *   画面下にその旨を出してある。消したらプライバシーの説明が実態とズレる。
- * ⚠ 個人情報を預かる口にしないため、氏名や住所を入れさせる導線はここに作らない（申し込みはフォームへ）。
+ * ⚠ チャットの入力欄には氏名や住所を入れさせない。入力内容はそのまま外部のAIサービスへ送られるため。
+ *   「解決しなかったとき」だけ、AIを通さない別のフォーム（handoff）に切り替えて担当者へのメールに引き継ぐ。
+ *   このフォームの内容は /api/support/contact にだけ送られ、OpenAI には渡らない。
+ *   受け取る項目は氏名・メール・電話・用件に限る（住所や決済情報はここで預からない）。
  * ⚠ モデルの出力は文字列としてそのまま描く。dangerouslySetInnerHTML を使わない。
  *
  * スマホではカテゴリページに追従CTA（MobileCategoryFloatingCta）が出る。重ならないよう、
@@ -51,6 +54,14 @@ export default function ChatWidget() {
   const [history, setHistory] = useState<Msg[]>([])
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+
+  /** chat = AIとのやりとり / handoff = 担当者へのメール / sent = 送信済み */
+  const [mode, setMode] = useState<'chat' | 'handoff' | 'sent'>('chat')
+  const [ticket, setTicket] = useState({ name: '', email: '', phone: '', message: '' })
+  const [shareTranscript, setShareTranscript] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [ticketId, setTicketId] = useState<string | null>(null)
 
   const logRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -158,6 +169,54 @@ export default function ChatWidget() {
     }
   }
 
+  /** チャットからメールサポートへ切り替える。直前の質問を下書きに入れておく */
+  const openHandoff = () => {
+    const lastQuestion = [...history].reverse().find((m) => m.role === 'user')?.content ?? ''
+    setTicket((t) => ({ ...t, message: t.message || lastQuestion }))
+    setSendError(null)
+    setMode('handoff')
+  }
+
+  const submitTicket = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (sending) return
+    setSendError(null)
+
+    if (!ticket.name.trim()) return setSendError('お名前を入力してください')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ticket.email)) {
+      return setSendError('メールアドレスを正しく入力してください')
+    }
+    if (ticket.message.trim().length < 5) return setSendError('お問い合わせ内容を入力してください')
+
+    setSending(true)
+    try {
+      const r = await fetch('/api/support/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...ticket,
+          pagePath: pathname,
+          shareTranscript,
+          // 署名は担当者には要らないので落とす
+          transcript: shareTranscript
+            ? history.map((m) => ({ role: m.role, content: m.content }))
+            : null,
+        }),
+      })
+      const data = await r.json().catch(() => ({}))
+      if (!r.ok) {
+        setSendError(data.error || '送信に失敗しました。お手数ですが 080-9453-0911 までご連絡ください。')
+        setSending(false)
+        return
+      }
+      setTicketId(data.ticketId ?? null)
+      setMode('sent')
+    } catch {
+      setSendError('通信エラーが発生しました。お手数ですが 080-9453-0911 までご連絡ください。')
+    }
+    setSending(false)
+  }
+
   // ⚠ 管理画面には出さない。編集中の画面に問い合わせ窓口が浮いていると誤操作のもと
   if (pathname?.startsWith('/admin')) return null
 
@@ -257,9 +316,27 @@ export default function ChatWidget() {
         />
 
         <div className="flex items-start justify-between gap-3 bg-gradient-to-r from-purple-600 to-pink-600 py-3 pl-7 pr-4 text-white">
-          <div>
-            <p className="text-sm font-bold">ご質問にお答えします</p>
-            <p className="text-[11px] text-white/80">AIが自動で回答します。料金・所要時間・アクセスなど。</p>
+          <div className="flex items-start gap-2">
+            {mode !== 'chat' && (
+              <button
+                type="button"
+                onClick={() => setMode('chat')}
+                aria-label="チャットに戻る"
+                className="-ml-1 mt-0.5 shrink-0 rounded-lg p-0.5 hover:bg-white/20"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            <div>
+              <p className="text-sm font-bold">
+                {mode === 'chat' ? 'ご質問にお答えします' : '担当者へのお問い合わせ'}
+              </p>
+              <p className="text-[11px] text-white/80">
+                {mode === 'chat'
+                  ? 'AIが自動で回答します。料金・所要時間・アクセスなど。'
+                  : 'AIではなく、担当者がメールでご返信します。'}
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -271,6 +348,8 @@ export default function ChatWidget() {
           </button>
         </div>
 
+        {mode === 'chat' && (
+          <>
         <div ref={logRef} role="log" aria-live="polite" className="flex-1 space-y-3 overflow-y-auto p-4">
           <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-gray-100 px-3.5 py-2.5 text-sm leading-relaxed text-gray-800">
             {GREET}
@@ -344,6 +423,21 @@ export default function ChatWidget() {
           </button>
         </form>
 
+
+        <div className="border-t border-gray-100 px-3 py-2">
+          <button
+            type="button"
+            onClick={openHandoff}
+            className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-colors ${
+              history.length >= 2
+                ? 'bg-purple-50 text-purple-800 hover:bg-purple-100'
+                : 'text-gray-500 hover:text-purple-700'
+            }`}
+          >
+            <LifeBuoy className="h-3.5 w-3.5" />
+            解決しませんでしたか？ 担当者にメールで問い合わせる
+          </button>
+        </div>
         <p className="border-t border-gray-100 px-3 py-2 text-[11px] leading-tight text-gray-500">
           AIの回答です。日程・空席・最終的な金額は予約ページとお電話でご確認ください。
           <br />
@@ -353,6 +447,132 @@ export default function ChatWidget() {
           </a>
           ）。
         </p>
+          </>
+        )}
+
+        {mode === 'handoff' && (
+          <form onSubmit={submitTicket} className="flex-1 space-y-3 overflow-y-auto p-4">
+            <p className="text-xs leading-relaxed text-gray-600">
+              お困りの内容をお送りください。<strong>2営業日以内</strong>に担当者からご返信します。
+              この内容はAIには送られません。
+            </p>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                お名前 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={ticket.name}
+                onChange={(e) => setTicket({ ...ticket, name: e.target.value })}
+                maxLength={100}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                メールアドレス <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={ticket.email}
+                onChange={(e) => setTicket({ ...ticket, email: e.target.value })}
+                maxLength={200}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">電話番号（任意）</label>
+              <input
+                type="tel"
+                value={ticket.phone}
+                onChange={(e) => setTicket({ ...ticket, phone: e.target.value })}
+                maxLength={40}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                お問い合わせ内容 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={ticket.message}
+                onChange={(e) => setTicket({ ...ticket, message: e.target.value })}
+                rows={5}
+                maxLength={4000}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+              />
+            </div>
+
+            {history.length > 0 && (
+              <label className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={shareTranscript}
+                  onChange={(e) => setShareTranscript(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded text-purple-600"
+                />
+                <span>
+                  ここまでのチャットのやりとり（{history.length}件）を担当者に共有する
+                  <span className="mt-0.5 block text-gray-500">
+                    状況が伝わりやすくなります。外さずに送っていただくのがおすすめです。
+                  </span>
+                </span>
+              </label>
+            )}
+
+            {sendError && (
+              <p className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+                {sendError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={sending}
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {sending ? '送信中…' : 'この内容で送信する'}
+            </button>
+
+            <p className="text-[11px] leading-tight text-gray-500">
+              ご入力いただいた内容は、お問い合わせへの対応にのみ利用します（
+              <a href="/privacy" className="underline hover:text-gray-700">
+                プライバシーポリシー
+              </a>
+              ）。お急ぎの場合は 080-9453-0911 へお電話ください。
+            </p>
+          </form>
+        )}
+
+        {mode === 'sent' && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <Check className="h-6 w-6 text-green-600" />
+            </div>
+            <p className="text-sm font-bold text-gray-900">お問い合わせを承りました</p>
+            <p className="text-xs leading-relaxed text-gray-600">
+              確認のメールをお送りしました。担当者より2営業日以内にご返信します。
+              {ticketId && (
+                <span className="mt-2 block text-gray-500">受付番号：{ticketId.slice(0, 8)}</span>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('chat')
+                setTicket({ name: '', email: '', phone: '', message: '' })
+              }}
+              className="mt-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              チャットに戻る
+            </button>
+          </div>
+        )}
+
       </div>
     </>
   )

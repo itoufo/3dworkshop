@@ -933,3 +933,121 @@ export function generateCutterOrderEmail(input: {
 
   return { subject, html };
 }
+
+/** チャットのやりとり1件分。support_tickets.transcript に入る形と揃えている */
+export interface SupportTranscriptLine {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** 担当者に届く問い合わせ通知 */
+export function generateSupportTicketEmail(input: {
+  ticketId: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  message: string;
+  transcript?: SupportTranscriptLine[] | null;
+  pagePath?: string | null;
+}) {
+  const subject = `【3DLab】サポートのお問い合わせ（${input.name} 様）`;
+
+  const transcriptHtml = (input.transcript ?? [])
+    .map(
+      (line) =>
+        `<p style="margin:4px 0;"><strong>${line.role === 'user' ? 'お客様' : 'AI'}：</strong>${escapeHtml(
+          line.content
+        ).replace(/\n/g, '<br>')}</p>`
+    )
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;color:#333;">
+      <div style="max-width:640px;margin:0 auto;padding:20px;">
+        <h2 style="border-bottom:2px solid #9333ea;padding-bottom:8px;">サポートのお問い合わせ</h2>
+
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="color:#6b7280;padding:6px 10px;width:120px;">受付番号</td><td style="padding:6px 10px;">${escapeHtml(input.ticketId)}</td></tr>
+          <tr><td style="color:#6b7280;padding:6px 10px;">お名前</td><td style="padding:6px 10px;">${escapeHtml(input.name)}</td></tr>
+          <tr><td style="color:#6b7280;padding:6px 10px;">メール</td><td style="padding:6px 10px;"><a href="mailto:${escapeHtml(input.email)}">${escapeHtml(input.email)}</a></td></tr>
+          ${input.phone ? `<tr><td style="color:#6b7280;padding:6px 10px;">電話</td><td style="padding:6px 10px;">${escapeHtml(input.phone)}</td></tr>` : ''}
+          ${input.pagePath ? `<tr><td style="color:#6b7280;padding:6px 10px;">送信元ページ</td><td style="padding:6px 10px;">${escapeHtml(input.pagePath)}</td></tr>` : ''}
+        </table>
+
+        <div style="background:#f9fafb;border-left:4px solid #9333ea;padding:16px;margin:20px 0;border-radius:4px;">
+          <h3 style="margin-top:0;">お問い合わせ内容</h3>
+          <p style="white-space:pre-wrap;margin:0;">${escapeHtml(input.message)}</p>
+        </div>
+
+        ${
+          transcriptHtml
+            ? `<div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:16px;margin:20px 0;border-radius:4px;">
+                 <h3 style="margin-top:0;">直前のチャットのやりとり（本人の同意のうえ共有）</h3>
+                 ${transcriptHtml}
+               </div>`
+            : '<p style="color:#6b7280;font-size:14px;">チャットのやりとりの共有は選択されていません。</p>'
+        }
+
+        <p style="font-size:14px;color:#6b7280;">このメールにそのまま返信すると、お客様宛には届きません。上のメールアドレス宛にご返信ください。</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
+
+/** お客様に届く受付のお知らせ */
+export function generateSupportAutoReplyEmail(input: {
+  ticketId: string;
+  name: string;
+  message: string;
+  contact: string;
+}) {
+  const subject = '【3DLab】お問い合わせを承りました';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;color:#333;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(to right,#9333ea,#ec4899);color:#fff;padding:24px;text-align:center;border-radius:10px;">
+          <h2 style="margin:0;">お問い合わせを承りました</h2>
+        </div>
+
+        <p>${escapeHtml(input.name)} 様</p>
+        <p>お問い合わせいただきありがとうございます。以下の内容で承りました。<br>
+        担当者より、<strong>2営業日以内</strong>にご返信いたします。</p>
+
+        <div style="background:#f9fafb;border-left:4px solid #9333ea;padding:16px;margin:20px 0;border-radius:4px;">
+          <p style="color:#6b7280;margin:0 0 8px;">受付番号：${escapeHtml(input.ticketId)}</p>
+          <p style="white-space:pre-wrap;margin:0;">${escapeHtml(input.message)}</p>
+        </div>
+
+        <p style="font-size:14px;color:#6b7280;">
+          お急ぎの場合はお電話でもご相談いただけます。<br>
+          ${escapeHtml(input.contact)}
+        </p>
+
+        <div style="text-align:center;padding:20px;color:#666;font-size:12px;">
+          <p>3DLab（株式会社ウォーカー）</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
