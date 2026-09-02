@@ -55,11 +55,11 @@ jobs:
           git commit -m "chore: サイトマップ自動更新 [skip ci]"
           git push
 
-      - name: Trigger Netlify deploy
+      - name: Deploy note
         if: steps.git-check.outputs.changed == 'true'
         run: |
           echo "✅ Sitemap updated and pushed to main branch"
-          echo "🚀 Netlify will automatically deploy the changes"
+          echo "🚀 The host connected to main will deploy the change automatically"
 
       - name: No changes
         if: steps.git-check.outputs.changed != 'true'

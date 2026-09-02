@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  *   `x-forwarded-for` の左端は「クライアントが好きに書ける欄」で、
  *   1リクエストごとに別人を名乗れば制限は素通しになる（2026-08-31 のレビューで指摘）。
  *
- * ⚠ プロセス内の Map だけで数えないこと。Netlify の関数はインスタンスが増減するので、
+ * ⚠ プロセス内の Map だけで数えないこと。サーバーレス関数はインスタンスが増減するので、
  *   実際の上限は「インスタンス数 × 上限」になり、コールドスタートで 0 に戻る。
  *   本当の上限は DB（public.rate_limit）で持つ。
  *
@@ -17,8 +17,18 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  *   2. DB で数える … こちらが本当の上限
  */
 
-/** Netlify が付ける、経路の最後で見えた接続元。⚠ クライアントは書き換えられない */
-const TRUSTED_IP_HEADERS = ['x-nf-client-connection-ip', 'cf-connecting-ip']
+/**
+ * CDN が自分で付ける「実際に接続してきた相手のIP」。⚠ クライアントは書き換えられない。
+ *   x-vercel-forwarded-for    … Vercel。x-forwarded-for と同じ値だが、Vercel の手前に
+ *                               別のプロキシを置いても上書きされない
+ *   x-nf-client-connection-ip … Netlify
+ *   cf-connecting-ip          … Cloudflare
+ */
+const TRUSTED_IP_HEADERS = [
+  'x-vercel-forwarded-for',
+  'x-nf-client-connection-ip',
+  'cf-connecting-ip',
+]
 
 /**
  * 数える単位にする接続元。

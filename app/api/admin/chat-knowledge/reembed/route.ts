@@ -16,8 +16,10 @@ import { embedTexts, knowledgeSourceText, needsReembedding } from '@/lib/chat-kn
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// ⚠ maxDuration は Vercel の設定で、このサイトの Netlify では効かない（netlify.toml + @netlify/plugin-nextjs）。
-//   置いても実行時間は伸びないので、時間内に終わるように埋め込みをまとめて作る。
+// 実行時間の上限（秒）。⚠ これが効くのは Vercel だけ。Netlify（@netlify/plugin-nextjs）は
+//   この指定を無視するので、どちらでも時間内に終わるよう埋め込みはまとめて作る。
+export const maxDuration = 300
+
 const BATCH_SIZE = 32
 
 export async function POST(req: Request) {
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
   const failed: string[] = []
 
   // ⚠ 1件ずつ OpenAI を叩かない。件数ぶん往復することになり、
-  //   Netlify の実行時間上限に当たって途中で切れる（どこまで終わったかも分からない）。
+  //   関数の実行時間上限に当たって途中で切れる（どこまで終わったかも分からない）。
   //   embeddings API は input に配列を取れるので、まとめて作る。
   // ⚠ バッチ同士は直列のまま。並列にするとレート制限に当たって半端に終わる
   for (let i = 0; i < targets.length; i += BATCH_SIZE) {

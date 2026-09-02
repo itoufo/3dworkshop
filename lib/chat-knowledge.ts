@@ -96,7 +96,7 @@ export async function embedText(text: string): Promise<number[] | null> {
 /**
  * まとめて埋め込みを作る。
  * ⚠ 1件ずつ叩かない。作り直し（reembed）は件数ぶん往復することになり、
- *   Netlify の実行時間上限に当たって途中で切れる（2026-08-31 のレビューで指摘）。
+ *   関数の実行時間上限に当たって途中で切れる（2026-08-31 のレビューで指摘）。
  *   embeddings API は input に配列を取れるので、1往復でまとめて作る。
  *
  * 返り値は入力と同じ並び。失敗した位置は null。

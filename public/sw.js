@@ -58,7 +58,7 @@ self.addEventListener('fetch', (event) => {
   //   キャッシュ名が変わらない限り activate では消えないため、数か月で数十MBになり、
   //   最後はブラウザにこのオリジンのストレージごと捨てられる
   //   （＝オフライン用ページまで失う。2026-08-31 のレビューで指摘）。
-  //   /_next/static は Netlify が immutable のキャッシュヘッダを付けて返すので、
+  //   /_next/static は CDN が immutable のキャッシュヘッダを付けて返すので、
   //   ブラウザのHTTPキャッシュに任せれば十分で、サービスワーカーが持つ意味がない。
   if (PRECACHE_URLS.includes(url.pathname)) {
     event.respondWith(caches.match(request).then((cached) => cached || fetch(request)))
