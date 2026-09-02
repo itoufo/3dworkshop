@@ -1,7 +1,7 @@
 // リッチテキスト (rich_description / blog content) 内の <img> を最適化する。
 // エディタ出力の生 <img> は next/image を通らず Supabase Storage の原寸画像
 // （数MBのPNGもある）をそのまま配信してしまうため、サーバーレンダリング時に
-// Netlify Image CDN (/_next/image) 経由の URL に書き換え、遅延読み込みを付与する。
+// 画像最適化 (/_next/image) 経由の URL に書き換え、遅延読み込みを付与する。
 
 // /_next/image の `w` は next.config images の deviceSizes/imageSizes に
 // 含まれる値のみ許可される（それ以外は 400）
