@@ -37,7 +37,9 @@ A レコードを `75.2.60.5` に戻せば数分で元通りになる。
 | デプロイの保護 | `*.vercel.app` は全部 Vercel ログイン必須。カスタムドメイン（3dlab.jp）だけ公開 |
 | 自動で付く公開URL | **削除済み**（`3dlab-bay.vercel.app`）。本番と同じ内容が別URLで検索に載るのを防ぐため |
 | 追加済みドメイン | `3dlab.jp`（本体）、`www.3dlab.jp`（3dlab.jp へ 301）。DNS はまだ Netlify を向いているので未接続 |
-| 環境変数 | Netlify にあった 17 個を production / preview に移送済み（下の「残っていること」の Stripe 3本を除く） |
+| 環境変数 | Netlify にあった 17 個を production / preview に移送済み。Stripe の鍵3本も投入済み |
+| 本番デプロイ | 作成済み（`feat/vercel-migration` から）。まだドメインが向いていないので誰にも見えない。切替の受け皿として待機中 |
+| 検証用URL | `https://3dlab-yuhoito-walkercojps-projects.vercel.app`（`x-robots-tag: noindex, nofollow` 付きなので検索には載らない）。ここで下の「4. 動作確認」の大半が実行できる |
 
 ### コード側（このブランチ）
 
@@ -49,6 +51,21 @@ A レコードを `75.2.60.5` に戻せば数分で元通りになる。
 | `app/api/admin/chat-knowledge/reembed/route.ts` | `maxDuration = 300` を追加（Vercel でのみ効く） |
 | `scripts/vercel-env-sync.sh` | 新規。Netlify の環境変数を Vercel へ移すスクリプト |
 | `.vercelignore` | 新規。⚠ Vercel CLI は `.gitignore` ではなく**このファイル**を見る。無いと `vercel deploy` でローカルの `.env` がデプロイのソースに丸ごと入る |
+
+### 実機で確認済み（2026-09-02、Vercel の本番ビルドと Netlify 本番の突き合わせ）
+
+| 項目 | 結果 |
+|---|---|
+| 講座一覧のカード数 | 61 = 61 |
+| 主要9ページの HTTP と `<title>` | すべて 200 かつ一致（トップ / 講座一覧 / カテゴリ一覧 / カテゴリ / ブログ一覧 / 製品 / スクール / 講座詳細 / ブログ詳細） |
+| Web Push の公開鍵 | 一致（既存の購読は生き残る） |
+| 静的アセットのキャッシュヘッダ | `netlify.toml` と同じ値で返る |
+| 旧カテゴリURLのリダイレクト | 301 |
+| sitemap.xml | 200 / 296 URL |
+| OG画像の動的生成 | 200 / image/png |
+
+**人が触らないと確認できない項目**（管理画面ログイン・画像アップロード・メール送信・Stripe のテスト決済・通知購読）は
+下の「4. 動作確認」に残っている。Stripe の Webhook だけは送信先が `3dlab.jp` 固定なので、DNS を向けるまで試せない。
 | 各所のコメント | 「Netlify が〜」という記述を、どちらの環境でも通じる書き方に直した |
 
 `netlify.toml` と `public/_redirects` は**わざと残している**。切り戻し先を壊さないため。
