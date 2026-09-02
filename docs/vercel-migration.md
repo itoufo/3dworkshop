@@ -1,27 +1,29 @@
 # Netlify から Vercel への移行手順
 
-最終更新: 2026-09-02
+最終更新: 2026-09-02（**切替完了**）
 
-## 方針
+## 現状: 切替済み
 
-**本番（3dlab.jp）を止めない・いつでも Netlify に戻せる状態を保ったまま移す。**
+**3dlab.jp は Vercel が配信している。** 2026-09-02 に DNS を切り替えた。
 
-そのために、次の順で進める。DNS を切り替えるまで、3dlab.jp は Netlify のままで一切変わらない。
+| 項目 | 値 |
+|---|---|
+| DNS の管理場所 | **Cloudflare**（`rohin.ns.cloudflare.com` / `sunny.ns.cloudflare.com`）。切替時にムームードメインから移管された |
+| Cloudflare のプロキシ | **通していない**（DNS のみ）。応答に `server: Vercel` が出て `cf-ray` は出ない |
+| `3dlab.jp` A | `216.150.1.1` / `216.150.16.1`（Vercel） |
+| `www.3dlab.jp` | Vercel の CNAME。Vercel 側の設定で apex へ 301 |
+| Vercel の本番デプロイ | ブランチ `feat/vercel-migration` から作成。**⚠ PR #9 を main にマージするまで、main へ push すると `vercel.json` の無いビルドが本番になる** |
+| Netlify | 残してある（切り戻し先）。GitHub 連携も生きている |
 
-```
-1. 並走      … Vercel にプロジェクトを作り、同じコード・同じ環境変数で動くことを確かめる
-                （このとき Vercel 側は *.vercel.app にすら公開しない。Vercel にログインした人だけが見られる）
-2. 予行演習  … www.3dlab.jp だけを先に Vercel に向ける
-                （www は今も 3dlab.jp へ 301 で飛ばしているだけなので、実質アクセスが無い。
-                  本物のドメイン・本物の証明書で Vercel が動くことを、無風で確かめられる）
-3. 本切替    … 3dlab.jp（apex）の A レコードを Vercel に向ける
-4. 後片付け  … 1〜2週間 Netlify を残して様子を見てから、Netlify 側を止める
-```
+### 切り戻し（Cloudflare で戻す）
 
-**切り戻しは常に「DNS を元に戻すだけ」**。Netlify のサイトは消さずに残しておくので、
-A レコードを `75.2.60.5` に戻せば数分で元通りになる。
+| レコード | 戻す値 |
+|---|---|
+| `3dlab.jp` A | `75.2.60.5` |
+| `www.3dlab.jp` | CNAME `3dworkshop.netlify.app.` |
 
----
+Netlify のサイト（`3dworkshop` / `aafb1975-ba24-4165-a612-3d661949a2aa`）と
+`netlify.toml` / `public/_redirects` は残してあるので、コードを戻す必要は無い。
 
 ## 1. 済んでいること
 
@@ -195,41 +197,38 @@ curl -s $BASE/robots.txt | head -3
 
 ---
 
-## 5. 本切替: apex（3dlab.jp）を Vercel に向ける
+## 5. 本切替（実施済み・2026-09-02）
 
-**アクセスの少ない時間帯（深夜〜早朝）に行う。**
+DNS を Cloudflare へ移管し、apex を Vercel の `216.150.1.1` / `216.150.16.1` に向けた。
+証明書は Vercel が自動発行した。切替直後に確認した結果は下記「切替後の実測」。
 
-1. 事前に DNS の TTL を下げる（可能なら 300 秒）。切り戻しを速くするため
-2. ムームードメインの DNS で apex の A レコードを差し替える
-   | | 現在 | 変更後 |
-   |---|---|---|
-   | `@` A | `75.2.60.5`（Netlify） | `216.150.1.1` と `216.150.16.1`（Vercel） |
-3. `main` にマージする（Vercel が GitHub 連携で本番デプロイを作る）
-   - すでに本番デプロイがある場合は `vercel deploy --prod` でも良い
-4. 数分待ってから「4. 動作確認」を全部実行する
-5. Google Search Console でエラーが増えていないか、翌日に確認する
+### 切替後の実測（すべて 3dlab.jp に対して）
 
-### 証明書について
-
-DNS が Vercel を向いた直後、Vercel が自動で証明書を発行する（通常は数十秒）。
-その数十秒だけ TLS エラーになりうるので、深夜に切り替える。
-予行演習（www）を先にやっておけば、発行の挙動を無風で確認できる。
-
----
+| 項目 | 結果 |
+|---|---|
+| 配信元 | `server: Vercel` / `x-vercel-id: hnd1::…`（東京エッジ、関数は sin1） |
+| 本番に noindex が付いていないこと | ✓ `x-robots-tag` なし |
+| 講座一覧のカード数 | 61 |
+| 静的アセットのキャッシュヘッダ | 画像7日 / sw.js 再検証必須 / manifest 1時間 |
+| 旧カテゴリURL | 301 |
+| www → apex | 301 |
+| sitemap.xml | 200 / 296 URL |
+| OG画像の動的生成 | 200 / image/png |
+| **Stripe Webhook** | `3dlab.jp/api/stripe-webhook` が **Vercel（sin1）で処理**され 200。署名検証も通過 |
+| **メール送信** | Vercel から送信成功（`smtpHost: smtp.gmail.com` / `250 2.0.0 OK … gsmtp` / 3宛先すべて accepted） |
+| 切替前後の実顧客の予約 | 0件（作業中に影響を受けた予約は無い） |
 
 ## 6. 切り戻し
 
-**いつでも、DNS を戻すだけ。**
+**Cloudflare の DNS を戻すだけ。**（⚠ ムームードメインではない。切替時に Cloudflare へ移管された）
 
-| | 戻す値 |
+| レコード | 戻す値 |
 |---|---|
-| `@` A | `75.2.60.5` |
-| `www` CNAME | `3dworkshop.netlify.app.` |
+| `3dlab.jp` A | `75.2.60.5` |
+| `www.3dlab.jp` | CNAME `3dworkshop.netlify.app.` |
 
-Netlify のサイト（`3dworkshop` / `aafb1975-ba24-4165-a612-3d661949a2aa`）は消さずに残してある。
-`netlify.toml` と `public/_redirects` も残してあるので、コードを戻す必要は無い。
-
----
+Netlify のサイトは消さずに残してある。`netlify.toml` と `public/_redirects` も残してあるので、
+コードを戻す必要は無い。
 
 ## 7. 後片付け（切替から1〜2週間、問題が無いことを確認してから）
 
@@ -247,6 +246,43 @@ Netlify のサイト（`3dworkshop` / `aafb1975-ba24-4165-a612-3d661949a2aa`）�
       ⚠ 紐づく予約行も一緒に消える（`bookings` は ON DELETE CASCADE）。テスト予約を実績として残したいなら先に控える
 
 ---
+
+## 付録: メール送信（SMTP）について分かったこと
+
+現行は **Gmail SMTP**（`smtp.gmail.com:587` / 認証 `itoyuho73@gmail.com` / 差出人 `3DLab運営事務局 <y-sato@sunu25.com>`）。
+Vercel からも問題なく送信できることを実測済み。
+
+### ⚠ Xserver の SMTP には切り替えられない
+
+`sunu25.com` は Xserver でメールを運用しているので、`sv14471.xserver.jp` から送れば SPF が通る——
+と考えて試したが、**Vercel の関数からは送れない**。
+
+```
+554 5.7.1 <ec2-54-169-14-173.ap-southeast-1.compute.amazonaws.com[54.169.14.173]>:
+        Client host rejected: Access denied
+```
+
+SMTP AUTH は成功しているのに `RCPT TO` で拒否される。Xserver が**接続元のホストを見て弾いている**。
+国内の家庭回線（作業用Mac）からは同じ認証情報で送信できたので、認証情報の問題ではない。
+`sunu25.xsrv.jp` は証明書が `sv14471.xserver.jp` のものを返すため、そもそも使えない。
+
+**Netlify も同じ理由で切り替えてはいけない**（Netlify も AWS 上で動くため）。
+
+### 今の構成の弱点（未解決）
+
+Gmail のサーバーから `@sunu25.com` を名乗って送っているため、**SPF も DKIM も差出人ドメインと揃っていない**。
+
+- `sunu25.com` の SPF: `v=spf1 +a:sv14471.xserver.jp +a:sunu25.com +mx include:spf.sender.xserver.jp ~all` — Google が入っていない
+- Gmail が付ける DKIM 署名は `gmail.com` のもので、`sunu25.com` とは一致しない
+- `_dmarc.sunu25.com` は `p=none` なので今は拒否されないが、受信側からは「認証を通っていない送信」に見える
+
+直すなら選択肢は3つ。**どれも未着手**。
+
+| 案 | 内容 | 難点 |
+|---|---|---|
+| A. Vercel の関数を東京（hnd1）へ | Xserver の拒否が「国外IP」由来なら通る可能性 | 拒否理由が rDNS のクラウド判定なら効かない。Supabase (ap-southeast-1) との往復が +70ms |
+| B. Xserver 側で接続元制限を解除 | sin1 のまま Xserver を使える | メールアカウントへの攻撃面が広がる |
+| C. 配信サービスを使う（Resend 等） | SPF・DKIM・DMARC を差出人ドメインで揃えられる。到達率も最善 | 導入作業が要る |
 
 ## 付録: Netlify と Vercel の違いと、その埋め方
 
