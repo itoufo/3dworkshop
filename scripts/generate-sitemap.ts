@@ -1,4 +1,10 @@
 /**
+ * ⚠ このスクリプトが書き出す public/sitemap.xml は、実際には配信されていない。
+ *   app/sitemap.ts が /sitemap.xml のルートを持っていて、そちらが優先される
+ *   （2026-09-03 に本番で確認）。検索エンジンに見せるURLを足すときは
+ *   app/sitemap.ts を直すこと。ここだけ直しても何も変わらない。
+ */
+/**
  * Sitemap Generator for 3DLab
  *
  * このスクリプトは以下のURLを含むsitemap.xmlを生成します:
