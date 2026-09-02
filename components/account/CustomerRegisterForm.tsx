@@ -96,11 +96,11 @@ export default function CustomerRegisterForm() {
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
-          minLength={10}
+          minLength={8}
           autoComplete="new-password"
           className={fieldClass}
         />
-        <p className="text-sm text-gray-500 mt-1">10文字以上。他のサービスと同じものは避けてください。</p>
+        <p className="text-sm text-gray-500 mt-1">8文字以上。他のサービスと同じものは避けてください。</p>
       </div>
 
       <FormMessage error={error} />

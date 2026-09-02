@@ -22,7 +22,7 @@ export default function ProductPurchaseForm({ productId, unitPrice, stockQuantit
     notes: '',
   })
 
-  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+  const { remember, setRemember, hasSaved, persist, forget, fromAccount } = useCustomerProfile((saved) => {
     setForm((f) => ({
       ...f,
       name: saved.name ?? f.name,
@@ -180,6 +180,7 @@ export default function ProductPurchaseForm({ productId, unitPrice, stockQuantit
         onChange={setRemember}
         hasSaved={hasSaved}
         onForget={forget}
+                fromAccount={fromAccount}
       />
 
       {errorMsg && (

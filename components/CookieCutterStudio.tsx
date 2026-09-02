@@ -128,7 +128,7 @@ export default function CookieCutterStudio() {
   const [submitting, setSubmitting] = useState<CutterOrderKind | null>(null)
   const [orderError, setOrderError] = useState<string | null>(null)
 
-  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+  const { remember, setRemember, hasSaved, persist, forget, fromAccount } = useCustomerProfile((saved) => {
     setForm((f) => ({
       ...f,
       name: saved.name ?? f.name,
@@ -789,6 +789,7 @@ export default function CookieCutterStudio() {
                 onChange={setRemember}
                 hasSaved={hasSaved}
                 onForget={forget}
+                fromAccount={fromAccount}
               />
 
               {orderError && (
