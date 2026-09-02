@@ -3,6 +3,7 @@ import Footer from '@/components/Footer'
 import ProductsListClient from '@/components/ProductsListClient'
 import { getAllProducts } from '@/lib/products'
 import { getAllServices } from '@/lib/services'
+import { firstImageUrl } from '@/lib/media'
 
 // ISR: cache for 1 hour
 export const revalidate = 3600
@@ -56,7 +57,7 @@ export default async function ProductsPage() {
           '@type': 'Product',
           name: product.name,
           description: product.description || product.name,
-          image: product.image_urls?.[0] || `${SITE_URL}/og-image.jpg`,
+          image: firstImageUrl(product.media_urls) || `${SITE_URL}/og-image.jpg`,
           url: product.category === '3d_printing'
             ? `${SITE_URL}/products/3d-printing/new`
             : `${SITE_URL}/products/${product.id}`,

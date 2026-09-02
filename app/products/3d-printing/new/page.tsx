@@ -8,6 +8,8 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaCoverage from '@/components/MediaCoverage'
 import { Upload, FileUp, Package, Palette, Ruler, Hash, AlertCircle, Truck, Info } from 'lucide-react'
 import Footer from '@/components/Footer'
+import RememberCustomerInfo from '@/components/RememberCustomerInfo'
+import { useCustomerProfile } from '@/lib/use-customer-profile'
 
 // サイズ定義
 const sizes = [
@@ -63,6 +65,15 @@ export default function New3DPrintingOrder() {
     name: '',
     email: '',
     phone: '',
+  })
+
+  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+    setCustomerInfo((c) => ({
+      ...c,
+      name: saved.name ?? c.name,
+      email: saved.email ?? c.email,
+      phone: saved.phone ?? c.phone,
+    }))
   })
 
   // 選択されたサイズの情報を取得
@@ -127,6 +138,7 @@ export default function New3DPrintingOrder() {
       return
     }
 
+    persist({ name: customerInfo.name, email: customerInfo.email, phone: customerInfo.phone })
     setLoading(true)
 
     try {
@@ -509,6 +521,13 @@ export default function New3DPrintingOrder() {
                   </p>
                 </div>
               </div>
+
+              <RememberCustomerInfo
+                remember={remember}
+                onChange={setRemember}
+                hasSaved={hasSaved}
+                onForget={forget}
+              />
 
               {/* 送信ボタン */}
               <div className="flex justify-center">

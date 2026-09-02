@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Package, Printer, Sparkles, RotateCw } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
+import { firstImageUrl } from '@/lib/media'
 import type { Service } from '@/types'
 import type { Product } from '@/lib/products'
 
@@ -180,10 +181,10 @@ export default function ProductsListClient({ products, services }: ProductsListC
               }`}
             >
               {/* Image */}
-              {product.image_urls && product.image_urls[0] ? (
+              {firstImageUrl(product.media_urls) ? (
                 <div className="relative w-full aspect-video overflow-hidden">
                   <Image
-                    src={optimizeImageUrl(product.image_urls[0], 75)}
+                    src={optimizeImageUrl(firstImageUrl(product.media_urls)!, 75)}
                     alt={product.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"

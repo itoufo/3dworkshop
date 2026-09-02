@@ -600,3 +600,202 @@ export function generateServiceRequestEmail(input: {
 
   return { subject, html };
 }
+/**
+ * 制作依頼のお支払い（/production-request で金額を手入力して決済）の完了メール。
+ * お客様宛に送り、社内には CC で控えを回す。注文レコードは持たないため、
+ * 決済時にお客様が入力した内容をそのまま本文に載せる。
+ */
+export function generateProductionRequestPaymentEmail(input: {
+  customerName: string;
+  email: string;
+  phone?: string | null;
+  amount: number;
+  details?: string | null;
+  sessionId: string;
+}) {
+  const esc = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  const nl2br = (s: string) => esc(s).replace(/\n/g, '<br>');
+
+  const subject = '【3DLab】制作依頼のお支払いを承りました';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #f9fafb; border-left: 4px solid #9333ea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .cost-box { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px 12px; }
+        td.label { color: #6b7280; width: 120px; vertical-align: top; }
+        td.value { color: #111827; }
+        .total { font-size: 20px; font-weight: bold; color: #9333ea; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">お支払いありがとうございます</h2>
+        </div>
+        <p>${esc(input.customerName)} 様</p>
+        <p>制作依頼のお支払いを承りました。決済が正常に完了しています。</p>
+
+        <div class="cost-box">
+          <table>
+            <tr>
+              <td class="label">お支払い金額</td>
+              <td class="value total">¥${input.amount.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="info-box">
+          <h3 style="margin-top:0;">お支払い内容</h3>
+          <table>
+            <tr><td class="label">お名前</td><td class="value">${esc(input.customerName)}</td></tr>
+            <tr><td class="label">メール</td><td class="value">${esc(input.email)}</td></tr>
+            ${input.phone ? `<tr><td class="label">電話番号</td><td class="value">${esc(input.phone)}</td></tr>` : ''}
+            ${input.details ? `<tr><td class="label">依頼内容</td><td class="value">${nl2br(input.details)}</td></tr>` : ''}
+            <tr><td class="label">受付番号</td><td class="value">${esc(input.sessionId)}</td></tr>
+          </table>
+        </div>
+
+        <p>担当者が内容を確認の上、制作の進行についてあらためてご連絡いたします。</p>
+
+        <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
+          <h3 style="margin-top:0;">お問い合わせ先</h3>
+          <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
+          <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
+        </div>
+
+        <div class="footer">
+          <p>このメールは自動送信されています。</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
+
+/**
+ * 物販（/products/[id]）のご注文確認メール。
+ * 発送目安は lib/shipping.ts の SHIPPING_LEAD_TIME_TEXT を呼び出し側から受け取る。
+ */
+export function generateProductOrderConfirmationEmail(input: {
+  customerName: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  shippingFee: number;
+  totalAmount: number;
+  notes?: string | null;
+  shippingLeadTimeText: string;
+  shippingName?: string | null;
+  shippingPhone?: string | null;
+  shippingAddressLines?: string[];
+  orderId: string;
+}) {
+  const esc = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+  const subject = `【3DLab】ご注文ありがとうございます (${input.productName})`;
+
+  const addressHtml = (input.shippingAddressLines ?? []).filter(Boolean).map(esc).join('<br>');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #f9fafb; border-left: 4px solid #9333ea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .cost-box { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px 12px; }
+        td.label { color: #6b7280; width: 120px; vertical-align: top; }
+        td.value { color: #111827; }
+        .total { font-size: 20px; font-weight: bold; color: #9333ea; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">ご注文ありがとうございます</h2>
+        </div>
+        <p>${esc(input.customerName)} 様</p>
+        <p>ご注文とお支払いを承りました。<strong>${esc(input.shippingLeadTimeText)}</strong>いたします。</p>
+
+        <div class="info-box">
+          <h3 style="margin-top:0;">ご注文内容</h3>
+          <table>
+            <tr><td class="label">注文番号</td><td class="value">${esc(input.orderId)}</td></tr>
+            <tr><td class="label">商品</td><td class="value">${esc(input.productName)}</td></tr>
+            <tr><td class="label">単価</td><td class="value">¥${input.unitPrice.toLocaleString()}</td></tr>
+            <tr><td class="label">数量</td><td class="value">${input.quantity} 点</td></tr>
+            <tr><td class="label">送料</td><td class="value">${input.shippingFee > 0 ? `¥${input.shippingFee.toLocaleString()}` : '無料'}</td></tr>
+            ${input.notes ? `<tr><td class="label">ご要望</td><td class="value">${esc(input.notes).replace(/\n/g, '<br>')}</td></tr>` : ''}
+          </table>
+        </div>
+
+        ${
+          addressHtml || input.shippingName
+            ? `<div class="info-box">
+          <h3 style="margin-top:0;">お届け先</h3>
+          <table>
+            ${input.shippingName ? `<tr><td class="label">お名前</td><td class="value">${esc(input.shippingName)}</td></tr>` : ''}
+            ${input.shippingPhone ? `<tr><td class="label">電話番号</td><td class="value">${esc(input.shippingPhone)}</td></tr>` : ''}
+            ${addressHtml ? `<tr><td class="label">住所</td><td class="value">${addressHtml}</td></tr>` : ''}
+          </table>
+        </div>`
+            : ''
+        }
+
+        <div class="cost-box">
+          <table>
+            <tr>
+              <td class="label">お支払い金額</td>
+              <td class="value total">¥${input.totalAmount.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p>発送時にあらためてご連絡いたします。お届け先の変更やご質問は、このメールへの返信または下記までお願いします。</p>
+
+        <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
+          <h3 style="margin-top:0;">お問い合わせ先</h3>
+          <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
+          <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
+        </div>
+
+        <div class="footer">
+          <p>このメールは自動送信されています。</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}

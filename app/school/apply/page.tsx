@@ -9,6 +9,8 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaCoverage from '@/components/MediaCoverage'
 import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Tag, X, Shield, Clock, Gift, Check } from 'lucide-react'
 import Footer from '@/components/Footer'
+import RememberCustomerInfo from '@/components/RememberCustomerInfo'
+import { useCustomerProfile } from '@/lib/use-customer-profile'
 import {
   CAMPAIGN_END_LABEL,
   REGULAR_REGISTRATION_FEE,
@@ -79,6 +81,17 @@ export default function SchoolApplyPage() {
   const [submitting, setSubmitting] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
+  // 保護者のお名前・連絡先・住所はこの端末に保存し、次回の入力を省く（お子さまの情報は保存しない）
+  const { remember, setRemember, hasSaved, persist, forget } = useCustomerProfile((saved) => {
+    setFormData((f) => ({
+      ...f,
+      parentName: saved.name ?? f.parentName,
+      email: saved.email ?? f.email,
+      phone: saved.phone ?? f.phone,
+      address: saved.address ?? f.address,
+    }))
+  })
+
   async function validateCoupon() {
     if (!couponCode.trim()) return
 
@@ -133,6 +146,12 @@ export default function SchoolApplyPage() {
     
     if (!agreedToTerms || submitting) return
 
+    persist({
+      name: formData.parentName,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+    })
     setSubmitting(true)
 
     try {
@@ -690,6 +709,13 @@ export default function SchoolApplyPage() {
                   </ul>
                 </div>
               </div>
+
+              <RememberCustomerInfo
+                remember={remember}
+                onChange={setRemember}
+                hasSaved={hasSaved}
+                onForget={forget}
+              />
 
               {/* Terms Agreement */}
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
