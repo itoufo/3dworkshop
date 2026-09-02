@@ -63,6 +63,15 @@ A レコードを `75.2.60.5` に戻せば数分で元通りになる。
 | 旧カテゴリURLのリダイレクト | 301 |
 | sitemap.xml | 200 / 296 URL |
 | OG画像の動的生成 | 200 / image/png |
+| 決済（100円の限定公開講座で実測） | Vercel が Checkout セッションを作成（`success_url` が Vercel ホスト）→ 決済完了 → 予約 `confirmed` / `paid` |
+| Stripe Webhook の署名検証 | **Vercel の `STRIPE_WEBHOOK_SECRET` は正しい**。正しい署名で 200 `{received:true}`、壊した署名で 400 `Invalid signature`。副作用の無いイベント種別（`default:` 分岐に落ちる）で確認。Netlify を対照に置いて同じ結果 |
+
+⚠ **メール送信（SMTP）だけは Vercel からの実行が未検証。**
+100円のテスト決済で確認メールが届いたのは、Stripe の送信先が `https://3dlab.jp/api/stripe-webhook` 固定で、
+**Netlify 側が処理したから**。SMTP の設定値は Netlify から平文でそのまま移送しており、
+Gmail の SMTP（アプリパスワード）は送信元IPで弾かないので危険は低いが、実測はしていない。
+確認するなら「価格0円の限定公開講座を作り、Vercel のURLから無料予約を1件通す」のが副作用が小さい
+（`/api/create-free-booking` は Webhook を介さずその場でメールを送るため）。
 
 **人が触らないと確認できない項目**（管理画面ログイン・画像アップロード・メール送信・Stripe のテスト決済・通知購読）は
 下の「4. 動作確認」に残っている。Stripe の Webhook だけは送信先が `3dlab.jp` 固定なので、DNS を向けるまで試せない。
