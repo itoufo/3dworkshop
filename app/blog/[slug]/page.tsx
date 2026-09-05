@@ -9,6 +9,7 @@ import { getBlogPost, getRelatedPosts } from '@/lib/blog'
 import ViewCountIncrementer from '@/components/ViewCountIncrementer'
 import Footer from '@/components/Footer'
 import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
+import BlogSidebarAd from '@/components/BlogSidebarAd'
 import { optimizeRichContentImages } from '@/lib/rich-content'
 
 export const revalidate = 3600
@@ -173,6 +174,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </div>
+
+                <BlogSidebarAd />
               </div>
             </aside>
           </div>
