@@ -26,17 +26,20 @@ export interface SidebarAd {
 /**
  * 掲載中の広告。
  *
- * TODO: 3DLab Slicer の公開 URL は Vercel の既定ドメインのまま。
- * 独自ドメインを当てたらここを差し替える。
+ * リンク先は**入手ページ**（/download）にする。トップページへ送るとブラウザ版が
+ * 主役に見えるが、造形機へデータを送れるのはデスクトップ版だけなので、
+ * この読者に見せたいのはそちら。
+ *
+ * TODO: 公開 URL は Vercel の既定ドメインのまま。独自ドメインを当てたら差し替える。
  */
 export const ADS: SidebarAd[] = [
   {
     id: 'slicer',
     title: '3DLab Slicer',
     body:
-      'STL を入れて大きさを確認するだけ。向き・配置・サポートまで自動で決まる光造形スライサーを無料公開しています。',
-    cta: '無料で使ってみる',
-    href: 'https://3dslicerrejin.vercel.app',
+      'STL を入れて大きさを確認するだけ。向き・配置・サポートまで自動で決まる光造形スライサーを無料配布しています。macOS / Windows / Linux 対応。',
+    cta: 'デスクトップ版を入手',
+    href: 'https://3dslicerrejin.vercel.app/download',
     external: true,
   },
 ]
