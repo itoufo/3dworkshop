@@ -156,6 +156,10 @@ export const ICON_CATEGORIES = [
   'くらし',
 ] as const
 
+/**
+ * ⚠ 同じ name を2つのカテゴリに入れないこと。
+ *   「すべて」の一覧に同じ絵が2回出る（2026-09-03 に crown が行事とかたちに重複していた）。
+ */
 export const CUTTER_ICONS: CutterIcon[] = [
   { name: 'cat', keywords: 'ねこ 猫 キャット', category: '動物', path: faCat.icon[4] as string },
   { name: 'dog', keywords: 'いぬ 犬 ドッグ', category: '動物', path: faDog.icon[4] as string },
@@ -238,7 +242,6 @@ export const CUTTER_ICONS: CutterIcon[] = [
   { name: 'heart', keywords: 'ハート', category: 'かたち', path: faHeart.icon[4] as string },
   { name: 'star', keywords: 'ほし 星 スター', category: 'かたち', path: faStar.icon[4] as string },
   { name: 'music', keywords: 'おんぷ 音符 おんがく 音楽', category: 'かたち', path: faMusic.icon[4] as string },
-  { name: 'crown', keywords: 'おうかん 王冠', category: 'かたち', path: faCrown.icon[4] as string },
   { name: 'trophy', keywords: 'トロフィー', category: 'かたち', path: faTrophy.icon[4] as string },
   { name: 'medal', keywords: 'メダル', category: 'かたち', path: faMedal.icon[4] as string },
   { name: 'bookmark', keywords: 'しおり', category: 'かたち', path: faBookmark.icon[4] as string },
