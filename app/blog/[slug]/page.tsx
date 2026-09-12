@@ -10,6 +10,7 @@ import ViewCountIncrementer from '@/components/ViewCountIncrementer'
 import Footer from '@/components/Footer'
 import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
 import BlogSidebarAd from '@/components/BlogSidebarAd'
+import BlogSurveyCta from '@/components/BlogSurveyCta'
 import { optimizeRichContentImages } from '@/lib/rich-content'
 
 export const revalidate = 3600
@@ -152,6 +153,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     </div>
                   </div>
                 )}
+
+                {/* 読み終わった人を「今日の質問」へ送る */}
+                <BlogSurveyCta />
               </div>
             </article>
 
