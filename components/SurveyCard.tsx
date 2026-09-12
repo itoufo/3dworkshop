@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import SurveyPieChart from './SurveyPieChart'
 import SurveyShareButtons from './SurveyShareButtons'
+import SurveyNotifyToggle from './SurveyNotifyToggle'
 import { getAnsweredChoice, getDeviceId, rememberAnswer } from '@/lib/survey-client'
 import type { Survey } from '@/lib/surveys'
 import { gaEvent } from '@/lib/gtag'
@@ -22,6 +23,16 @@ interface SurveyCardProps {
   readOnly?: boolean
   /** 共有ボタンを出す */
   showShare?: boolean
+  /**
+   * 回答した直後に「毎日の質問を通知で受け取る」の切り替えを出す。
+   *
+   * 押してもらえる見込みがいちばん高いのは、答えて結果を見た直後。答える前から出すと
+   * 「毎日通知が来るのか」が先に立って、回答そのものを避けられる。
+   *
+   * ⚠ /survey には今日の質問のすぐ下に同じ切り替えが常設されている。あちらでは渡さないこと。
+   *   同じ設定の切り替えが1画面に2つ並び、片方を操作してももう片方の表示が変わらない。
+   */
+  showNotify?: boolean
 }
 
 type Counts = { a: number; b: number }
@@ -34,7 +45,12 @@ function percentages(counts: Counts): { a: number; b: number } {
   return { a, b: 100 - a }
 }
 
-export default function SurveyCard({ survey, readOnly = false, showShare = false }: SurveyCardProps) {
+export default function SurveyCard({
+  survey,
+  readOnly = false,
+  showShare = false,
+  showNotify = false,
+}: SurveyCardProps) {
   const [counts, setCounts] = useState<Counts>({ a: survey.count_a, b: survey.count_b })
   const [choice, setChoice] = useState<'a' | 'b' | null>(null)
   const [submitting, setSubmitting] = useState<'a' | 'b' | null>(null)
@@ -155,6 +171,13 @@ export default function SurveyCard({ survey, readOnly = false, showShare = false
             <p className="mt-4 rounded-2xl bg-purple-50 p-4 text-sm leading-relaxed text-gray-700">
               {survey.result_comment}
             </p>
+          )}
+
+          {/* ⚠ choice で見る（revealed ではない）。締切済みを読んでいるだけの人に出すものではない */}
+          {showNotify && choice !== null && (
+            <div className="mt-6">
+              <SurveyNotifyToggle />
+            </div>
           )}
 
           {showShare && (

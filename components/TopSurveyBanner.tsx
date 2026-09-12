@@ -36,7 +36,7 @@ export default async function TopSurveyBanner() {
           </p>
         </div>
 
-        <SurveyCard survey={survey} />
+        <SurveyCard survey={survey} showNotify />
 
         <p className="mt-4 text-center">
           <Link
