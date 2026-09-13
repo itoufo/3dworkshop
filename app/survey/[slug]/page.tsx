@@ -92,7 +92,7 @@ export default async function SurveyDetailPage({ params }: PageProps) {
 
         <div className="mt-4">
           {/* 締切済みなら結果を出し、まだ受付中なら（＝今日の設問への直リンク）投票させる */}
-          <SurveyCard survey={survey} readOnly={survey.status === 'closed'} showShare />
+          <SurveyCard survey={survey} readOnly={survey.status === 'closed'} showShare showNotify />
         </div>
 
         <div className="mt-8">
