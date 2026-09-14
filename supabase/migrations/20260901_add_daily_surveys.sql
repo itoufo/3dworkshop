@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS public.surveys (
   -- ⚠ 集計は毎回 count(*) しない。回答が増えるほど重くなるうえ、
   --   回答直後にその場でグラフを出す用途では毎リクエスト走ることになる。
   --   カウンタで持ち、submit_survey_answer が挿入と同じトランザクションで足す。
-  --   （= counter と survey_answers の行数は常に一致する。下の関数のコメント参照）
+  --   ⚠ カウンタ = 実際に押された数 + 受付開始時に入れた初期票（lib/survey-seed.ts）。
+  --     初期票は survey_answers に行を作らないので、実数は survey_answers の行数で分かる。
   count_a INTEGER NOT NULL DEFAULT 0,
   count_b INTEGER NOT NULL DEFAULT 0,
 

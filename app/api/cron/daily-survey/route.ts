@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { isPushConfigured, sendAndLogPush } from '@/lib/push'
 import { jstDateString } from '@/lib/surveys'
+import { dummyInitialVotes } from '@/lib/survey-seed'
 
 /**
  * 1日1回（JST 12:00）に呼ばれる。GitHub Actions の schedule から叩く。
@@ -102,7 +103,9 @@ export async function POST(request: NextRequest) {
       // 公開日が今日に割り当て済みのストック
       const scheduled = await db
         .from('surveys')
-        .update({ status: 'live' })
+        // 初期票を入れるのは status を live にするこの1回だけ（lib/survey-seed.ts）。
+        // .eq('status', 'scheduled') が効くので、cron が2度走っても二重には入らない
+        .update({ status: 'live', ...dummyInitialVotes() })
         .eq('status', 'scheduled')
         .eq('publish_date', today)
         .select('id, slug, question, publish_date')
@@ -136,7 +139,7 @@ export async function POST(request: NextRequest) {
         //   その場合は既に誰かが今日の分を立てているので、読み直して続ける
         const promoted = await db
           .from('surveys')
-          .update({ status: 'live', publish_date: today })
+          .update({ status: 'live', publish_date: today, ...dummyInitialVotes() })
           .eq('id', draft.data.id)
           .eq('status', 'draft')
           .select('id, slug, question, publish_date')
