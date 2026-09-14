@@ -70,28 +70,9 @@ export default async function SurveyPage() {
           毎日1問、3Dプリンターとものづくりについて聞いています。回答すると、翌日にみんなの集計結果が届きます。
         </p>
 
-        {/* 昨日の結果 → 今日の質問 の順で並べる。通知を開いた人がまず見たいのは結果のほう */}
-        {yesterday && (
-          <section className="mt-10" aria-labelledby="yesterday-heading">
-            <h2
-              id="yesterday-heading"
-              className="mb-4 flex items-center gap-2 text-sm font-bold tracking-wide text-purple-700"
-            >
-              <CalendarDays className="h-4 w-4" aria-hidden="true" />
-              {formatSurveyDate(yesterday.publish_date)}の結果
-            </h2>
-            <SurveyCard survey={yesterday} readOnly showShare />
-            <p className="mt-3 text-right">
-              <Link
-                href={`/survey/${yesterday.slug}`}
-                className="text-sm text-purple-600 hover:underline"
-              >
-                この結果のページを見る
-              </Link>
-            </p>
-          </section>
-        )}
-
+        {/* 今日の質問 → 昨日の結果 の順で並べる。このページに来た人にまず求めるのは回答で、
+            結果は答えたあとのごほうび。⚠ 通知（「昨日の結果が出ました」）から来た人は
+            目当ての結果までひと画面ぶんスクロールすることになる。 */}
         <section className="mt-12" aria-labelledby="today-heading">
           <h2
             id="today-heading"
@@ -117,6 +98,27 @@ export default async function SurveyPage() {
           <div className="mt-8">
             <SurveyWorkshopCta survey={liveSurvey} />
           </div>
+        )}
+
+        {yesterday && (
+          <section className="mt-10" aria-labelledby="yesterday-heading">
+            <h2
+              id="yesterday-heading"
+              className="mb-4 flex items-center gap-2 text-sm font-bold tracking-wide text-purple-700"
+            >
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
+              {formatSurveyDate(yesterday.publish_date)}の結果
+            </h2>
+            <SurveyCard survey={yesterday} readOnly showShare />
+            <p className="mt-3 text-right">
+              <Link
+                href={`/survey/${yesterday.slug}`}
+                className="text-sm text-purple-600 hover:underline"
+              >
+                この結果のページを見る
+              </Link>
+            </p>
+          </section>
         )}
 
         {recent.length > 0 && (
