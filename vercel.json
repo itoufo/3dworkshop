@@ -4,6 +4,12 @@
   "regions": [
     "sin1"
   ],
+  "crons": [
+    {
+      "path": "/api/cron/daily-survey",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "redirects": [
     {
       "source": "/workshops/category/family-ai3d-printer-original-work",

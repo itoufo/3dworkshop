@@ -6,15 +6,21 @@ import { jstDateString } from '@/lib/surveys'
 import { dummyInitialVotes } from '@/lib/survey-seed'
 
 /**
- * 1日1回（JST 12:00）に呼ばれる。GitHub Actions の schedule から叩く。
+ * 1日1回（JST 12:00）に呼ばれる。
  *
  *   1. 昨日までの受付中の設問を締めて確定させる
  *   2. 今日の設問を受付中にする
- *   3. 「昨日の結果が出ました＋今日の質問」を1通だけ配信する
+ *   3. 「今日の質問が届きました」を1通だけ配信する
  *
- * ⚠ 何度呼ばれても同じ結果になること。GitHub Actions の schedule は遅れることがあり、
- *   手動再実行（workflow_dispatch）もある。二重配信は push_notification_log の
- *   dedupe_key（UNIQUE）が受け止める。状態遷移のほうは条件付き UPDATE で冪等にする。
+ * 呼び出し元は2つある。
+ *   - Vercel Cron（vercel.json の crons）… 本命。GET + `Authorization: Bearer <CRON_SECRET>`。
+ *     指定した時刻どおりに動く。
+ *   - GitHub Actions（daily-survey.yml）… 予備。POST + `x-cron-secret`。
+ *     こちらは発火が数時間遅れるので、本命が落ちた日を後から拾う役でしかない。
+ *
+ * ⚠ 何度呼ばれても同じ結果になること。呼び出し元が2つあるうえ、手動再実行もある。
+ *   二重配信は push_notification_log の dedupe_key（UNIQUE）が受け止める。
+ *   状態遷移のほうは条件付き UPDATE で冪等にする。
  */
 
 export const runtime = 'nodejs'
@@ -25,7 +31,12 @@ function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
   if (!secret) return false // 未設定なら誰も通さない（開けっ放しにしない）
 
-  const provided = request.headers.get('x-cron-secret')
+  // Vercel Cron は `Authorization: Bearer <CRON_SECRET>` を自分で付けてくる。
+  // GitHub Actions 側は `x-cron-secret` を自分で付けている。どちらも受ける。
+  const bearer = request.headers.get('authorization')
+  const provided =
+    request.headers.get('x-cron-secret') ||
+    (bearer?.startsWith('Bearer ') ? bearer.slice('Bearer '.length) : null)
   if (!provided) return false
 
   // ⚠ === で比べない。文字列比較は先頭から順に見るので、掛かった時間で正解が漏れる
@@ -35,7 +46,16 @@ function isAuthorized(request: NextRequest): boolean {
   return timingSafeEqual(a, b)
 }
 
+/** Vercel Cron は GET で叩いてくる。中身は POST と同じ */
+export async function GET(request: NextRequest) {
+  return handle(request)
+}
+
 export async function POST(request: NextRequest) {
+  return handle(request)
+}
+
+async function handle(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
@@ -214,9 +234,11 @@ export async function POST(request: NextRequest) {
       dedupeKey: `survey:${today}`,
       logOnly: hasScheduleNotice,
       payload: {
-        title: closedYesterday ? '昨日の結果が出ました' : '今日の質問が届きました',
+        // ⚠ 見出しは常に「今日の質問」から。/survey も今日の質問を先頭に置いているので、
+        //   「昨日の結果が出ました」で開かせると、目当てのものが画面の下にある状態になる。
+        title: '今日の質問が届きました',
         body: closedYesterday
-          ? `「${closedYesterday.question}」の結果と、今日の質問をどうぞ`
+          ? `「${live.question}」　昨日の結果も出ています`
           : `「${live.question}」`,
         url: '/survey?from=push',
         // ⚠ 日ごとに違う tag にする。同じにすると、読まれる前に翌日の通知で上書きされる
