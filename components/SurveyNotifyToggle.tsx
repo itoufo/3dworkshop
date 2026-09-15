@@ -101,7 +101,7 @@ export default function SurveyNotifyToggle() {
       setPushState('subscribed')
       setMessage(
         next
-          ? '登録しました。毎日12時ごろ、前日の結果と新しい質問をお届けします。'
+          ? '登録しました。毎日12時ごろ、その日の質問と前日の結果をお届けします。'
           : '毎日のアンケート通知を停止しました。'
       )
       gaEvent('survey_notify_toggle', { enabled: next })
@@ -157,7 +157,7 @@ export default function SurveyNotifyToggle() {
             毎日の質問を通知で受け取る
           </p>
           <p className="mt-1 text-sm text-gray-600">
-            毎日12時ごろ、前日の結果と新しい質問を1通でお届けします。
+            毎日12時ごろ、その日の質問と前日の結果を1通でお届けします。
           </p>
         </div>
         <button

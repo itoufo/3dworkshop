@@ -1,11 +1,14 @@
 name: 毎日のアンケートを公開して通知する
 
-# Netlify にスケジューラが無いので、GitHub Actions から本番の API を叩く。
-# 既存の update-sitemap.yml と同じ形。
+# ⚠ これは予備。日次処理を時刻どおりに動かすのは Vercel Cron（vercel.json の crons）のほう。
 #
-# ⚠ schedule は数分〜十数分遅れて発火することがある。ずれても実害が出ないように、
-#   API 側は何度呼ばれても同じ結果になるよう作ってある
-#   （push_notification_log の dedupe_key と、条件付き UPDATE）。
+# このリポジトリでは GitHub の schedule が毎日5時間ほど遅れて発火しており（指定 03:00 UTC に対し
+# 実際は 07:30〜08:10 UTC）、通知が「毎日12時ごろ」の約束から外れていた。そこで本命を
+# Vercel Cron に移し、こちらは「本命が落ちた日を夕方に拾う」役として残している。
+#
+# 本命が動いた日にここが走っても、API 側が何度呼ばれても同じ結果になるよう作ってあるので
+# 二重配信にはならない（push_notification_log の dedupe_key と、条件付き UPDATE）。
+# そのときは sent ではなく skipped で 200 が返る。
 on:
   schedule:
     # UTC 03:00 = JST 12:00
