@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import AdminSidebar from '@/components/AdminSidebar'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { optimizeImageUrl } from '@/lib/image-optimization'
@@ -48,11 +49,13 @@ export default function AdminProductsPage() {
 
   async function deleteProduct(product: Product) {
     if (!confirm(`「${product.name}」を削除しますか？`)) return
-    const { error } = await supabase.from('products').delete().eq('id', product.id)
-    if (error) {
-      // 注文が紐づいている商品は外部キー制約で削除できない（履歴を残すため）
-      console.error('Error deleting product:', error)
-      alert('削除できませんでした。ご注文がある商品は削除せず、非公開にしてください。')
+    // 注文が紐づいている商品は外部キー制約で削除できない（履歴を残すため）
+    const failure = await deleteAdminRecord('products', product.id, {
+      inUse: '削除できませんでした。ご注文がある商品は削除せず、非公開にしてください。',
+      failed: '削除に失敗しました',
+    })
+    if (failure) {
+      alert(failure)
       return
     }
     loadProducts()

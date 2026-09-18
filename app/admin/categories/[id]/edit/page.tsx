@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { WorkshopCategory } from '@/types'
 import { DEFAULT_PRODUCTION_NOTES } from '@/lib/email-templates'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -94,21 +95,18 @@ export default function EditCategoryPage() {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('workshop_categories')
-        .delete()
-        .eq('id', params.id)
-
-      if (error) throw error
-
-      alert('カテゴリを削除しました')
-      setNavigating(true)
-      router.push('/admin?tab=categories')
-    } catch (error) {
-      console.error('Error deleting category:', error)
-      alert('カテゴリの削除に失敗しました')
+    const failure = await deleteAdminRecord('workshop-categories', params.id as string, {
+      inUse: '削除できませんでした。このカテゴリに紐づくデータがあります。',
+      failed: 'カテゴリの削除に失敗しました',
+    })
+    if (failure) {
+      alert(failure)
+      return
     }
+
+    alert('カテゴリを削除しました')
+    setNavigating(true)
+    router.push('/admin?tab=categories')
   }
 
   const handleBack = () => {

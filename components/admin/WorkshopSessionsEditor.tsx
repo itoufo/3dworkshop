@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { WorkshopSession } from '@/types'
 import { Plus, Trash2, Calendar, Clock, Save, X, BellRing, BellOff, Loader2 } from 'lucide-react'
 import { fetchNotifiedScheduleKeys, notifyWorkshopSchedule } from '@/lib/notify-schedule'
@@ -145,11 +146,13 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
   async function handleDelete(s: WorkshopSession) {
     if (!confirm(`${s.event_date} のセッションを完全に削除しますか？\n紐づく予約がある場合は失敗します。`)) return
     setSavingId(s.id)
-    const { error } = await supabase.from('workshop_sessions').delete().eq('id', s.id)
+    const failure = await deleteAdminRecord('workshop-sessions', s.id, {
+      inUse: '削除できませんでした（予約が紐づいています）',
+      failed: '削除に失敗しました',
+    })
     setSavingId(null)
-    if (error) {
-      console.error('delete session failed:', error)
-      alert('削除に失敗しました（予約が紐づいている可能性があります）')
+    if (failure) {
+      alert(failure)
       return
     }
     fetchSessions()

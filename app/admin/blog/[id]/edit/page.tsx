@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Upload, Save, BookOpen, Type, Tag, User, Calendar, Trash2 } from 'lucide-react'
@@ -183,19 +184,18 @@ export default function EditBlogPostPage() {
     setUploading(true)
 
     try {
-      const { error } = await supabase
-        .from('blog_posts')
-        .delete()
-        .eq('id', params.id)
-
-      if (error) throw error
+      const failure = await deleteAdminRecord('blog-posts', params.id as string, {
+        inUse: '削除できませんでした。この記事に紐づくデータがあります。',
+        failed: 'ブログ記事の削除に失敗しました',
+      })
+      if (failure) {
+        alert(failure)
+        return
+      }
 
       alert('ブログ記事を削除しました')
       setNavigating(true)
       router.push('/admin')
-    } catch (error) {
-      console.error('Error deleting blog post:', error)
-      alert('ブログ記事の削除に失敗しました')
     } finally {
       setUploading(false)
     }
