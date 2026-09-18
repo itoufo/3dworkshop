@@ -28,6 +28,14 @@ export function WorkshopEventSchema(workshop: {
     ? `${workshop.event_date}${workshop.event_time ? `T${workshop.event_time}` : 'T10:00:00'}`
     : undefined;
 
+  // image_url は Supabase Storage の絶対URLで入っている（DB上は全件が https://…）。
+  // ドメインを前置すると https://3dlab.jphttps://… という壊れたURLになるため、絶対URLはそのまま使う。
+  const image = !workshop.image_url
+    ? "https://3dlab.jp/og-image.jpg"
+    : /^https?:\/\//.test(workshop.image_url)
+      ? workshop.image_url
+      : `https://3dlab.jp${workshop.image_url}`;
+
   return {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -53,7 +61,7 @@ export function WorkshopEventSchema(workshop: {
         "longitude": "139.7697007"
       }
     },
-    "image": workshop.image_url ? `https://3dlab.jp${workshop.image_url}` : "https://3dlab.jp/og-image.jpg",
+    "image": image,
     "offers": {
       "@type": "Offer",
       "url": `https://3dlab.jp/workshops/${workshop.id}`,

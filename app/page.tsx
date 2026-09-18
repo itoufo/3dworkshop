@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import MediaCoverage from '@/components/MediaCoverage'
 import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
+import WorkshopActivitySection from '@/components/WorkshopActivitySection'
 import TopSurveyBanner from '@/components/TopSurveyBanner'
 import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
 
@@ -183,6 +184,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ワークショップ開催中（開催実績・直近の日程・カテゴリピラーへの導線） */}
+      <WorkshopActivitySection />
 
       {/* 今日のアンケート（受付中の設問がある時のみ表示） */}
       <TopSurveyBanner />
