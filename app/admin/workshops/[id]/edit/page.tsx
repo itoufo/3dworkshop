@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
@@ -201,21 +202,18 @@ export default function EditWorkshop() {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('workshops')
-        .delete()
-        .eq('id', params.id)
-
-      if (error) throw error
-
-      alert('ワークショップを削除しました')
-      setNavigating(true)
-      router.push('/admin')
-    } catch (error) {
-      console.error('Error deleting workshop:', error)
-      alert('削除に失敗しました')
+    const failure = await deleteAdminRecord('workshops', params.id as string, {
+      inUse: '削除できませんでした。予約が入っているワークショップは削除せず、日程を取り消してください。',
+      failed: '削除に失敗しました',
+    })
+    if (failure) {
+      alert(failure)
+      return
     }
+
+    alert('ワークショップを削除しました')
+    setNavigating(true)
+    router.push('/admin')
   }
 
   if (loading) {
