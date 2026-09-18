@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import { ArrowRight, FolderOpen, Calendar, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import Footer from '@/components/Footer'
+import { getWorkshopActivityStats } from '@/lib/workshops'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -31,7 +32,7 @@ interface CategoryWithStats {
   sort_order: number
   upcoming_count: number      // upcoming session を持つ workshop 数
   total_count: number         // 配下 workshop 総数
-  held_count: number          // 過去 session の総数 (= 累計開催回数)
+  held_days: number           // 実際に参加者がいた開催日の数
 }
 
 export default async function WorkshopCategoriesIndex() {
@@ -52,18 +53,20 @@ export default async function WorkshopCategoriesIndex() {
   today.setHours(0, 0, 0, 0)
   const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-  const stats = new Map<string, { upcoming: number; total: number; held: number }>()
+  // 開催実績は lib/workshops.ts の定義に一本化する。
+  // 過去 session を数えると、予約が入らず開催されなかった日程まで「開催した」ことになる
+  // （2026-09-19 時点で、あるカテゴリは過去29日程に対し実際に人が来たのは16日）。
+  const activity = await getWorkshopActivityStats()
+
+  const stats = new Map<string, { upcoming: number; total: number }>()
   for (const w of workshops || []) {
     if (!w.category_id) continue
     const sessions = w.sessions || []
     const hasUpcoming = sessions.some(
       (s) => s.status === 'scheduled' && s.event_date >= todayIso
     )
-    // 過去 session の数 = 累計開催回数
-    const pastCount = sessions.filter((s) => s.event_date < todayIso).length
-    const entry = stats.get(w.category_id) || { upcoming: 0, total: 0, held: 0 }
+    const entry = stats.get(w.category_id) || { upcoming: 0, total: 0 }
     entry.total += 1
-    entry.held += pastCount
     if (hasUpcoming) entry.upcoming += 1
     stats.set(w.category_id, entry)
   }
@@ -73,11 +76,11 @@ export default async function WorkshopCategoriesIndex() {
       ...c,
       upcoming_count: stats.get(c.id)?.upcoming || 0,
       total_count: stats.get(c.id)?.total || 0,
-      held_count: stats.get(c.id)?.held || 0,
+      held_days: activity.heldDaysByCategory[c.id] || 0,
     }))
-    // 累計開催回数 desc → upcoming desc → sort_order asc
+    // 開催実績 desc → upcoming desc → sort_order asc
     .sort((a, b) => {
-      if (b.held_count !== a.held_count) return b.held_count - a.held_count
+      if (b.held_days !== a.held_days) return b.held_days - a.held_days
       if (b.upcoming_count !== a.upcoming_count) return b.upcoming_count - a.upcoming_count
       return a.sort_order - b.sort_order
     })
@@ -197,8 +200,8 @@ export default async function WorkshopCategoriesIndex() {
                     </p>
                   )}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="text-xs text-gray-500">
-                      累計 {cat.held_count}回 開催
+                    <div className="text-sm text-gray-500">
+                      {cat.held_days > 0 ? `これまで ${cat.held_days}日程 開催` : '初回開催を準備中'}
                     </div>
                     <div className="text-purple-600 group-hover:text-purple-700 flex items-center text-sm font-medium transition-colors">
                       詳細を見る

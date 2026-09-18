@@ -93,7 +93,7 @@ export default function HomePage() {
                         <Printer className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 ">最先端の設備</h3>
+                        <p className="text-lg font-semibold text-gray-900">最先端の設備</p>
                         <p className="text-sm text-gray-500">
                           業務用3Dプリンタと多彩な素材で、プロ品質の造形を実現。試作から量産まで対応可能。
                         </p>
@@ -106,7 +106,7 @@ export default function HomePage() {
                         <Users className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">プロが伴走</h3>
+                        <p className="text-lg font-semibold text-gray-900">プロが伴走</p>
                         <p className="text-sm text-gray-500">
                           3Dモデリングから造形、仕上げまで、経験豊富なスタッフが一貫してサポート。
                         </p>
