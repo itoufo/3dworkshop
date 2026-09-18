@@ -14,6 +14,7 @@ import styles from '@/app/workshops/[id]/workshop.module.css'
 import Footer from '@/components/Footer'
 import { optimizeRichContentImages } from '@/lib/rich-content'
 import { formatPrice } from '@/lib/price'
+import { WorkshopEventSchema } from '@/components/StructuredData'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -44,6 +45,9 @@ interface SessionRef {
   workshop_price: number
   workshop_max_participants: number
   workshop_duration: number
+  workshop_description: string
+  workshop_location: string | null
+  workshop_image_url: string | null
 }
 
 function todayIso(): string {
@@ -115,6 +119,9 @@ export default async function CategoryPillarPage({ params }: Props) {
         workshop_price: w.price,
         workshop_max_participants: w.max_participants,
         workshop_duration: w.duration,
+        workshop_description: w.description,
+        workshop_location: w.location,
+        workshop_image_url: w.image_url,
       }
       if (s.status === 'scheduled' && s.event_date >= today) upcomingSessions.push(ref)
       else if (s.event_date < today) pastSessions.push(ref)
@@ -129,16 +136,45 @@ export default async function CategoryPillarPage({ params }: Props) {
   // 代表 workshop = 最新の workshop (説明文表示用)
   const representativeWorkshop = (workshops || [])[0] || null
 
-  // 構造化データ
+  // 構造化データ。画面のパンくず（ホーム/ワークショップ/カテゴリ/{name}）と段数を揃える
   const breadcrumbData = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://3dlab.jp' },
       { '@type': 'ListItem', position: 2, name: 'ワークショップ', item: 'https://3dlab.jp/workshops' },
-      { '@type': 'ListItem', position: 3, name: category.name, item: `https://3dlab.jp/workshops/category/${slug}` },
+      { '@type': 'ListItem', position: 3, name: 'カテゴリ', item: 'https://3dlab.jp/workshops/categories' },
+      { '@type': 'ListItem', position: 4, name: category.name, item: `https://3dlab.jp/workshops/category/${slug}` },
     ],
   }
+
+  // このページは全ワークショップ詳細の canonical 先なので、開催予定を Event として宣言するのは
+  // ここが本籍。画面に出している upcoming session だけをマークアップする。
+  const upcomingEventsData =
+    upcomingSessions.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: `${category.name} の開催予定`,
+          itemListElement: upcomingSessions.map((s, i) => {
+            const event = WorkshopEventSchema({
+              id: s.workshop_id,
+              title: s.workshop_title,
+              description: s.workshop_description,
+              price: s.workshop_price,
+              event_date: s.event_date,
+              event_time: s.event_time,
+              duration: s.workshop_duration,
+              location: s.workshop_location,
+              image_url: s.workshop_image_url,
+              max_participants: s.workshop_max_participants,
+            }) as Record<string, unknown>
+            // 入れ子の item では @context を持たない（外側の ItemList が持つ）
+            delete event['@context']
+            return { '@type': 'ListItem', position: i + 1, item: event }
+          }),
+        }
+      : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
@@ -148,6 +184,12 @@ export default async function CategoryPillarPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }}
       />
+      {upcomingEventsData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(upcomingEventsData) }}
+        />
+      )}
 
       {/* Breadcrumb */}
       <div className="pt-20 px-4 sm:px-6 lg:px-8">

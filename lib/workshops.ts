@@ -84,7 +84,7 @@ export async function getWorkshopCategories(): Promise<WorkshopCategory[]> {
   return (data as WorkshopCategory[]) || []
 }
 
-/** トップページの開催実績表示用の集計値 */
+/** 開催実績の集計値。トップページとカテゴリ一覧が共有する */
 export interface WorkshopActivityStats {
   /** 実際に参加者がいた開催日の数 */
   heldDays: number
@@ -92,6 +92,8 @@ export interface WorkshopActivityStats {
   participants: number
   /** 初回開催日 (YYYY-MM-DD)。実績が無ければ null */
   firstHeldDate: string | null
+  /** カテゴリID → そのカテゴリで実際に参加者がいた開催日の数 */
+  heldDaysByCategory: Record<string, number>
 }
 
 // 過去の確定予約から「実際に人が来た開催日数」「延べ参加者数」「初回開催日」を出す。
@@ -107,33 +109,49 @@ export interface WorkshopActivityStats {
 export const getWorkshopActivityStats = cache(async (): Promise<WorkshopActivityStats> => {
   const { data } = await supabase
     .from('bookings')
-    .select('booking_date, participants, companion_count, customer:customers(email)')
+    .select(
+      'booking_date, participants, companion_count, ' +
+        'customer:customers(email), workshop:workshops(category_id)'
+    )
     .eq('status', 'confirmed')
     .lt('booking_date', todayIso())
 
+  type Maybe<T> = T | T[] | null
   type BookingRow = {
     booking_date: string
     participants: number | null
     companion_count: number | null
-    customer: { email: string | null } | { email: string | null }[] | null
+    customer: Maybe<{ email: string | null }>
+    workshop: Maybe<{ category_id: string | null }>
   }
+  // PostgREST は多対一でもリレーション名によっては配列で返すことがあるため両方を見る
+  const one = <T,>(v: Maybe<T>): T | null => (Array.isArray(v) ? v[0] ?? null : v)
 
   const rows = (data as unknown as BookingRow[]) || []
   const heldDates = new Set<string>()
+  const datesByCategory = new Map<string, Set<string>>()
   let participants = 0
   let firstHeldDate: string | null = null
 
   for (const row of rows) {
-    // PostgREST は多対一でもリレーション名によっては配列で返すことがあるため両方を見る
-    const customer = Array.isArray(row.customer) ? row.customer[0] : row.customer
-    if (isInternalEmail(customer?.email)) continue
+    if (isInternalEmail(one(row.customer)?.email)) continue
 
     heldDates.add(row.booking_date)
     participants += (row.participants ?? 0) + (row.companion_count ?? 0)
     if (!firstHeldDate || row.booking_date < firstHeldDate) firstHeldDate = row.booking_date
+
+    const categoryId = one(row.workshop)?.category_id
+    if (categoryId) {
+      const set = datesByCategory.get(categoryId) ?? new Set<string>()
+      set.add(row.booking_date)
+      datesByCategory.set(categoryId, set)
+    }
   }
 
-  return { heldDays: heldDates.size, participants, firstHeldDate }
+  const heldDaysByCategory: Record<string, number> = {}
+  for (const [categoryId, dates] of datesByCategory) heldDaysByCategory[categoryId] = dates.size
+
+  return { heldDays: heldDates.size, participants, firstHeldDate, heldDaysByCategory }
 })
 
 export async function getRelatedWorkshops(workshopId: string, categoryId: string): Promise<Workshop[]> {

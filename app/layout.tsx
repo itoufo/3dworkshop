@@ -50,8 +50,9 @@ export const metadata: Metadata = {
     images: ['/og-image.jpg'],
   },
   manifest: "/manifest.webmanifest",
+  // icon は app/favicon.ico が自動で <link rel="icon"> を生成するのでここには書かない
+  // （書くと link タグが2本出る。public/favicon.ico と二重に置くと dev で /favicon.ico が500になる）
   icons: {
-    icon: "/favicon.ico",
     apple: "/icons/apple-touch-icon.png",
   },
   appleWebApp: {
