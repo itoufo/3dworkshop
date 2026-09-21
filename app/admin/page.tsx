@@ -808,9 +808,18 @@ export default function AdminDashboard() {
       {/* 顧客管理 */}
       {activeTab === 'customers' && (
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">顧客一覧</h3>
-            <p className="text-sm text-gray-600 mt-1">全{customers.length}名の顧客</p>
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">顧客一覧</h3>
+              <p className="text-sm text-gray-600 mt-1">全{customers.length}名の顧客</p>
+            </div>
+            <button
+              onClick={() => handleNavigate('/admin/customers/new')}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              新規顧客登録
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
