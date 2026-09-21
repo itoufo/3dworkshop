@@ -140,7 +140,7 @@ export default function NewCustomerPage() {
                     </label>
                     <input
                       type="number"
-                      min={0}
+                      min={1}
                       max={150}
                       className={inputClass}
                       value={customer.age}

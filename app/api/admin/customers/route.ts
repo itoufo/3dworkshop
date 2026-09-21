@@ -84,12 +84,13 @@ export async function POST(request: NextRequest) {
   }
   const phone = phoneRaw || null
 
-  // age は DB の CHECK (0〜150) と同じ範囲で弾く。空欄は未登録
+  // age は公開の予約フォームと同じ 1〜150 で弾く（DB の CHECK は 0〜150 だが、
+  // 0 を入れると顧客一覧の `customer.age && …` が「0」を描画してしまう）。空欄は未登録
   let age: number | null = null
   if (body.age !== undefined && body.age !== null && body.age !== '') {
     const n = Number(body.age)
-    if (!Number.isInteger(n) || n < 0 || n > 150) {
-      return NextResponse.json({ error: '年齢は 0〜150 の整数で入力してください' }, { status: 400 })
+    if (!Number.isInteger(n) || n < 1 || n > 150) {
+      return NextResponse.json({ error: '年齢は 1〜150 の整数で入力してください' }, { status: 400 })
     }
     age = n
   }
