@@ -180,7 +180,7 @@ export default function NewCustomerPage() {
                   </label>
                   <input
                     type="tel"
-                    maxLength={40}
+                    maxLength={20}
                     className={inputClass}
                     value={customer.phone}
                     onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}

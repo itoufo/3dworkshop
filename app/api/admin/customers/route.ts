@@ -18,8 +18,20 @@ export const dynamic = 'force-dynamic'
 const GENDERS = ['male', 'female', 'other', 'prefer_not_to_say'] as const
 type Gender = (typeof GENDERS)[number]
 
+/** customers.phone の列幅（supabase/schema.sql の VARCHAR(20)） */
+const PHONE_MAX_LENGTH = 20
+
 function emailValid(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+/**
+ * ilike に渡す前に LIKE のメタ文字を無効化する。
+ * エスケープしないと `_` が任意の1文字にマッチし、taro_yamada@… の登録が
+ * 別人の taro.yamada@… に当たって「登録済み」と誤って拒否される
+ */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&')
 }
 
 function optionalText(value: unknown, maxLength: number): string | null {
@@ -37,7 +49,12 @@ export async function POST(request: NextRequest) {
 
   let body: Record<string, unknown>
   try {
-    body = await request.json()
+    const parsed: unknown = await request.json()
+    // null や配列も JSON としては通るので、オブジェクトであることを確かめてから触る
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'リクエストの形式が不正です' }, { status: 400 })
+    }
+    body = parsed as Record<string, unknown>
   } catch {
     return NextResponse.json({ error: 'リクエストの形式が不正です' }, { status: 400 })
   }
@@ -45,13 +62,23 @@ export async function POST(request: NextRequest) {
   const name = optionalText(body.name, 100)
   // ログイン（/api/account/login）はメールを小文字で照合するので、ここでも小文字に揃える
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase().slice(0, 200) : ''
-  const phone = optionalText(body.phone, 40)
   const address = optionalText(body.address, 500)
 
   if (!name) return NextResponse.json({ error: 'お名前を入力してください' }, { status: 400 })
   if (!emailValid(email)) {
     return NextResponse.json({ error: 'メールアドレスを正しく入力してください' }, { status: 400 })
   }
+
+  // customers.phone は VARCHAR(20)。超えると INSERT が落ちて汎用 500 になるので、
+  // 黙って切り詰めずに、どの欄が原因かを管理者に返す
+  const phoneRaw = typeof body.phone === 'string' ? body.phone.trim() : ''
+  if (phoneRaw.length > PHONE_MAX_LENGTH) {
+    return NextResponse.json(
+      { error: `電話番号は${PHONE_MAX_LENGTH}文字以内で入力してください` },
+      { status: 400 },
+    )
+  }
+  const phone = phoneRaw || null
 
   // age は DB の CHECK (0〜150) と同じ範囲で弾く。空欄は未登録
   let age: number | null = null
@@ -77,7 +104,7 @@ export async function POST(request: NextRequest) {
   const { data: existing, error: lookupError } = await supabaseAdmin
     .from('customers')
     .select('id, name, email')
-    .ilike('email', email)
+    .ilike('email', escapeLikePattern(email))
     .limit(1)
     .maybeSingle()
 
