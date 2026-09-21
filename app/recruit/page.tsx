@@ -210,7 +210,7 @@ export default function RecruitPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">応募方法</h2>
               <div className="bg-purple-600 text-white rounded-2xl p-6">
                 <p className="mb-4 text-purple-100">
-                  メールにお名前・電話番号・希望の勤務日を書いてお送りください。お電話でも受け付けています。
+                  メールにお名前・電話番号・希望の勤務日を書いてお送りください。
                   応募の前に、スタジオの見学だけしていただくことも可能です。
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">

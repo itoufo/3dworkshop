@@ -187,7 +187,7 @@ export default function SchoolSuccessPage() {
           <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center">
             <p className="text-sm text-yellow-800">
               <strong>重要：</strong>メールが届かない場合は、迷惑メールフォルダをご確認いただくか、<br />
-              お電話にてお問い合わせください。
+              別のメールアドレスから 3dlab@sunu25.com までお問い合わせください。
             </p>
           </div>
         </div>

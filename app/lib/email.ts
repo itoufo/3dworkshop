@@ -1031,8 +1031,7 @@ export function generateSupportAutoReplyEmail(input: {
         </div>
 
         <p style="font-size:14px;color:#6b7280;">
-          お急ぎの場合はお電話でもご相談いただけます。<br>
-          ${escapeHtml(input.contact)}
+          追加のご連絡は、このメールへの返信または ${escapeHtml(input.contact)} までお願いします。
         </p>
 
         <div style="text-align:center;padding:20px;color:#666;font-size:12px;">

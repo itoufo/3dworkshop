@@ -12,7 +12,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  *   これは知識ではなく安全装置で、管理画面から緩められると値引きや空席を勝手に約束し始める。
  */
 
-export const CONTACT = 'メール 3dlab@sunu25.com（またはチャット下部の「担当者にメールで問い合わせる」）'
+/** 問い合わせ先メール。電話番号はサイトのどこにも出さない */
+export const CONTACT_EMAIL = '3dlab@sunu25.com'
+/** 「〜へお問い合わせください」に続ける形の連絡先 */
+export const CONTACT = `メール ${CONTACT_EMAIL}`
 
 export const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
 export const EMBEDDING_DIMENSIONS = 1536 // ⚠ migration の VECTOR(1536) と揃っている。変えるなら両方
