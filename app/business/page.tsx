@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { Building2, Users, MapPin, Calendar, Clock, CheckCircle, ArrowRight, Phone, Mail } from 'lucide-react'
+import { Building2, Users, MapPin, Calendar, Clock, CheckCircle, ArrowRight, Mail } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -231,19 +231,7 @@ export default function BusinessPage() {
             まずはお気軽にお問い合わせください。
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <a
-              href="tel:080-9453-0911"
-              className="flex items-center justify-center p-6 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors"
-            >
-              <Phone className="w-6 h-6 text-purple-600 mr-3" />
-              <div>
-                <p className="text-sm text-gray-500">お電話</p>
-                <p className="text-lg font-bold text-purple-700">080-9453-0911</p>
-                <p className="text-xs text-gray-400">※「3DLabを見た」とお伝えください</p>
-              </div>
-            </a>
-
+          <div className="max-w-md mx-auto mb-8">
             <a
               href="mailto:3dlab@sunu25.com"
               className="flex items-center justify-center p-6 bg-pink-50 rounded-2xl hover:bg-pink-100 transition-colors"

@@ -12,7 +12,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  *   これは知識ではなく安全装置で、管理画面から緩められると値引きや空席を勝手に約束し始める。
  */
 
-export const CONTACT = '080-9453-0911（「3DLabのサイトを見た」とお伝えください）／ 3dlab@sunu25.com'
+export const CONTACT = 'メール 3dlab@sunu25.com（またはチャット下部の「担当者にメールで問い合わせる」）'
 
 export const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
 export const EMBEDDING_DIMENSIONS = 1536 // ⚠ migration の VECTOR(1536) と揃っている。変えるなら両方
@@ -140,7 +140,7 @@ type Chunk = { title: string; body: string }
 
 /**
  * 知識テーブルがまだ無い＝ migration を流す前の状態。
- * ⚠ これを「障害」として扱わない。来訪者には「準備中」と出したい（電話番号を案内する）。
+ * ⚠ これを「障害」として扱わない。来訪者には「準備中」と出したい（担当者へのメール問い合わせを案内する。電話番号は出さない）。
  *   「うまく答えられませんでした」を出すと、直せる設定漏れが不具合に見える。
  */
 export class KnowledgeUnavailableError extends Error {}
@@ -304,6 +304,7 @@ ${FENCE_CLOSE}
 - 値引き、無料対応、知識に無い納期、空席の有無を約束しない。日程と空席は予約ページを案内する。
 - 合計金額の掛け算をしない。単価をそのまま伝える。一度言った金額は約束になる。
 - 相手の氏名・住所・電話番号・クレジットカード情報を聞き出さない。申し込みはフォームから行ってもらう。
+- こちらの電話番号は案内しない。連絡手段はメールだけを伝える。
 - 完成品は当日渡しではない。聞かれなくても、申し込みに関わる話では後日発送だと伝える。
 - 回答は3〜4文まで。長くしない。箇条書きは2〜4項目まで。
 - 日本語で、です・ます調で答える。

@@ -220,15 +220,9 @@ export default function RecruitPage() {
                   >
                     メールで応募
                   </a>
-                  <a
-                    href="tel:080-9453-0911"
-                    className="inline-block border-2 border-white text-white font-bold px-6 py-3 rounded-full hover:bg-white/10 transition-colors text-center"
-                  >
-                    電話で応募 080-9453-0911
-                  </a>
                 </div>
                 <p className="mt-4 text-purple-200 text-sm">
-                  電話受付：10:00〜18:00 /「採用ページを見た」とお伝えください
+                  メールでの応募は24時間受け付けています
                 </p>
               </div>
             </section>

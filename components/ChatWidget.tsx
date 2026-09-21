@@ -35,9 +35,9 @@ const SUGGESTIONS = [
   '駐車場はありますか？',
 ]
 
-const FAILED = 'うまく答えられませんでした。お手数ですが 080-9453-0911 までお問い合わせください。'
+const FAILED = 'うまく答えられませんでした。下の「担当者にメールで問い合わせる」からお送りください。'
 const BUSY = '少し間をおいてからお試しください。'
-const OFF = 'ただいまチャットを準備中です。080-9453-0911 までお問い合わせください。'
+const OFF = 'ただいまチャットを準備中です。下の「担当者にメールで問い合わせる」からお送りください。'
 
 /**
  * ⚠ assistant には signature を持たせ、次のリクエストでそのまま送り返す。
@@ -205,14 +205,14 @@ export default function ChatWidget() {
       })
       const data = await r.json().catch(() => ({}))
       if (!r.ok) {
-        setSendError(data.error || '送信に失敗しました。お手数ですが 080-9453-0911 までご連絡ください。')
+        setSendError(data.error || '送信に失敗しました。お手数ですが 3dlab@sunu25.com までメールでご連絡ください。')
         setSending(false)
         return
       }
       setTicketId(data.ticketId ?? null)
       setMode('sent')
     } catch {
-      setSendError('通信エラーが発生しました。お手数ですが 080-9453-0911 までご連絡ください。')
+      setSendError('通信エラーが発生しました。お手数ですが 3dlab@sunu25.com までメールでご連絡ください。')
     }
     setSending(false)
   }
@@ -439,7 +439,7 @@ export default function ChatWidget() {
           </button>
         </div>
         <p className="border-t border-gray-100 px-3 py-2 text-[11px] leading-tight text-gray-500">
-          AIの回答です。日程・空席・最終的な金額は予約ページとお電話でご確認ください。
+          AIの回答です。日程・空席・最終的な金額は予約ページでご確認ください。
           <br />
           入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信されます。氏名・住所・電話番号などは入力しないでください（
           <a href="/privacy" className="underline hover:text-gray-700">
@@ -543,7 +543,7 @@ export default function ChatWidget() {
               <a href="/privacy" className="underline hover:text-gray-700">
                 プライバシーポリシー
               </a>
-              ）。お急ぎの場合は 080-9453-0911 へお電話ください。
+              ）。
             </p>
           </form>
         )}

@@ -40,9 +40,9 @@ const items: { label: string; value: React.ReactNode }[] = [
     label: '電話番号',
     value: (
       <>
-        080-9453-0911<br />
+        ご請求があれば遅滞なく開示いたします。<br />
         <span className="text-sm text-gray-500">
-          ※ お問い合わせはメールでも承っております
+          ※ お問い合わせはメール（3dlab@sunu25.com）で承っております
         </span>
       </>
     ),

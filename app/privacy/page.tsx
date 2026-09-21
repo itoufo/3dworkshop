@@ -200,7 +200,6 @@ export default function PrivacyPage() {
                   <p>代表取締役 伊東優</p>
                   <p className="mt-3 font-semibold mb-2">お問い合わせ先</p>
                   <p>メール：3dlab@sunu25.com</p>
-                  <p>電話：080-9453-0911</p>
                   <p>受付時間：平日 10:00〜18:00</p>
                 </div>
               </section>
