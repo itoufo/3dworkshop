@@ -28,7 +28,11 @@ function emailValid(email: string): boolean {
 /**
  * ilike に渡す前に LIKE のメタ文字を無効化する。
  * エスケープしないと `_` が任意の1文字にマッチし、taro_yamada@… の登録が
- * 別人の taro.yamada@… に当たって「登録済み」と誤って拒否される
+ * 別人の taro.yamada@… に当たって「登録済み」と誤って拒否される。
+ *
+ * ⚠ これでも完全ではない。PostgREST は値中の `*` を無条件に `%` へ置き換え、
+ *   `\*` と書いても `\%` になるだけで `*` そのものは逃がせない。
+ *   なので ilike の結果は「候補」として扱い、呼び出し側で厳密に比べ直す。
  */
 function escapeLikePattern(value: string): string {
   return value.replace(/[\\%_]/g, '\\$&')
@@ -100,18 +104,19 @@ export async function POST(request: NextRequest) {
 
   // 同じメールがすでにあれば上書きせず知らせる。
   // 決済履歴が紐づく行を、手入力で黙って書き換えないため。
-  // 大文字小文字違いで過去に入った行（checkout は小文字化していない）も拾う
-  const { data: existing, error: lookupError } = await supabaseAdmin
+  // 大文字小文字違いで過去に入った行（checkout は小文字化していない）も拾う。
+  // ilike は候補を広めに取るだけで、本当に同じメールかは小文字化して比べ直す
+  // （limit(1) にすると、ワイルドカードで拾った無関係な行が先頭に来て本物を取りこぼす）
+  const { data: candidates, error: lookupError } = await supabaseAdmin
     .from('customers')
     .select('id, name, email')
     .ilike('email', escapeLikePattern(email))
-    .limit(1)
-    .maybeSingle()
 
   if (lookupError) {
     console.error('admin customer lookup failed:', lookupError)
     return NextResponse.json({ error: '登録に失敗しました' }, { status: 500 })
   }
+  const existing = (candidates || []).find((c) => c.email.toLowerCase() === email) ?? null
   if (existing) {
     return NextResponse.json(
       {
