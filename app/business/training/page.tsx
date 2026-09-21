@@ -90,7 +90,6 @@ const serviceJsonLd = {
   provider: {
     '@type': 'LocalBusiness',
     name: '3DLab',
-    telephone: '+81-80-9453-0911',
     email: '3dlab@sunu25.com',
     address: {
       '@type': 'PostalAddress',

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
-import { CONTACT } from '@/lib/chat-knowledge'
+import { CONTACT_EMAIL } from '@/lib/chat-knowledge'
 import {
   sendEmail,
   generateSupportTicketEmail,
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
   const ip = clientIp(request.headers)
   if (await tooManyRequests(`support:${ip}`, { windowMs: WINDOW_MS, max: MAX_TICKETS })) {
     return NextResponse.json(
-      { error: '送信の回数が多すぎます。しばらく待ってからお試しください。お急ぎの場合はお電話ください。' },
+      { error: '送信の回数が多すぎます。しばらく待ってからお試しください。' },
       { status: 429 }
     )
   }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
   if (error || !ticket) {
     console.error('support_tickets insert failed:', error)
-    return NextResponse.json({ error: '送信に失敗しました。お手数ですがお電話ください。' }, { status: 500 })
+    return NextResponse.json({ error: `送信に失敗しました。お手数ですが ${CONTACT_EMAIL} まで直接メールでご連絡ください。` }, { status: 500 })
   }
 
   // 担当者への通知。ここが本体なので、失敗したら利用者にもそう伝える
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     console.error('support ticket staff email failed:', staffResult.error)
     return NextResponse.json(
       {
-        error: `受付はしましたが、通知メールの送信に失敗しました。お手数ですが ${CONTACT} までご連絡ください。`,
+        error: `受付はしましたが、通知メールの送信に失敗しました。お手数ですが ${CONTACT_EMAIL} まで直接メールでご連絡ください。`,
         ticketId: ticket.id,
       },
       { status: 502 }
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       ticketId: ticket.id,
       name,
       message,
-      contact: CONTACT,
+      contact: CONTACT_EMAIL,
     })
     const replyResult = await sendEmail({ to: email, subject: replyMail.subject, html: replyMail.html })
     if (!replyResult.success) {

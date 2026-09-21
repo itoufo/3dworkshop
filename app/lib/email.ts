@@ -165,8 +165,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             
             <p style="margin-top: 30px;">ご不明な点がございましたら、お気軽にお問い合わせください。</p>
             <p>
-              📧 3dlab@sunu25.com<br>
-              📞 080-9453-0911
+              📧 3dlab@sunu25.com
             </p>
           </div>
           
@@ -304,7 +303,6 @@ export function generateBookingConfirmationEmail(
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
             <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
-            <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
           </div>
         </div>
         <div class="footer">
@@ -371,7 +369,6 @@ export function generate3DPrintingRequestEmail(
           <div class="info-box" style="background-color: #e3f2fd; border-left-color: #2196F3;">
             <h3>お問い合わせ先</h3>
             <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
-            <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
           </div>
         </div>
         <div class="footer">
@@ -453,7 +450,6 @@ export function generateServiceOrderConfirmationEmail(input: {
         <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
           <h3 style="margin-top:0;">お問い合わせ先</h3>
           <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
-          <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
         </div>
 
         <div class="footer">
@@ -675,7 +671,6 @@ export function generateProductionRequestPaymentEmail(input: {
         <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
           <h3 style="margin-top:0;">お問い合わせ先</h3>
           <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
-          <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
         </div>
 
         <div class="footer">
@@ -785,7 +780,6 @@ export function generateProductOrderConfirmationEmail(input: {
         <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
           <h3 style="margin-top:0;">お問い合わせ先</h3>
           <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
-          <p><strong>電話:</strong> <a href="tel:080-9453-0911">080-9453-0911</a></p>
         </div>
 
         <div class="footer">
@@ -1037,8 +1031,7 @@ export function generateSupportAutoReplyEmail(input: {
         </div>
 
         <p style="font-size:14px;color:#6b7280;">
-          お急ぎの場合はお電話でもご相談いただけます。<br>
-          ${escapeHtml(input.contact)}
+          追加のご連絡は、このメールへの返信または ${escapeHtml(input.contact)} までお願いします。
         </p>
 
         <div style="text-align:center;padding:20px;color:#666;font-size:12px;">

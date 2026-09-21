@@ -34,13 +34,6 @@ export default function Footer() {
                 3dlab@sunu25.com
               </a>
             </p>
-            <p className="text-sm">
-              <span className="text-gray-400">電話：</span>
-              <a href="tel:080-9453-0911" className="text-purple-400 hover:text-purple-300 ml-2">
-                080-9453-0911
-              </a>
-              <span className="text-gray-500 text-xs ml-2">※「3DLabを見た」とお伝えください</span>
-            </p>
           </div>
         </div>
 
