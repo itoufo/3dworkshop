@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
-import AdminSidebar from '@/components/AdminSidebar'
 import { LifeBuoy, MessageSquare, RefreshCw } from 'lucide-react'
 import { isDeclineReply } from '@/lib/chat-decline'
 import { CHAT_LOG_RETENTION_DAYS } from '@/lib/chat-retention'
@@ -165,9 +164,7 @@ export default function AdminChatLogsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <main className="flex-1 p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <MessageSquare className="w-6 h-6 text-purple-600" />
@@ -343,7 +340,6 @@ export default function AdminChatLogsPage() {
             ))}
           </section>
         )}
-      </main>
     </div>
   )
 }

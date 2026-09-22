@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import AdminSidebar from '@/components/AdminSidebar'
 import { Users, CheckCircle, XCircle, Clock, Mail, Phone, User, BookOpen } from 'lucide-react'
 
 interface SchoolEnrollment {
@@ -129,10 +128,7 @@ export default function SchoolAdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      
-      <main className="flex-1 p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-8">スクール生管理</h1>
 
@@ -341,7 +337,6 @@ export default function SchoolAdminPage() {
             )}
           </div>
         </div>
-      </main>
     </div>
   )
 }

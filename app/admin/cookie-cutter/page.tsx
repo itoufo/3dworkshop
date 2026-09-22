@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import AdminSidebar from '@/components/AdminSidebar'
 import { Cookie, Download, Package, Check, RefreshCw } from 'lucide-react'
 
 interface CutterOrder {
@@ -82,9 +81,7 @@ export default function AdminCookieCutterPage() {
   const rest = orders.filter((o) => !(o.kind === 'print' && o.status === 'paid'))
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <main className="flex-1 p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Cookie className="w-6 h-6 text-purple-600" />
@@ -129,7 +126,6 @@ export default function AdminCookieCutterPage() {
             </div>
           </section>
         )}
-      </main>
     </div>
   )
 }

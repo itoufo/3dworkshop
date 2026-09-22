@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle, BellRing, ClipboardList } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
 import PushNotificationPanel from '@/components/admin/PushNotificationPanel'
 import SurveyPanel from '@/components/admin/SurveyPanel'
 
@@ -74,9 +74,15 @@ export default function AdminDashboard() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
+    // ⚠ 行き先は左メニュー（components/AdminSidebar.tsx）。このリストに無いタブ名を
+    //   リンクしても何も起きないので、あちらに足したらここにも足す
     const tab = searchParams.get('tab')
-    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests', 'notifications'].includes(tab)) {
+    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests', 'notifications', 'surveys'].includes(tab)) {
       setActiveTab(tab as typeof activeTab)
+    } else if (!tab) {
+      // タブ指定なしで /admin に来たら既定に戻す。戻さないと、左メニューで
+      // 「ダッシュボード」を選んだのに前に見ていたタブの中身が出たままになる
+      setActiveTab('bookings')
     }
     setBookingWorkshopFilter(searchParams.get('workshop_id'))
   }, [searchParams])
@@ -428,126 +434,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* タブ */}
-        <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
-          <nav className="flex space-x-2">
-            <button
-              onClick={() => {
-                setActiveTab('bookings')
-                if (bookingWorkshopFilter) router.replace('/admin?tab=bookings')
-              }}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'bookings'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Calendar className="w-4 h-4 inline mr-2" />
-              予約管理
-            </button>
-            <button
-              onClick={() => setActiveTab('customers')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'customers'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              顧客管理
-            </button>
-            <button
-              onClick={() => setActiveTab('workshops')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'workshops'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <CreditCard className="w-4 h-4 inline mr-2" />
-              ワークショップ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'categories'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <FolderOpen className="w-4 h-4 inline mr-2" />
-              カテゴリ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('coupons')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'coupons'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Tag className="w-4 h-4 inline mr-2" />
-              クーポン管理
-            </button>
-            <button
-              onClick={() => setActiveTab('blog')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'blog'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 inline mr-2" />
-              ブログ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 relative ${
-                activeTab === 'requests'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Inbox className="w-4 h-4 inline mr-2" />
-              リクエスト
-              {(workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length) > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white">
-                  {workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('notifications')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'notifications'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BellRing className="w-4 h-4 inline mr-2" />
-              通知
-            </button>
-            <button
-              onClick={() => setActiveTab('surveys')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'surveys'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <ClipboardList className="w-4 h-4 inline mr-2" />
-              アンケート
-            </button>
-            {/* ⚠ これだけ別ページ。タブではなく遷移する（知識の編集は独立した画面） */}
-            <button
-              onClick={() => router.push('/admin/chat-knowledge')}
-              className="flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-            >
-              <MessageCircle className="w-4 h-4 inline mr-2" />
-              チャットの知識
-            </button>
-          </nav>
-        </div>
       </div>
 
       {/* 予約管理 */}
