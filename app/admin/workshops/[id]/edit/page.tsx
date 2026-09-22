@@ -188,7 +188,7 @@ export default function EditWorkshop() {
 
       alert('ワークショップを更新しました')
       setNavigating(true)
-      router.push('/admin')
+      router.push('/admin?tab=workshops')
     } catch (error) {
       console.error('Error updating workshop:', error)
       alert('更新に失敗しました')
@@ -213,7 +213,7 @@ export default function EditWorkshop() {
 
     alert('ワークショップを削除しました')
     setNavigating(true)
-    router.push('/admin')
+    router.push('/admin?tab=workshops')
   }
 
   if (loading) {
@@ -230,7 +230,7 @@ export default function EditWorkshop() {
         <div className="text-center">
           <p className="text-red-600 mb-4">ワークショップが見つかりません</p>
           <button
-            onClick={() => router.push('/admin')}
+            onClick={() => router.push('/admin?tab=workshops')}
             className="text-indigo-600 hover:underline"
           >
             管理画面へ戻る
@@ -242,7 +242,7 @@ export default function EditWorkshop() {
 
   const handleBack = () => {
     setNavigating(true)
-    router.push('/admin')
+    router.push('/admin?tab=workshops')
   }
 
   return (

@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { toAdminTab, type AdminTab } from '@/lib/admin-tabs'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle, BellRing, ClipboardList } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
 import PushNotificationPanel from '@/components/admin/PushNotificationPanel'
 import SurveyPanel from '@/components/admin/SurveyPanel'
 
@@ -55,6 +56,19 @@ interface ServiceRequestRow {
   service?: { title: string; type: string } | null
 }
 
+/** 区画ごとの見出し。⚠ 左メニューの項目名と揃える（違う名前だと今どこにいるか分からなくなる） */
+const TAB_TITLES: Record<AdminTab, { title: string; description: string }> = {
+  bookings: { title: '3DLab 管理ダッシュボード', description: '3Dプリンタ教室の予約と顧客情報を管理' },
+  customers: { title: '顧客管理', description: '申し込みのあったお客様の一覧' },
+  workshops: { title: 'ワークショップ', description: '開催するワークショップの作成と編集' },
+  categories: { title: 'カテゴリ', description: 'ワークショップのカテゴリ（まとめページ）' },
+  coupons: { title: 'クーポン', description: '割引クーポンの発行と利用状況' },
+  blog: { title: 'ブログ', description: '記事の作成と公開' },
+  requests: { title: 'リクエスト', description: '開催希望・法人向けサービスのお問い合わせ' },
+  notifications: { title: '通知', description: 'アプリに入れている方へのお知らせ配信' },
+  surveys: { title: 'アンケート', description: '2択アンケートの設問と回答' },
+}
+
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -65,21 +79,22 @@ export default function AdminDashboard() {
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests' | 'notifications' | 'surveys'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const [showCancelled, setShowCancelled] = useState(false)
   const [hideInternal, setHideInternal] = useState(true)
-  const [bookingWorkshopFilter, setBookingWorkshopFilter] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests', 'notifications'].includes(tab)) {
-      setActiveTab(tab as typeof activeTab)
-    }
-    setBookingWorkshopFilter(searchParams.get('workshop_id'))
-  }, [searchParams])
+  // ⚠ どの区画を見ているかは URL だけで決まる。state に写して useEffect で追わない。
+  //   写すと、左メニューを踏んでから effect が走るまでの1回、前の区画（=予約一覧の全行）
+  //   を描いてから捨てることになる。導出なら最初から正しい区画で描く。
+  //   区画名の一覧は lib/admin-tabs.ts（左メニューもそこから取る）
+  const activeTab = toAdminTab(searchParams.get('tab'))
+  const bookingWorkshopFilter = searchParams.get('workshop_id')
+
+  /** 統計と売上グラフを出すか。/admin（タブ指定なし）＝ダッシュボードのときだけ。
+   *  ⚠ 各区画の上に毎回これを出すと、左メニューで選んだ中身に届くまで800pxスクロールさせられる */
+  const showOverview = !searchParams.get('tab')
 
   useEffect(() => {
     fetchData()
@@ -314,8 +329,8 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">3DLab 管理ダッシュボード</h2>
-            <p className="text-gray-600 mt-1">3Dプリンタ教室の予約と顧客情報を管理</p>
+            <h2 className="text-3xl font-bold text-gray-900">{TAB_TITLES[activeTab].title}</h2>
+            <p className="text-gray-600 mt-1">{TAB_TITLES[activeTab].description}</p>
           </div>
           <div className="flex items-center space-x-3">
             <RevalidateButton />
@@ -330,7 +345,9 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-        
+
+        {showOverview && (
+        <>
         {/* 統計情報 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white">
@@ -427,127 +444,8 @@ export default function AdminDashboard() {
             })}
           </div>
         </div>
-
-        {/* タブ */}
-        <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
-          <nav className="flex space-x-2">
-            <button
-              onClick={() => {
-                setActiveTab('bookings')
-                if (bookingWorkshopFilter) router.replace('/admin?tab=bookings')
-              }}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'bookings'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Calendar className="w-4 h-4 inline mr-2" />
-              予約管理
-            </button>
-            <button
-              onClick={() => setActiveTab('customers')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'customers'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              顧客管理
-            </button>
-            <button
-              onClick={() => setActiveTab('workshops')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'workshops'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <CreditCard className="w-4 h-4 inline mr-2" />
-              ワークショップ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'categories'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <FolderOpen className="w-4 h-4 inline mr-2" />
-              カテゴリ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('coupons')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'coupons'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Tag className="w-4 h-4 inline mr-2" />
-              クーポン管理
-            </button>
-            <button
-              onClick={() => setActiveTab('blog')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'blog'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 inline mr-2" />
-              ブログ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 relative ${
-                activeTab === 'requests'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Inbox className="w-4 h-4 inline mr-2" />
-              リクエスト
-              {(workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length) > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white">
-                  {workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('notifications')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'notifications'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BellRing className="w-4 h-4 inline mr-2" />
-              通知
-            </button>
-            <button
-              onClick={() => setActiveTab('surveys')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'surveys'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <ClipboardList className="w-4 h-4 inline mr-2" />
-              アンケート
-            </button>
-            {/* ⚠ これだけ別ページ。タブではなく遷移する（知識の編集は独立した画面） */}
-            <button
-              onClick={() => router.push('/admin/chat-knowledge')}
-              className="flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-            >
-              <MessageCircle className="w-4 h-4 inline mr-2" />
-              チャットの知識
-            </button>
-          </nav>
-        </div>
+        </>
+        )}
       </div>
 
       {/* 予約管理 */}

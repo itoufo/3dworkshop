@@ -78,7 +78,7 @@ export default function NewCouponPage() {
 
       alert('クーポンを作成しました')
       setNavigating(true)
-      router.push('/admin')
+      router.push('/admin?tab=coupons')
     } catch (error) {
       console.error('Error creating coupon:', error)
       alert('クーポンの作成に失敗しました')
@@ -89,7 +89,7 @@ export default function NewCouponPage() {
 
   const handleBack = () => {
     setNavigating(true)
-    router.push('/admin')
+    router.push('/admin?tab=coupons')
   }
 
   return (

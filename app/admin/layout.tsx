@@ -1,20 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Cookies from 'js-cookie'
-import { LogOut, Home, Shield } from 'lucide-react'
+import { LogOut, Home, Menu, Shield } from 'lucide-react'
+import AdminSidebar from '@/components/AdminSidebar'
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  return (
+    // ⚠ Suspense が要る。中で useSearchParams を使うため
+    <Suspense fallback={null}>
+      <AdminShell>{children}</AdminShell>
+    </Suspense>
+  )
+}
+
+function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  /** スマホの引き出しメニュー。PC では常に出ているので使わない */
+  const [navOpen, setNavOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
+
+  // 行き先に着いたら引き出しは閉じる（開きっぱなしで中身が見えないのを防ぐ）。
+  // ⚠ pathname だけを見ない。区画の切り替えは ?tab= しか変わらないので、
+  //   それだと「戻る」で区画が変わっても開いたままになる
+  const search = searchParams.toString()
+  useEffect(() => {
+    setNavOpen(false)
+  }, [pathname, search])
 
   useEffect(() => {
     const authCookie = Cookies.get('admin_auth')
@@ -131,6 +153,14 @@ export default function AdminLayout({
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
+              {/* スマホだけ。PC はサイドバーが常に出ている */}
+              <button
+                onClick={() => setNavOpen(true)}
+                aria-label="メニューを開く"
+                className="lg:hidden p-2 -ml-2 rounded-lg text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
               <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
@@ -160,7 +190,15 @@ export default function AdminLayout({
           </div>
         </div>
       </header>
-      <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+      <div className="flex">
+        {/*
+          ⚠ サイドバーは全ページ共通でここに1つだけ置く。各ページで <AdminSidebar /> を
+            呼ばないこと（ダッシュボードだけ出ない、という以前の状態に戻る）。
+        */}
+        <AdminSidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
+        {/* ⚠ min-w-0 が要る。無いと幅の広い表がサイドバーを押し出す */}
+        <main className="flex-1 min-w-0 min-h-[calc(100vh-4rem)]">{children}</main>
+      </div>
     </div>
   )
 }
