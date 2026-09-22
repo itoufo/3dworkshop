@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { AdminTab } from '@/lib/admin-tabs'
+import { REQUESTS_CHANGED_EVENT } from '@/lib/request-statuses'
 import {
   Bell,
   BookOpen,
@@ -95,32 +96,53 @@ const groups: NavGroup[] = [
 ]
 
 /**
- * 未対応（status = new）のリクエスト件数。0 なら出さない。
+ * 未対応（status = new）のリクエスト件数。
  *
  * ⚠ anon キーでは数えられない（workshop_requests / service_requests は RLS が
  *   INSERT だけ許可）。管理用の API で数える。
- * ⚠ ここに出す意味: 気づかないと問い合わせが埋もれる。実際、表示されないまま
- *   未対応15件が溜まっていた（2026-09-23）。
+ * ⚠ 数えられなかったときに 0 として扱わない。未対応が溜まっているのに
+ *   「空の受信箱」と同じ見た目になり、このバッジを置いた意味が消える。
+ *   分からないときは分からないと出す。
+ * ⚠ 対応状況を変えたら数え直す。一度きりだと、全部片付けたのに赤い15が
+ *   居座り続ける（左メニューはページを移っても作り直されない）。
  */
-function useNewRequestCount(): number {
+function useNewRequestCount(): { count: number; failed: boolean } {
   const [count, setCount] = useState(0)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let alive = true
-    fetch('/api/admin/requests?only=count')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (alive && d && typeof d.newCount === 'number') setCount(d.newCount)
-      })
-      .catch(() => {
-        // 数えられなくてもメニューは出す。ここで画面を止めない
-      })
+
+    async function load() {
+      try {
+        const res = await fetch('/api/admin/requests?only=count')
+        if (!alive) return
+        if (!res.ok) {
+          setFailed(true)
+          return
+        }
+        const data = await res.json()
+        if (!alive) return
+        if (typeof data.newCount === 'number') {
+          setCount(data.newCount)
+          setFailed(false)
+        } else {
+          setFailed(true)
+        }
+      } catch {
+        if (alive) setFailed(true)
+      }
+    }
+
+    load()
+    window.addEventListener(REQUESTS_CHANGED_EVENT, load)
     return () => {
       alive = false
+      window.removeEventListener(REQUESTS_CHANGED_EVENT, load)
     }
   }, [])
 
-  return count
+  return { count, failed }
 }
 
 export default function AdminSidebar({
@@ -138,7 +160,7 @@ export default function AdminSidebar({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentTab = searchParams.get('tab')
-  const newRequests = useNewRequestCount()
+  const { count: newRequests, failed: countFailed } = useNewRequestCount()
 
   // 引き出しが開いている間だけ。⚠ 背後が動くと、閉じたときに別の場所に飛ぶ
   useEffect(() => {
@@ -192,14 +214,29 @@ export default function AdminSidebar({
                 >
                   <item.icon className="w-5 h-5 shrink-0" />
                   <span className="flex-1 text-base font-medium">{item.label}</span>
-                  {item.tab === 'requests' && newRequests > 0 && (
+                  {item.tab === 'requests' && (newRequests > 0 || countFailed) && (
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
-                        active ? 'bg-white text-purple-700' : 'bg-red-500 text-white'
+                        countFailed
+                          ? 'bg-gray-200 text-gray-600'
+                          : active
+                            ? 'bg-white text-purple-700'
+                            : 'bg-red-500 text-white'
                       }`}
-                      title={`未対応のリクエストが${newRequests}件あります`}
+                      // ⚠ title だけにしない。読み上げでは「リクエスト 15」としか聞こえず、
+                      //   15が何の数か分からない
+                      aria-label={
+                        countFailed
+                          ? '未対応の件数を数えられませんでした'
+                          : `未対応のリクエストが${newRequests}件あります`
+                      }
+                      title={
+                        countFailed
+                          ? '未対応の件数を数えられませんでした（0件という意味ではありません）'
+                          : `未対応のリクエストが${newRequests}件あります`
+                      }
                     >
-                      {newRequests}
+                      {countFailed ? '?' : newRequests}
                     </span>
                   )}
                 </Link>
