@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import type { AdminTab } from '@/lib/admin-tabs'
 import {
   Bell,
   BookOpen,
@@ -27,12 +29,23 @@ import {
  *   以前はダッシュボードだけ横タブ、他のページだけサイドバーで、
  *   どちらからも相手に行けない画面があった。
  *
- * ⚠ ダッシュボードの中身はタブで切り替わる。リンク先は `/admin?tab=xxx`。
- *   タブ名は app/admin/page.tsx の activeTab と、URL を読む useEffect の許可リストに揃える。
- *   （揃っていないタブ名はリンクを踏んでも何も起きない）
+ * ⚠ ダッシュボードの中身は区画で切り替わる。リンク先は `/admin?tab=xxx`。
+ *   区画名は lib/admin-tabs.ts が正本で、型で縛ってある（知らない名前は書けない）。
  */
 
-type NavItem = { href: string; label: string; icon: typeof Home; tab?: string }
+type NavItem = {
+  href: string
+  label: string
+  icon: typeof Home
+  /** ダッシュボードの区画。/admin?tab=<これ> のとき選択中になる */
+  tab?: AdminTab
+  /**
+   * この項目の配下とみなすURL。新規作成・編集の画面で選択中を保つために要る。
+   * ⚠ これが無いと /admin/workshops/new などで左メニューのどこも光らず、
+   *   今どこにいるか分からなくなる（旧サイドバーは前方一致で光っていた）
+   */
+  match?: string
+}
 type NavGroup = { title: string | null; items: NavItem[] }
 
 const groups: NavGroup[] = [
@@ -51,8 +64,8 @@ const groups: NavGroup[] = [
   {
     title: '開催するもの',
     items: [
-      { href: '/admin?tab=workshops', label: 'ワークショップ', icon: Calendar, tab: 'workshops' },
-      { href: '/admin?tab=categories', label: 'カテゴリ', icon: FolderTree, tab: 'categories' },
+      { href: '/admin?tab=workshops', label: 'ワークショップ', icon: Calendar, tab: 'workshops', match: '/admin/workshops' },
+      { href: '/admin?tab=categories', label: 'カテゴリ', icon: FolderTree, tab: 'categories', match: '/admin/categories' },
       { href: '/admin/school', label: 'スクール生管理', icon: BookOpen },
     ],
   },
@@ -61,13 +74,13 @@ const groups: NavGroup[] = [
     items: [
       { href: '/admin/products', label: '商品管理', icon: Package },
       { href: '/admin/cookie-cutter', label: 'クッキー型の注文', icon: Cookie },
-      { href: '/admin?tab=coupons', label: 'クーポン', icon: Tag, tab: 'coupons' },
+      { href: '/admin?tab=coupons', label: 'クーポン', icon: Tag, tab: 'coupons', match: '/admin/coupons' },
     ],
   },
   {
     title: '発信',
     items: [
-      { href: '/admin?tab=blog', label: 'ブログ', icon: FileText, tab: 'blog' },
+      { href: '/admin?tab=blog', label: 'ブログ', icon: FileText, tab: 'blog', match: '/admin/blog' },
       { href: '/admin?tab=notifications', label: '通知', icon: Bell, tab: 'notifications' },
       { href: '/admin?tab=surveys', label: 'アンケート', icon: ClipboardList, tab: 'surveys' },
     ],
@@ -87,14 +100,34 @@ export default function AdminSidebar({
 }: {
   /** スマホで開いているか（PCでは常に出ているので関係ない） */
   open?: boolean
-  /** リンクを踏んだとき・閉じるボタンを押したとき。スマホの引き出しを閉じる */
-  onNavigate?: () => void
+  /**
+   * リンクを踏んだとき・閉じるボタンを押したとき。スマホの引き出しを閉じる。
+   * ⚠ 必須。省けるようにすると、引き出しを開いたら閉じられない画面が作れてしまう
+   */
+  onNavigate: () => void
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentTab = searchParams.get('tab')
 
+  // 引き出しが開いている間だけ。⚠ 背後が動くと、閉じたときに別の場所に飛ぶ
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onNavigate()
+    }
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = previous
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, onNavigate])
+
   function isActive(item: NavItem): boolean {
+    // 新規作成・編集の画面（/admin/blog/new など）もその項目の配下として光らせる
+    if (item.match && (pathname === item.match || pathname.startsWith(`${item.match}/`))) return true
     if (item.tab) return pathname === '/admin' && currentTab === item.tab
     // ダッシュボードは「タブ指定なしで /admin にいるとき」だけ。
     // ⚠ ここを前方一致にすると、どのページにいてもダッシュボードが選択中に見える
@@ -117,6 +150,9 @@ export default function AdminSidebar({
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
+                  // ⚠ ?tab= の9本は実体が同じルート（/admin）なので、先読みさせると
+                  //   管理画面を開くたびに同じ中身を9回取りに行く
+                  prefetch={item.tab ? false : undefined}
                   aria-current={active ? 'page' : undefined}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     active
@@ -145,12 +181,15 @@ export default function AdminSidebar({
       {/* スマホ。ヘッダーのボタンで開く引き出し */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* 背景。押すと閉じる。⚠ これは補助でしかないので、閉じる手段は
+              右上のボタンと Escape の2つを必ず残す（支援技術からは押せない） */}
+          <div className="absolute inset-0 bg-black/40" onClick={onNavigate} aria-hidden="true" />
           <div
-            className="absolute inset-0 bg-black/40"
-            onClick={onNavigate}
-            aria-hidden="true"
-          />
-          <div className="relative w-72 max-w-[80%] bg-white h-full overflow-y-auto p-4 shadow-xl">
+            role="dialog"
+            aria-modal="true"
+            aria-label="管理画面のメニュー"
+            className="relative w-72 max-w-[80%] bg-white h-full overflow-y-auto p-4 shadow-xl"
+          >
             <div className="flex items-center justify-between mb-4">
               <p className="text-lg font-bold text-gray-900">メニュー</p>
               <button

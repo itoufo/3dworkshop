@@ -114,7 +114,7 @@ export default function NewBlogPostPage() {
 
       alert('ブログ記事を作成しました')
       setNavigating(true)
-      router.push('/admin')
+      router.push('/admin?tab=blog')
     } catch (error) {
       console.error('Error creating blog post:', error)
       alert('ブログ記事の作成に失敗しました')

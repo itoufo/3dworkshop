@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { toAdminTab, type AdminTab } from '@/lib/admin-tabs'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -55,6 +56,19 @@ interface ServiceRequestRow {
   service?: { title: string; type: string } | null
 }
 
+/** 区画ごとの見出し。⚠ 左メニューの項目名と揃える（違う名前だと今どこにいるか分からなくなる） */
+const TAB_TITLES: Record<AdminTab, { title: string; description: string }> = {
+  bookings: { title: '3DLab 管理ダッシュボード', description: '3Dプリンタ教室の予約と顧客情報を管理' },
+  customers: { title: '顧客管理', description: '申し込みのあったお客様の一覧' },
+  workshops: { title: 'ワークショップ', description: '開催するワークショップの作成と編集' },
+  categories: { title: 'カテゴリ', description: 'ワークショップのカテゴリ（まとめページ）' },
+  coupons: { title: 'クーポン', description: '割引クーポンの発行と利用状況' },
+  blog: { title: 'ブログ', description: '記事の作成と公開' },
+  requests: { title: 'リクエスト', description: '開催希望・法人向けサービスのお問い合わせ' },
+  notifications: { title: '通知', description: 'アプリに入れている方へのお知らせ配信' },
+  surveys: { title: 'アンケート', description: '2択アンケートの設問と回答' },
+}
+
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -65,27 +79,22 @@ export default function AdminDashboard() {
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests' | 'notifications' | 'surveys'>('bookings')
   const [navigating, setNavigating] = useState(false)
   const [showCancelled, setShowCancelled] = useState(false)
   const [hideInternal, setHideInternal] = useState(true)
-  const [bookingWorkshopFilter, setBookingWorkshopFilter] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  useEffect(() => {
-    // ⚠ 行き先は左メニュー（components/AdminSidebar.tsx）。このリストに無いタブ名を
-    //   リンクしても何も起きないので、あちらに足したらここにも足す
-    const tab = searchParams.get('tab')
-    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests', 'notifications', 'surveys'].includes(tab)) {
-      setActiveTab(tab as typeof activeTab)
-    } else if (!tab) {
-      // タブ指定なしで /admin に来たら既定に戻す。戻さないと、左メニューで
-      // 「ダッシュボード」を選んだのに前に見ていたタブの中身が出たままになる
-      setActiveTab('bookings')
-    }
-    setBookingWorkshopFilter(searchParams.get('workshop_id'))
-  }, [searchParams])
+  // ⚠ どの区画を見ているかは URL だけで決まる。state に写して useEffect で追わない。
+  //   写すと、左メニューを踏んでから effect が走るまでの1回、前の区画（=予約一覧の全行）
+  //   を描いてから捨てることになる。導出なら最初から正しい区画で描く。
+  //   区画名の一覧は lib/admin-tabs.ts（左メニューもそこから取る）
+  const activeTab = toAdminTab(searchParams.get('tab'))
+  const bookingWorkshopFilter = searchParams.get('workshop_id')
+
+  /** 統計と売上グラフを出すか。/admin（タブ指定なし）＝ダッシュボードのときだけ。
+   *  ⚠ 各区画の上に毎回これを出すと、左メニューで選んだ中身に届くまで800pxスクロールさせられる */
+  const showOverview = !searchParams.get('tab')
 
   useEffect(() => {
     fetchData()
@@ -320,8 +329,8 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">3DLab 管理ダッシュボード</h2>
-            <p className="text-gray-600 mt-1">3Dプリンタ教室の予約と顧客情報を管理</p>
+            <h2 className="text-3xl font-bold text-gray-900">{TAB_TITLES[activeTab].title}</h2>
+            <p className="text-gray-600 mt-1">{TAB_TITLES[activeTab].description}</p>
           </div>
           <div className="flex items-center space-x-3">
             <RevalidateButton />
@@ -336,7 +345,9 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-        
+
+        {showOverview && (
+        <>
         {/* 統計情報 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white">
@@ -433,7 +444,8 @@ export default function AdminDashboard() {
             })}
           </div>
         </div>
-
+        </>
+        )}
       </div>
 
       {/* 予約管理 */}

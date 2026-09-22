@@ -97,7 +97,7 @@ export default function EditCouponPage() {
 
       alert('クーポンを更新しました')
       setNavigating(true)
-      router.push('/admin')
+      router.push('/admin?tab=coupons')
     } catch (error) {
       console.error('Error updating coupon:', error)
       alert('クーポンの更新に失敗しました')
@@ -124,7 +124,7 @@ export default function EditCouponPage() {
 
   const handleBack = () => {
     setNavigating(true)
-    router.push('/admin')
+    router.push('/admin?tab=coupons')
   }
 
   return (

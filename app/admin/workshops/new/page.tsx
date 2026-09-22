@@ -259,7 +259,7 @@ export default function NewWorkshopPage() {
       if (insertedWorkshop && !workshop.event_date) {
         router.push(`/admin/workshops/${insertedWorkshop.id}/edit`)
       } else {
-        router.push('/admin')
+        router.push('/admin?tab=workshops')
       }
     } catch (error) {
       console.error('Error adding workshop:', error)
@@ -271,7 +271,7 @@ export default function NewWorkshopPage() {
 
   const handleBack = () => {
     setNavigating(true)
-    router.push('/admin')
+    router.push('/admin?tab=workshops')
   }
 
   return (

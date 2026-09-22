@@ -165,181 +165,181 @@ export default function AdminChatLogsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-purple-600" />
-            チャットの履歴
-          </h1>
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-base hover:bg-gray-100"
-          >
-            <RefreshCw className="w-4 h-4" />
-            更新
-          </button>
-        </div>
-        <p className="text-base text-gray-500 mb-6">
-          会話ログは{CHAT_LOG_RETENTION_DAYS}日で自動的に消えます。残したいものは控えを取ってください。
-        </p>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <MessageSquare className="w-6 h-6 text-purple-600" />
+          チャットの履歴
+        </h1>
+        <button
+          onClick={load}
+          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-base hover:bg-gray-100"
+        >
+          <RefreshCw className="w-4 h-4" />
+          更新
+        </button>
+      </div>
+      <p className="text-base text-gray-500 mb-6">
+        会話ログは{CHAT_LOG_RETENTION_DAYS}日で自動的に消えます。残したいものは控えを取ってください。
+      </p>
 
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setTab('conversations')}
-            className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
-              tab === 'conversations'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-purple-50'
-            }`}
-          >
-            会話ログ（{conversations.length}）
-          </button>
-          <button
-            onClick={() => setTab('tickets')}
-            className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
-              tab === 'tickets'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-purple-50'
-            }`}
-          >
-            メール問い合わせ（{tickets.length}）
-          </button>
-        </div>
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setTab('conversations')}
+          className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+            tab === 'conversations'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-purple-50'
+          }`}
+        >
+          会話ログ（{conversations.length}）
+        </button>
+        <button
+          onClick={() => setTab('tickets')}
+          className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+            tab === 'tickets'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-purple-50'
+          }`}
+        >
+          メール問い合わせ（{tickets.length}）
+        </button>
+      </div>
 
-        {loading && <p className="text-base text-gray-500">読み込み中…</p>}
+      {loading && <p className="text-base text-gray-500">読み込み中…</p>}
 
-        {!loading && tab === 'conversations' && (
-          <section className="space-y-3">
-            {convError && <p className="mb-4 text-base text-red-600">{convError}</p>}
-            {conversations.length === 0 && !convError && (
-              <p className="text-base text-gray-500">
-                まだ会話はありません。チャットで質問されると、ここに残ります。
-              </p>
-            )}
-            {conversations.map((c) => (
-              <div key={c.id} className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <button
-                  onClick={() => toggle(c.id)}
-                  className="w-full text-left p-4 hover:bg-purple-50 rounded-xl transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <p className="text-base font-medium text-gray-900">
-                      {c.first_question || '（質問なし）'}
-                    </p>
-                    <span className="shrink-0 text-base text-gray-500">
-                      {formatDateTime(c.last_message_at)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-base text-gray-500">
-                    {Math.floor(c.message_count / 2)}往復
-                    {c.page_path ? ` ・ ${c.page_path}` : ''}
+      {!loading && tab === 'conversations' && (
+        <section className="space-y-3">
+          {convError && <p className="mb-4 text-base text-red-600">{convError}</p>}
+          {conversations.length === 0 && !convError && (
+            <p className="text-base text-gray-500">
+              まだ会話はありません。チャットで質問されると、ここに残ります。
+            </p>
+          )}
+          {conversations.map((c) => (
+            <div key={c.id} className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <button
+                onClick={() => toggle(c.id)}
+                className="w-full text-left p-4 hover:bg-purple-50 rounded-xl transition-colors"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <p className="text-base font-medium text-gray-900">
+                    {c.first_question || '（質問なし）'}
                   </p>
-                </button>
+                  <span className="shrink-0 text-base text-gray-500">
+                    {formatDateTime(c.last_message_at)}
+                  </span>
+                </div>
+                <p className="mt-1 text-base text-gray-500">
+                  {Math.floor(c.message_count / 2)}往復
+                  {c.page_path ? ` ・ ${c.page_path}` : ''}
+                </p>
+              </button>
 
-                {openId === c.id && (
-                  <div className="border-t border-gray-100 p-4 space-y-3">
-                    {loadingId === c.id && <p className="text-base text-gray-500">読み込み中…</p>}
-                    {(messages[c.id] ?? []).map((m) => (
+              {openId === c.id && (
+                <div className="border-t border-gray-100 p-4 space-y-3">
+                  {loadingId === c.id && <p className="text-base text-gray-500">読み込み中…</p>}
+                  {(messages[c.id] ?? []).map((m) => (
+                    <div
+                      key={m.id}
+                      className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
+                    >
                       <div
-                        key={m.id}
-                        className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 text-base whitespace-pre-wrap ${
+                          m.role === 'user'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        {m.content}
+                        {/* ⚠ retrieval では判定しない（理由は lib/chat-decline.ts）。
+                            答えられたかどうかは返答そのものを見る */}
+                        {m.role === 'assistant' && isDeclineReply(m.content) && (
+                          <span
+                            className="ml-2 align-middle text-xs font-medium text-amber-700"
+                            title="この質問には答えられていません。「チャットの知識」に足す候補です"
+                          >
+                            答えられていない
+                          </span>
+                        )}
+                        {m.role === 'assistant' && m.retrieval === 'fallback' && (
+                          <span
+                            className="ml-2 align-middle text-xs font-medium text-gray-500"
+                            title="類似検索が使えず、公開中の知識をまとめて渡して答えた回。質問の内容とは関係ありません（埋め込み未作成・OpenAI の不調など）"
+                          >
+                            検索が使えない状態
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {!loading && tab === 'tickets' && (
+        <section className="space-y-4">
+          {ticketError && <p className="mb-4 text-base text-red-600">{ticketError}</p>}
+          {tickets.length === 0 && !ticketError && (
+            <p className="text-base text-gray-500">まだ問い合わせはありません。</p>
+          )}
+          {tickets.map((t) => (
+            <article key={t.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div>
+                  <p className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <LifeBuoy className="w-5 h-5 text-purple-600" />
+                    {t.name}
+                  </p>
+                  <p className="text-base text-gray-600">
+                    <a href={`mailto:${t.email}`} className="text-purple-700 underline">
+                      {t.email}
+                    </a>
+                    {t.phone ? ` ・ ${t.phone}` : ''}
+                  </p>
+                </div>
+                <span className="shrink-0 text-base text-gray-500">{formatDateTime(t.created_at)}</span>
+              </div>
+
+              <p className="whitespace-pre-wrap text-base text-gray-900 bg-gray-50 rounded-lg p-4">
+                {t.message}
+              </p>
+
+              <p className="mt-2 text-base text-gray-500">
+                {t.page_path ? `送信元: ${t.page_path}` : ''}
+              </p>
+
+              {t.transcript && t.transcript.length > 0 && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-base text-purple-700">
+                    ここまでのチャット（{t.transcript.length}件）
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    {t.transcript.map((line, i) => (
+                      <div
+                        key={i}
+                        className={line.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
                       >
                         <div
                           className={`max-w-[80%] rounded-2xl px-4 py-2 text-base whitespace-pre-wrap ${
-                            m.role === 'user'
+                            line.role === 'user'
                               ? 'bg-purple-600 text-white'
                               : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          {m.content}
-                          {/* ⚠ retrieval では判定しない（理由は lib/chat-decline.ts）。
-                              答えられたかどうかは返答そのものを見る */}
-                          {m.role === 'assistant' && isDeclineReply(m.content) && (
-                            <span
-                              className="ml-2 align-middle text-xs font-medium text-amber-700"
-                              title="この質問には答えられていません。「チャットの知識」に足す候補です"
-                            >
-                              答えられていない
-                            </span>
-                          )}
-                          {m.role === 'assistant' && m.retrieval === 'fallback' && (
-                            <span
-                              className="ml-2 align-middle text-xs font-medium text-gray-500"
-                              title="類似検索が使えず、公開中の知識をまとめて渡して答えた回。質問の内容とは関係ありません（埋め込み未作成・OpenAI の不調など）"
-                            >
-                              検索が使えない状態
-                            </span>
-                          )}
+                          {line.content}
                         </div>
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            ))}
-          </section>
-        )}
-
-        {!loading && tab === 'tickets' && (
-          <section className="space-y-4">
-            {ticketError && <p className="mb-4 text-base text-red-600">{ticketError}</p>}
-            {tickets.length === 0 && !ticketError && (
-              <p className="text-base text-gray-500">まだ問い合わせはありません。</p>
-            )}
-            {tickets.map((t) => (
-              <article key={t.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <p className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <LifeBuoy className="w-5 h-5 text-purple-600" />
-                      {t.name}
-                    </p>
-                    <p className="text-base text-gray-600">
-                      <a href={`mailto:${t.email}`} className="text-purple-700 underline">
-                        {t.email}
-                      </a>
-                      {t.phone ? ` ・ ${t.phone}` : ''}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-base text-gray-500">{formatDateTime(t.created_at)}</span>
-                </div>
-
-                <p className="whitespace-pre-wrap text-base text-gray-900 bg-gray-50 rounded-lg p-4">
-                  {t.message}
-                </p>
-
-                <p className="mt-2 text-base text-gray-500">
-                  {t.page_path ? `送信元: ${t.page_path}` : ''}
-                </p>
-
-                {t.transcript && t.transcript.length > 0 && (
-                  <details className="mt-3">
-                    <summary className="cursor-pointer text-base text-purple-700">
-                      ここまでのチャット（{t.transcript.length}件）
-                    </summary>
-                    <div className="mt-3 space-y-2">
-                      {t.transcript.map((line, i) => (
-                        <div
-                          key={i}
-                          className={line.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
-                        >
-                          <div
-                            className={`max-w-[80%] rounded-2xl px-4 py-2 text-base whitespace-pre-wrap ${
-                              line.role === 'user'
-                                ? 'bg-purple-600 text-white'
-                                : 'bg-gray-100 text-gray-900'
-                            }`}
-                          >
-                            {line.content}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
-              </article>
-            ))}
-          </section>
-        )}
+                </details>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
     </div>
   )
 }

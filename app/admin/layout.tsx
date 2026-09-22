@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Cookies from 'js-cookie'
 import { LogOut, Home, Menu, Shield } from 'lucide-react'
@@ -12,18 +12,31 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  return (
+    // ⚠ Suspense が要る。中で useSearchParams を使うため
+    <Suspense fallback={null}>
+      <AdminShell>{children}</AdminShell>
+    </Suspense>
+  )
+}
+
+function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   /** スマホの引き出しメニュー。PC では常に出ているので使わない */
   const [navOpen, setNavOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // 行き先に着いたら引き出しは閉じる（開きっぱなしで中身が見えないのを防ぐ）
+  // 行き先に着いたら引き出しは閉じる（開きっぱなしで中身が見えないのを防ぐ）。
+  // ⚠ pathname だけを見ない。区画の切り替えは ?tab= しか変わらないので、
+  //   それだと「戻る」で区画が変わっても開いたままになる
+  const search = searchParams.toString()
   useEffect(() => {
     setNavOpen(false)
-  }, [pathname])
+  }, [pathname, search])
 
   useEffect(() => {
     const authCookie = Cookies.get('admin_auth')
@@ -181,11 +194,8 @@ export default function AdminLayout({
         {/*
           ⚠ サイドバーは全ページ共通でここに1つだけ置く。各ページで <AdminSidebar /> を
             呼ばないこと（ダッシュボードだけ出ない、という以前の状態に戻る）。
-          ⚠ Suspense で包む: サイドバーは選択中の判定に useSearchParams を使うため。
         */}
-        <Suspense fallback={<div className="hidden lg:block w-60 shrink-0 border-r border-gray-200" />}>
-          <AdminSidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
-        </Suspense>
+        <AdminSidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
         {/* ⚠ min-w-0 が要る。無いと幅の広い表がサイドバーを押し出す */}
         <main className="flex-1 min-w-0 min-h-[calc(100vh-4rem)]">{children}</main>
       </div>
