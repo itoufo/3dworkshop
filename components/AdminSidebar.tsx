@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { AdminTab } from '@/lib/admin-tabs'
@@ -94,6 +94,35 @@ const groups: NavGroup[] = [
   },
 ]
 
+/**
+ * 未対応（status = new）のリクエスト件数。0 なら出さない。
+ *
+ * ⚠ anon キーでは数えられない（workshop_requests / service_requests は RLS が
+ *   INSERT だけ許可）。管理用の API で数える。
+ * ⚠ ここに出す意味: 気づかないと問い合わせが埋もれる。実際、表示されないまま
+ *   未対応15件が溜まっていた（2026-09-23）。
+ */
+function useNewRequestCount(): number {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/admin/requests?only=count')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d && typeof d.newCount === 'number') setCount(d.newCount)
+      })
+      .catch(() => {
+        // 数えられなくてもメニューは出す。ここで画面を止めない
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  return count
+}
+
 export default function AdminSidebar({
   open = false,
   onNavigate,
@@ -109,6 +138,7 @@ export default function AdminSidebar({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentTab = searchParams.get('tab')
+  const newRequests = useNewRequestCount()
 
   // 引き出しが開いている間だけ。⚠ 背後が動くと、閉じたときに別の場所に飛ぶ
   useEffect(() => {
@@ -161,7 +191,17 @@ export default function AdminSidebar({
                   }`}
                 >
                   <item.icon className="w-5 h-5 shrink-0" />
-                  <span className="text-base font-medium">{item.label}</span>
+                  <span className="flex-1 text-base font-medium">{item.label}</span>
+                  {item.tab === 'requests' && newRequests > 0 && (
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                        active ? 'bg-white text-purple-700' : 'bg-red-500 text-white'
+                      }`}
+                      title={`未対応のリクエストが${newRequests}件あります`}
+                    >
+                      {newRequests}
+                    </span>
+                  )}
                 </Link>
               )
             })}

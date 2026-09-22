@@ -171,16 +171,11 @@ export default function AdminDashboard() {
       }))
 
       // リクエスト一覧 (ワークショップ開催・サービス購入相談)
-      const [wsReqRes, svcReqRes] = await Promise.all([
-        supabase
-          .from('workshop_requests')
-          .select('*, workshop:workshops(title), category:workshop_categories(name, slug)')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('service_requests')
-          .select('*, service:services(title, type)')
-          .order('created_at', { ascending: false }),
-      ])
+      // ⚠ anon キーでは読めない（RLS が INSERT だけ許可）。管理用の API 経由で取る。
+      //   ここを supabase 直読みに戻すと、届いた問い合わせが1件も出ない状態に逆戻りする
+      const reqRes = await fetch('/api/admin/requests')
+      const reqData = await reqRes.json().catch(() => ({}))
+      if (!reqRes.ok) console.error('リクエストの取得に失敗:', reqData.message || reqData.error)
 
       setBookings(bookingsData || [])
       setCustomers(customersData || [])
@@ -188,8 +183,10 @@ export default function AdminDashboard() {
       setCoupons(couponsData || [])
       setBlogPosts(blogPostsData || [])
       setCategories(categoriesWithCount)
-      if (!wsReqRes.error) setWorkshopRequests((wsReqRes.data as WorkshopRequestRow[]) || [])
-      if (!svcReqRes.error) setServiceRequests((svcReqRes.data as ServiceRequestRow[]) || [])
+      if (reqRes.ok) {
+        setWorkshopRequests((reqData.workshopRequests as WorkshopRequestRow[]) || [])
+        setServiceRequests((reqData.serviceRequests as ServiceRequestRow[]) || [])
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -197,24 +194,33 @@ export default function AdminDashboard() {
     }
   }
 
-  async function updateWorkshopRequestStatus(id: string, status: WorkshopRequestRow['status']) {
-    const { error } = await supabase.from('workshop_requests').update({ status }).eq('id', id)
-    if (error) {
-      console.error(error)
-      alert('ステータス更新に失敗しました')
+  /**
+   * 対応状況の更新。
+   * ⚠ anon キーでは書けない（RLS が INSERT だけ許可）。しかも RLS は0件更新でも
+   *   エラーを返さないので、直書きしていた頃は「押すと画面だけ変わって DB は元のまま」
+   *   だった。API 側で更新できた行数を確かめている。
+   */
+  async function updateRequestStatus(kind: 'workshop' | 'service', id: string, status: string) {
+    const res = await fetch('/api/admin/requests', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, id, status }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      console.error('リクエストの更新に失敗:', data)
+      alert(data.message || 'ステータス更新に失敗しました')
       return
     }
-    setWorkshopRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
-  }
-
-  async function updateServiceRequestStatus(id: string, status: ServiceRequestRow['status']) {
-    const { error } = await supabase.from('service_requests').update({ status }).eq('id', id)
-    if (error) {
-      console.error(error)
-      alert('ステータス更新に失敗しました')
-      return
+    if (kind === 'workshop') {
+      setWorkshopRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: status as WorkshopRequestRow['status'] } : r)),
+      )
+    } else {
+      setServiceRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: status as ServiceRequestRow['status'] } : r)),
+      )
     }
-    setServiceRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
   }
 
   async function updateBookingStatus(bookingId: string, status: string) {
@@ -1386,7 +1392,7 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3">
                           <select
                             value={req.status}
-                            onChange={(e) => updateWorkshopRequestStatus(req.id, e.target.value as WorkshopRequestRow['status'])}
+                            onChange={(e) => updateRequestStatus('workshop', req.id, e.target.value)}
                             className="text-xs px-2 py-1 border border-gray-300 rounded"
                           >
                             <option value="new">未対応</option>
@@ -1452,7 +1458,7 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3">
                           <select
                             value={req.status}
-                            onChange={(e) => updateServiceRequestStatus(req.id, e.target.value as ServiceRequestRow['status'])}
+                            onChange={(e) => updateRequestStatus('service', req.id, e.target.value)}
                             className="text-xs px-2 py-1 border border-gray-300 rounded"
                           >
                             <option value="new">未対応</option>
