@@ -1,7 +1,8 @@
 -- チャットで解決しなかった問い合わせを、担当者へのメールに引き継ぐための記録。
 --
--- チャット本体（/api/chat）は会話をどこにも保存しない。
--- ここに残るのは「メールで問い合わせる」を選んだ人が、自分で送った内容だけ。
+-- ここに残るのは「メールで問い合わせる」を選んだ人が、自分で送った内容（＝連絡先があり、返信できるもの）。
+-- ⚠ 2026-09-22 追記: AIとのやりとり自体も chat_conversations / chat_messages に残すようになった
+--   （20260922_create_chat_logs.sql）。あちらは90日で消える・連絡先は無い。役割を混ぜないこと。
 
 CREATE TABLE IF NOT EXISTS public.support_tickets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
