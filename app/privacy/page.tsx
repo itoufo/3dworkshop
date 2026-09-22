@@ -3,6 +3,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import { CHAT_LOG_RETENTION_DAYS } from '@/lib/chat-retention'
 
 export default function PrivacyPage() {
   return (
@@ -47,11 +48,19 @@ export default function PrivacyPage() {
                   <li>決済情報（Stripeを通じて安全に処理されます）</li>
                   <li>ワークショップ参加履歴</li>
                   <li>作品の写真（ご本人の同意がある場合のみ）</li>
-                  <li>サイト内のチャットでのご質問と回答の内容（90日間保存し、その後自動的に削除します）</li>
+                  <li>
+                    サイト内のチャットでのご質問と回答の内容（{CHAT_LOG_RETENTION_DAYS}日間保存し、その後自動的に削除します）
+                  </li>
                 </ul>
                 <p className="text-gray-700 mt-3">
                   チャットの回答生成には外部のAIサービス（OpenAI）を利用しており、入力された内容は同社へ送信されます。
                   チャットには氏名・住所・電話番号などの個人情報を入力しないようお願いしております。
+                </p>
+                <p className="text-gray-700 mt-3">
+                  なお、チャットから「担当者にメールで問い合わせる」をご利用いただいた場合、
+                  お送りいただいたお問い合わせの内容（ご本人の同意のうえで添付されたチャットのやりとりを含みます）は、
+                  対応の記録として上記の{CHAT_LOG_RETENTION_DAYS}日を超えて保管します。
+                  削除をご希望の場合は第8条のお問い合わせ先までご連絡ください。
                 </p>
               </section>
 

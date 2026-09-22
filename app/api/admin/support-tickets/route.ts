@@ -19,7 +19,8 @@ export async function GET(req: Request) {
   if (denied) return denied
 
   const url = new URL(req.url)
-  const limitRaw = Number(url.searchParams.get('limit'))
+  // ⚠ 整数に丸める。小数のまま渡すと PostgREST が 400 を返し、こちらの 500 になって出る
+  const limitRaw = Math.trunc(Number(url.searchParams.get('limit')))
   const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, MAX_LIMIT) : DEFAULT_LIMIT
 
   const { data, error } = await supabaseAdmin!

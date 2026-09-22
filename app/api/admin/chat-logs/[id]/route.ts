@@ -1,10 +1,18 @@
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-/** 1件の会話の中身（やりとり全部）。⚠ 先頭で requireAdmin() を通す */
+/**
+ * 1件の会話の中身。⚠ 先頭で requireAdmin() を通す。
+ *
+ * ⚠ 件数に上限を付ける。append_chat_turn 側でも1会話の長さを抑えているが、
+ *   上限の無い SELECT をブラウザに流し込む口を作らない。
+ * conversation も返す。一覧を取ってから増えたぶんで、画面の「N往復」がズレるため。
+ */
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const MAX_MESSAGES = 500
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin()
@@ -29,6 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .select('id, role, content, retrieval, created_at')
     .eq('conversation_id', id)
     .order('id', { ascending: true })
+    .limit(MAX_MESSAGES)
 
   if (msgError) {
     console.error('[admin/chat-logs] messages', msgError.code, msgError.message)

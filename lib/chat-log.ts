@@ -1,4 +1,5 @@
 import { createHmac } from 'crypto'
+import { replySigningSecret } from '@/lib/chat-knowledge'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 /**
@@ -15,8 +16,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 /** 接続元を突き合わせるための値。元の IP には戻せない */
 function clientKey(ip: string): string | null {
-  // ⚠ 秘密を増やさない。署名（lib/chat-knowledge.ts の signReply）と同じ出どころを使う
-  const secret = process.env.CHAT_SIGNING_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
+  // ⚠ 秘密を増やさない。署名（signReply）と同じ関数を呼ぶ。
+  //   同じ式を書き写すと、向こうの出どころが変わったときに黙ってすれ違い、
+  //   毎回「別人」と判定されて1往復だけの会話が量産される
+  const secret = replySigningSecret()
   if (!secret) return null
   return createHmac('sha256', secret).update(ip).digest('hex')
 }
@@ -34,7 +37,7 @@ type Turn = {
   pagePath?: unknown
   question: string
   answer: string
-  /** vector = 類似検索が当たった / fallback = 公開分を全部渡した */
+  /** matched / no_match / fallback（lib/chat-knowledge.ts の Retrieval.mode） */
   retrieval: string | null
 }
 

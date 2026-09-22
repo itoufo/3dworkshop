@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Check, ChevronLeft, LifeBuoy, MessageCircle, Send, X } from 'lucide-react'
+import { CHAT_LOG_RETENTION_DAYS } from '@/lib/chat-retention'
 
 /**
  * 問い合わせチャット。
  *
  * ⚠ 答えを作るのはサーバー（/api/chat）。ここには知識もAPIキーも持たない。
  * ⚠ 会話は2箇所へ出る。(1) 答えを作るために外部のAIサービス（OpenAI）へ、
- *   (2) 管理画面で後から読むためにこのサイトのDBへ（90日で消える）。
+ *   (2) 管理画面で後から読むためにこのサイトのDBへ（lib/chat-retention.ts の日数で消える）。
  *   画面下にその旨を出してある。消したらプライバシーの説明が実態とズレる。
  * ⚠ チャットの入力欄には氏名や住所を入れさせない。入力内容はそのまま外部のAIサービスへ送られるため。
  *   「解決しなかったとき」だけ、AIを通さない別のフォーム（handoff）に切り替えて担当者へのメールに引き継ぐ。
@@ -452,7 +453,8 @@ export default function ChatWidget() {
         <p className="border-t border-gray-100 px-3 py-2 text-[11px] leading-tight text-gray-500">
           AIの回答です。日程・空席・最終的な金額は予約ページでご確認ください。
           <br />
-          入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信され、応対の改善のため当サイトに90日間記録されます。氏名・住所・電話番号などは入力しないでください（
+          入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信され、応対の改善のため当サイトに
+          {CHAT_LOG_RETENTION_DAYS}日間記録されます。氏名・住所・電話番号などは入力しないでください（
           <a href="/privacy" className="underline hover:text-gray-700">
             プライバシーポリシー
           </a>

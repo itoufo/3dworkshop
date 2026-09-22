@@ -3,8 +3,9 @@
 -- 何に使うか: 管理画面（/admin/chat-logs）で「何を聞かれているか」「知識が当たらなかった
 -- やりとりはどれか」を見る。ここが分かると chat_knowledge に足す項目が決まる。
 --
--- ⚠ 90日で消す（/api/cron/purge-chat-logs）。support_tickets と違い、本人が「送る」と決めた
---   情報ではない。持ち続ける理由が無いものを持ち続けない。
+-- ⚠ 一定期間で消す（/api/cron/purge-chat-logs、日数は lib/chat-retention.ts）。
+--   support_tickets と違い、本人が「送る」と決めた情報ではない。
+--   持ち続ける理由が無いものを持ち続けない。
 -- ⚠ 公開ロールから読めるようにしないこと。他人の会話がそのまま読めてしまう。
 -- ⚠ 生の IP は保存しない。同じ来訪者の続きの発言を同じ会話に足すためだけに、
 --   ハッシュ（client_key）を持つ。
@@ -27,8 +28,10 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
   conversation_id UUID NOT NULL REFERENCES public.chat_conversations(id) ON DELETE CASCADE,
   role VARCHAR(16) NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL,
-  -- assistant のときだけ入る。vector = 類似検索が当たった / fallback = 公開分を全部渡した。
-  -- 「fallback なのに的外れ」が続く質問は、知識が足りていないということ
+  -- assistant のときだけ入る（lib/chat-knowledge.ts の Retrieval.mode）。
+  --   matched  = 類似検索が当たった
+  --   no_match = 類似検索は動いたが0件 ＝ 知識に無いことを聞かれた回。ここが足す項目の候補
+  --   fallback = 検索が成立していない（埋め込みが無い・OpenAI が落ちている）。質問のせいではない
   retrieval VARCHAR(16),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -47,6 +50,7 @@ REVOKE ALL ON public.chat_conversations FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON public.chat_messages      FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.chat_conversations TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.chat_messages      TO service_role;
+REVOKE ALL ON SEQUENCE public.chat_messages_id_seq FROM PUBLIC, anon, authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.chat_messages_id_seq TO service_role;
 
 /**
@@ -74,12 +78,15 @@ AS $$
 DECLARE
   v_id UUID;
 BEGIN
-  -- 同じ来訪者の、まだ続いているとみなせる会話か
+  -- 同じ来訪者の、まだ続いているとみなせる会話か。
+  -- ⚠ 件数の上限も見る。24時間の窓は発言のたびに延びるので、これが無いと
+  --   1つの会話が限りなく伸び、管理画面がその1行を開けなくなる
   SELECT c.id INTO v_id
   FROM public.chat_conversations c
   WHERE c.id = p_conversation_id
     AND c.client_key = p_client_key
-    AND c.last_message_at > now() - INTERVAL '24 hours';
+    AND c.last_message_at > now() - INTERVAL '24 hours'
+    AND c.message_count < 400;
 
   IF v_id IS NULL THEN
     INSERT INTO public.chat_conversations (client_key, page_path, first_question)

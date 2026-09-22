@@ -1,8 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Cookies from 'js-cookie'
 import AdminSidebar from '@/components/AdminSidebar'
 import { LifeBuoy, MessageSquare, RefreshCw } from 'lucide-react'
+import { isDeclineReply } from '@/lib/chat-decline'
+import { CHAT_LOG_RETENTION_DAYS } from '@/lib/chat-retention'
 
 /**
  * チャットの履歴。見るための画面で、ここから返信や編集はしない。
@@ -11,7 +14,7 @@ import { LifeBuoy, MessageSquare, RefreshCw } from 'lucide-react'
  *   - 会話ログ … AIとのやりとり。誰が書いたかは分からない（連絡先を預かっていない）
  *   - 問い合わせ … 「担当者にメールで問い合わせる」から送られたもの。連絡先がある＝返信できる
  *
- * ⚠ 会話ログは90日で消える（/api/cron/purge-chat-logs）。残したいものは別に控える。
+ * ⚠ 会話ログは一定期間で消える（lib/chat-retention.ts）。残したいものは別に控える。
  */
 
 type Conversation = {
@@ -46,13 +49,26 @@ type Ticket = {
   created_at: string
 }
 
+/** ⚠ timeZone を必ず指定する。指定しないと見る人の端末の時計になり、
+ *  掃除の時刻（JST 03:30）や保持日数の話と突き合わせられなくなる */
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+/**
+ * ⚠ 401 をそのまま文字で出さない。画面側の `admin_auth` cookie は残っているのに
+ *   署名付きの `admin_session` だけ切れている状態があり、そのときログイン画面に戻れず
+ *   「ログインしているのに何も読めない」で詰む（admin/chat-knowledge と同じ扱い）。
+ */
+function backToLogin() {
+  Cookies.remove('admin_auth')
+  location.reload()
 }
 
 export default function AdminChatLogsPage() {
@@ -61,34 +77,50 @@ export default function AdminChatLogsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // ⚠ 2つの取得は別々に失敗しうる。1つのエラー欄にまとめると、
+  //   片方の失敗がもう片方の失敗を隠す（両方の migration が未適用のときに実際に起きる）
+  const [convError, setConvError] = useState<string | null>(null)
+  const [ticketError, setTicketError] = useState<string | null>(null)
 
-  /** 開いている会話の中身。id をキーに覚えて、開き直すたびに取りに行かない */
+  /** 開いている会話の中身。⚠ 更新時は捨てる（下の load） */
   const [openId, setOpenId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Record<string, Message[]>>({})
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
-    setError(null)
+    setConvError(null)
+    setTicketError(null)
+    // ⚠ 開いている会話の控えも捨てる。残すと「更新」を押しても古いやりとりが出続ける
+    setMessages({})
+    setOpenId(null)
+
     try {
       const [convRes, ticketRes] = await Promise.all([
         fetch('/api/admin/chat-logs'),
         fetch('/api/admin/support-tickets'),
       ])
+      if (convRes.status === 401 || ticketRes.status === 401) {
+        backToLogin()
+        return
+      }
+
       const convData = await convRes.json().catch(() => ({}))
+      if (convRes.ok) setConversations(convData.conversations ?? [])
+      else {
+        setConversations([])
+        setConvError(convData.message || convData.error || '会話ログの取得に失敗しました')
+      }
+
       const ticketData = await ticketRes.json().catch(() => ({}))
-
-      if (!convRes.ok) setError(convData.message || convData.error || '会話ログの取得に失敗しました')
-      else setConversations(convData.conversations ?? [])
-
-      if (!ticketRes.ok && convRes.ok) {
-        setError(ticketData.message || ticketData.error || '問い合わせの取得に失敗しました')
-      } else if (ticketRes.ok) {
-        setTickets(ticketData.tickets ?? [])
+      if (ticketRes.ok) setTickets(ticketData.tickets ?? [])
+      else {
+        setTickets([])
+        setTicketError(ticketData.message || ticketData.error || '問い合わせの取得に失敗しました')
       }
     } catch {
-      setError('通信エラーが発生しました')
+      setConvError('通信エラーが発生しました')
+      setTicketError('通信エラーが発生しました')
     }
     setLoading(false)
   }, [])
@@ -108,11 +140,26 @@ export default function AdminChatLogsPage() {
     setLoadingId(id)
     try {
       const res = await fetch(`/api/admin/chat-logs/${id}`)
+      if (res.status === 401) {
+        backToLogin()
+        return
+      }
       const data = await res.json().catch(() => ({}))
-      if (res.ok) setMessages((m) => ({ ...m, [id]: data.messages ?? [] }))
-      else setError(data.message || data.error || 'やりとりの取得に失敗しました')
+      if (res.ok && Array.isArray(data.messages)) {
+        setMessages((m) => ({ ...m, [id]: data.messages }))
+        // 一覧を取ってからやりとりが増えていることがある。開いた行だけ数字を合わせる
+        if (data.conversation) {
+          setConversations((list) =>
+            list.map((c) => (c.id === id ? { ...c, ...data.conversation } : c)),
+          )
+        }
+      } else {
+        setConvError(data.message || data.error || 'やりとりの取得に失敗しました')
+        setOpenId(null)
+      }
     } catch {
-      setError('通信エラーが発生しました')
+      setConvError('通信エラーが発生しました')
+      setOpenId(null)
     }
     setLoadingId(null)
   }
@@ -135,7 +182,7 @@ export default function AdminChatLogsPage() {
           </button>
         </div>
         <p className="text-base text-gray-500 mb-6">
-          会話ログは90日で自動的に消えます。残したいものは控えを取ってください。
+          会話ログは{CHAT_LOG_RETENTION_DAYS}日で自動的に消えます。残したいものは控えを取ってください。
         </p>
 
         <div className="flex gap-2 mb-6">
@@ -161,12 +208,12 @@ export default function AdminChatLogsPage() {
           </button>
         </div>
 
-        {error && <p className="mb-4 text-base text-red-600">{error}</p>}
         {loading && <p className="text-base text-gray-500">読み込み中…</p>}
 
         {!loading && tab === 'conversations' && (
           <section className="space-y-3">
-            {conversations.length === 0 && !error && (
+            {convError && <p className="mb-4 text-base text-red-600">{convError}</p>}
+            {conversations.length === 0 && !convError && (
               <p className="text-base text-gray-500">
                 まだ会話はありません。チャットで質問されると、ここに残ります。
               </p>
@@ -207,12 +254,22 @@ export default function AdminChatLogsPage() {
                           }`}
                         >
                           {m.content}
+                          {/* ⚠ retrieval では判定しない（理由は lib/chat-decline.ts）。
+                              答えられたかどうかは返答そのものを見る */}
+                          {m.role === 'assistant' && isDeclineReply(m.content) && (
+                            <span
+                              className="ml-2 align-middle text-xs font-medium text-amber-700"
+                              title="この質問には答えられていません。「チャットの知識」に足す候補です"
+                            >
+                              答えられていない
+                            </span>
+                          )}
                           {m.role === 'assistant' && m.retrieval === 'fallback' && (
                             <span
-                              className="ml-2 align-middle text-xs text-amber-700"
-                              title="知識の類似検索が当たらず、公開中の知識をまとめて渡して答えています"
+                              className="ml-2 align-middle text-xs font-medium text-gray-500"
+                              title="類似検索が使えず、公開中の知識をまとめて渡して答えた回。質問の内容とは関係ありません（埋め込み未作成・OpenAI の不調など）"
                             >
-                              知識が当たっていません
+                              検索が使えない状態
                             </span>
                           )}
                         </div>
@@ -227,7 +284,8 @@ export default function AdminChatLogsPage() {
 
         {!loading && tab === 'tickets' && (
           <section className="space-y-4">
-            {tickets.length === 0 && !error && (
+            {ticketError && <p className="mb-4 text-base text-red-600">{ticketError}</p>}
+            {tickets.length === 0 && !ticketError && (
               <p className="text-base text-gray-500">まだ問い合わせはありません。</p>
             )}
             {tickets.map((t) => (
