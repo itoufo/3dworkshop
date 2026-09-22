@@ -6,6 +6,7 @@ import {
   retrieveKnowledge,
   signReply,
 } from '@/lib/chat-knowledge'
+import { logChatTurn } from '@/lib/chat-log'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 
 /**
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'rate_limited' }, { status: 429 })
   }
 
-  let body: { messages?: unknown }
+  let body: { messages?: unknown; conversationId?: unknown; pagePath?: unknown }
   try {
     body = await req.json()
   } catch {
@@ -93,8 +94,18 @@ export async function POST(req: Request) {
     const reply = await completeChat(buildSystemPrompt(chunks), messages)
     if (!reply) return Response.json({ error: 'empty_reply' }, { status: 502 })
 
+    // 管理画面で後から読むための記録。⚠ 失敗しても返答は返す（lib/chat-log.ts）
+    const conversationId = await logChatTurn({
+      conversationId: body.conversationId,
+      ip,
+      pagePath: body.pagePath,
+      question,
+      answer: reply,
+      retrieval: mode,
+    })
+
     // 次のリクエストで「これはこちらが返したもの」と確かめられるように署名を添える
-    return Response.json({ reply, signature: signReply(reply), retrieval: mode })
+    return Response.json({ reply, signature: signReply(reply), retrieval: mode, conversationId })
   } catch (e) {
     if (e instanceof KnowledgeUnavailableError) {
       // migration 未適用。障害ではなく未設定なので、来訪者には「準備中」を出す

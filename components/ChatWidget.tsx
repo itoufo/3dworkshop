@@ -8,8 +8,8 @@ import { Check, ChevronLeft, LifeBuoy, MessageCircle, Send, X } from 'lucide-rea
  * 問い合わせチャット。
  *
  * ⚠ 答えを作るのはサーバー（/api/chat）。ここには知識もAPIキーも持たない。
- * ⚠ 会話はこのサイトには保存しない（リロードで消える）。ただし答えを作るために
- *   入力内容は外部のAIサービス（OpenAI）へ送られる。「保存しない＝どこにも出ない」ではない。
+ * ⚠ 会話は2箇所へ出る。(1) 答えを作るために外部のAIサービス（OpenAI）へ、
+ *   (2) 管理画面で後から読むためにこのサイトのDBへ（90日で消える）。
  *   画面下にその旨を出してある。消したらプライバシーの説明が実態とズレる。
  * ⚠ チャットの入力欄には氏名や住所を入れさせない。入力内容はそのまま外部のAIサービスへ送られるため。
  *   「解決しなかったとき」だけ、AIを通さない別のフォーム（handoff）に切り替えて担当者へのメールに引き継ぐ。
@@ -54,6 +54,12 @@ export default function ChatWidget() {
   const [history, setHistory] = useState<Msg[]>([])
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+
+  /**
+   * サーバー側の会話の記録を、続きとしてまとめてもらうための id。
+   * ⚠ 画面の表示には使わない。サーバーが返したものをそのまま送り返すだけ。
+   */
+  const conversationIdRef = useRef<string | null>(null)
 
   /** chat = AIとのやりとり / handoff = 担当者へのメール / sent = 送信済み */
   const [mode, setMode] = useState<'chat' | 'handoff' | 'sent'>('chat')
@@ -151,7 +157,11 @@ export default function ChatWidget() {
       const r = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({
+          messages: next,
+          conversationId: conversationIdRef.current,
+          pagePath: pathname,
+        }),
       })
       const data = await r.json().catch(() => ({}))
       if (r.status === 429) reply = BUSY
@@ -159,6 +169,7 @@ export default function ChatWidget() {
       else if (r.ok && data.reply) {
         reply = data.reply
         signature = typeof data.signature === 'string' ? data.signature : undefined
+        if (typeof data.conversationId === 'string') conversationIdRef.current = data.conversationId
       }
     } catch {
       // reply は FAILED のまま
@@ -441,7 +452,7 @@ export default function ChatWidget() {
         <p className="border-t border-gray-100 px-3 py-2 text-[11px] leading-tight text-gray-500">
           AIの回答です。日程・空席・最終的な金額は予約ページでご確認ください。
           <br />
-          入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信されます。氏名・住所・電話番号などは入力しないでください（
+          入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信され、応対の改善のため当サイトに90日間記録されます。氏名・住所・電話番号などは入力しないでください（
           <a href="/privacy" className="underline hover:text-gray-700">
             プライバシーポリシー
           </a>
