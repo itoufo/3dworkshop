@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Bell, BellOff, Loader2, Share } from 'lucide-react'
+import Link from 'next/link'
+import { Bell, BellOff, ChevronRight, Loader2 } from 'lucide-react'
 import {
   ensureServiceWorker,
   getPushState,
@@ -125,11 +126,17 @@ export default function SurveyNotifyToggle() {
           <Bell className="h-5 w-5 text-purple-600" aria-hidden="true" />
           毎日の質問を通知で受け取る
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-gray-600">
-          iPhone・iPad では、ホーム画面に追加すると通知を受け取れます。画面下部の
-          <Share className="mx-1 inline h-4 w-4 align-text-bottom" aria-hidden="true" />
-          共有ボタンから「ホーム画面に追加」を選んでください。
+        <p className="mt-2 text-base leading-relaxed text-gray-600">
+          iPhone・iPad では、ホーム画面に追加すると通知を受け取れます。
         </p>
+        <Link
+          href="/notify"
+          onClick={() => gaEvent('push_guide_open', { source: 'survey' })}
+          className="mt-3 inline-flex items-center gap-1 text-base font-semibold text-purple-700 underline underline-offset-4"
+        >
+          画面つきの手順を見る
+          <ChevronRight className="h-5 w-5" aria-hidden="true" />
+        </Link>
       </div>
     )
   }
