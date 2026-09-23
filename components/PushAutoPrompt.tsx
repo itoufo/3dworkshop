@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Bell, Share, X, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { Bell, ChevronRight, X, Loader2 } from 'lucide-react'
 import {
   getPushState,
   isIOS,
@@ -103,6 +104,8 @@ export default function PushAutoPrompt() {
   useEffect(() => {
     // ⚠ 管理画面には出さない。編集中に許可ダイアログが被ると誤操作のもと
     if (pathname?.startsWith('/admin')) return
+    // 手順ページでは本文が同じことを案内しているので重ねない
+    if (pathname === '/notify') return
     if (!VAPID_PUBLIC_KEY) return
     // 画面遷移のたびに走らせない
     if (startedRef.current) return
@@ -233,10 +236,19 @@ export default function PushAutoPrompt() {
             新しい開催日程を通知で受け取る
           </p>
           <p className="mt-2 text-base leading-relaxed text-gray-600">
-            iPhone・iPad では、共有ボタン
-            <Share className="mx-1 inline h-4 w-4 align-text-bottom" />
-            から「ホーム画面に追加」をすると、通知を受け取れるようになります。
+            iPhone・iPad では、ホーム画面に追加すると通知を受け取れます。
           </p>
+          <Link
+            href="/notify"
+            onClick={() => {
+              gaEvent('push_guide_open', { source: 'auto_prompt' })
+              close()
+            }}
+            className="mt-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-base font-semibold text-white"
+          >
+            画面つきの手順を見る
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </Link>
         </>
       ) : (
         <>
