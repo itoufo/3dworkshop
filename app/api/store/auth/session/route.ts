@@ -1,0 +1,97 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { clientIp, tooManyRequests } from '@/lib/rate-limit'
+import { verifyMiraiidToken } from '@/lib/store/miraiid'
+import { issueStoreSession, STORE_SESSION_COOKIE, storeSessionCookieOptions } from '@/lib/store/session'
+
+/**
+ * MiraiID でのログインを、ストアのログイン（store_session）に引き換える。
+ *
+ * POST { access_token } … MiraiID に問い合わせて本人を確かめ、store_session を発行する
+ * DELETE                … ログアウト
+ *
+ * ⚠ customers 行にはメールアドレスで紐づける。ゲスト購入やスクール申込で既に行がある人は
+ *   その行を使う（スクール在籍＝出品資格の判定がこの紐づけに依存する）。
+ *   MiraiID 側でメール確認済みの人しか通さない（lib/store/miraiid.ts）。
+ * ⚠ 既存の行の氏名は書き換えない。
+ */
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+export async function POST(request: NextRequest) {
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  const ip = clientIp(request.headers)
+  if (await tooManyRequests(`store-login-ip:${ip}`, { windowMs: 15 * 60 * 1000, max: 30 })) {
+    return NextResponse.json({ error: '試行回数が多すぎます。しばらく待ってからお試しください' }, { status: 429 })
+  }
+
+  const body = await request.json().catch(() => ({}))
+  const user = await verifyMiraiidToken(body?.access_token)
+  if (!user) {
+    return NextResponse.json(
+      { error: 'ログインを確認できませんでした。メールアドレスの確認が済んでいるかご確認ください' },
+      { status: 401 }
+    )
+  }
+
+  // 2回目以降は紐づけ済みの行をそのまま使う（MiraiID 側でメールを変えても同じ人のまま）
+  const { data: identity } = await supabaseAdmin
+    .from('store_identities')
+    .select('customer_id')
+    .eq('miraiid_user_id', user.id)
+    .maybeSingle()
+
+  let customerId = identity?.customer_id as string | undefined
+
+  if (!customerId) {
+    const { data: existing } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('email', user.email)
+      .maybeSingle()
+
+    if (existing) {
+      customerId = existing.id
+    } else {
+      const { data: created, error } = await supabaseAdmin
+        .from('customers')
+        .insert({ email: user.email, name: user.name || user.email.split('@')[0] })
+        .select('id')
+        .single()
+      if (error || !created) {
+        console.error('[store-login] customer insert failed:', error)
+        return NextResponse.json({ error: 'ログインに失敗しました' }, { status: 500 })
+      }
+      customerId = created.id
+    }
+  }
+
+  const { error: identityError } = await supabaseAdmin.from('store_identities').upsert(
+    {
+      miraiid_user_id: user.id,
+      customer_id: customerId,
+      email: user.email,
+      last_login_at: new Date().toISOString(),
+    },
+    { onConflict: 'miraiid_user_id' }
+  )
+  if (identityError) {
+    console.error('[store-login] identity upsert failed:', identityError)
+    return NextResponse.json({ error: 'ログインに失敗しました' }, { status: 500 })
+  }
+
+  const session = issueStoreSession(user.id)
+  const res = NextResponse.json({ ok: true })
+  res.cookies.set(session.name, session.value, { ...storeSessionCookieOptions, maxAge: session.maxAge })
+  return res
+}
+
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true })
+  res.cookies.set(STORE_SESSION_COOKIE, '', { ...storeSessionCookieOptions, maxAge: 0 })
+  return res
+}

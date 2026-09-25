@@ -44,6 +44,8 @@ const NAV_ENTRIES: NavEntry[] = [
     items: [
       { href: '/cookie-cutter', label: 'クッキー型メーカー' },
       { href: '/products', label: '3Dプリント制作' },
+      // 出品マーケット（別サブドメイン。next/link は外部 URL もそのまま <a> で出す）
+      { href: 'https://stores.3dlab.jp', label: 'みんなの作品ストア' },
     ],
   },
   {

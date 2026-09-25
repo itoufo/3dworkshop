@@ -1,7 +1,12 @@
 import Link from 'next/link'
 import PushSubscribeButton from './PushSubscribeButton'
 
-export default function Footer() {
+/**
+ * @param siteBase 3dlab.jp 以外のホスト（stores.3dlab.jp）で使うときに 'https://3dlab.jp' を渡す。
+ *   ⚠ 相対リンクのままだと、ストア側では /store/* に書き換わって 404 になる（next.config.js）。
+ *   あわせて通知の購読ボタンも出さない（通知は 3dlab.jp のサービスワーカーで受けるため）。
+ */
+export default function Footer({ siteBase = '' }: { siteBase?: string } = {}) {
   return (
     <footer className="bg-gray-900 text-gray-300 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,9 +26,11 @@ export default function Footer() {
         </div>
 
         {/* 開催日程の通知 */}
-        <div className="border-t border-gray-800 pt-6 mb-6">
-          <PushSubscribeButton />
-        </div>
+        {!siteBase && (
+          <div className="border-t border-gray-800 pt-6 mb-6">
+            <PushSubscribeButton />
+          </div>
+        )}
 
         {/* Contact Information */}
         <div className="border-t border-gray-800 pt-6 mb-6">
@@ -40,31 +47,35 @@ export default function Footer() {
         {/* Links */}
         <div className="border-t border-gray-800 pt-6 mb-6">
           <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-sm">
-            <Link href="/workshops" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/workshops`} className="text-gray-400 hover:text-purple-400 transition-colors">
               ワークショップ
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/products" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/products`} className="text-gray-400 hover:text-purple-400 transition-colors">
               3Dプリント制作
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/team" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <a href="https://stores.3dlab.jp" className="text-gray-400 hover:text-purple-400 transition-colors">
+              みんなの作品ストア
+            </a>
+            <span className="text-gray-600">|</span>
+            <Link href={`${siteBase}/team`} className="text-gray-400 hover:text-purple-400 transition-colors">
               スタッフ紹介
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/faq" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/faq`} className="text-gray-400 hover:text-purple-400 transition-colors">
               よくある質問
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/terms`} className="text-gray-400 hover:text-purple-400 transition-colors">
               利用規約
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/privacy" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/privacy`} className="text-gray-400 hover:text-purple-400 transition-colors">
               プライバシーポリシー
             </Link>
             <span className="text-gray-600">|</span>
-            <Link href="/tokushoho" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/tokushoho`} className="text-gray-400 hover:text-purple-400 transition-colors">
               特定商取引法に基づく表記
             </Link>
           </div>
