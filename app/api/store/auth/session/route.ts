@@ -33,12 +33,13 @@ function isSameOriginJson(request: NextRequest): boolean {
 }
 
 /**
- * ilike の特殊文字（% _ \ *）を文字どおりに扱わせる。
- * ⚠ * も含める。PostgREST は like/ilike の値の * を % に読み替える。
- *   * はメールアドレスに使える文字なので、放っておくと同じドメインの別人の行に当たる。
+ * メールアドレスを大文字小文字を区別せずに探すための ilike のパターン。
+ * ⚠ PostgREST は ilike の値の * を、前に \\ があっても % に読み替える。
+ *   * はメールアドレスに使える文字なので、1文字に当たる _ に置き換えて候補を広めに取り、
+ *   最後に JS 側で完全一致を確かめる（POST 内の exact）。
  */
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_*]/g, (c) => `\\${c}`)
+function likePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`).replace(/\*/g, '_')
 }
 
 export const runtime = 'nodejs'
@@ -82,17 +83,18 @@ export async function POST(request: NextRequest) {
     //   複数当たったら最も古い行（最初に申し込んだときの行）を使う。
     const { data: matches, error: lookupError } = await supabaseAdmin
       .from('customers')
-      .select('id')
-      .ilike('email', escapeLike(user.email))
+      .select('id, email')
+      .ilike('email', likePattern(user.email))
       .order('created_at', { ascending: true })
-      .limit(1)
+      .limit(20)
     if (lookupError) {
       console.error('[store-login] customer lookup failed:', lookupError)
       return NextResponse.json({ error: 'ログインに失敗しました' }, { status: 500 })
     }
 
-    if (matches && matches.length > 0) {
-      customerId = matches[0].id
+    const exact = (matches ?? []).find((m) => m.email?.toLowerCase() === user.email)
+    if (exact) {
+      customerId = exact.id
     } else {
       const { data: created, error } = await supabaseAdmin
         .from('customers')
