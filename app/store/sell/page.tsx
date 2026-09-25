@@ -86,7 +86,7 @@ export default async function SellPage() {
   }
 
   // 未申請・却下 → 資格を確かめて申請フォームか案内を出す
-  const eligibility = await checkSellerEligibility(user.customerId)
+  const eligibility = await checkSellerEligibility(user.customerId, user.email)
   const canApply = eligibility.verified || eligibility.unverifiedEnrollment
 
   return (

@@ -11,8 +11,13 @@ import { SELLER_MIN_ENROLLED_MONTHS } from './urls'
  *   公開 anon キーで書き換えられるので、DB の status や開始日だけを信じると、
  *   誰でも「在籍3ヶ月」を作れてしまう。Stripe の値は外から書き換えられない。
  *   DB は「どの定期課金を見ればよいか」を知るためだけに使う。
- * ⚠ Stripe を通らない在籍（無料クラス・手入力）は「未確認」として返す。
+ * ⚠ Stripe の定期課金が「本人のもの」であることも確かめる。school_enrollments は anon で書けるので、
+ *   他人の定期課金 ID を自分の行に書き込めば、その定期課金は Stripe 上は正しく「継続中」に見える。
+ *   Stripe の顧客メールが MiraiID で確認済みのメールと一致したときだけ確認済みにする。
+ * ⚠ Stripe を通らない在籍（無料クラス・手入力）・メールが違うものは「未確認」として返す。
  *   申請は受け付け、管理者が承認時に確かめる。
+ * ⚠ 見る在籍の数に上限を置く。anon で在籍の行をいくらでも足せるので、上限が無いと
+ *   1回の判定で Stripe を何千回も呼ばされ、決済と共用のレート制限を使い切る。
  */
 
 export type EnrollmentCheck = {
@@ -32,22 +37,33 @@ export type EnrollmentCheck = {
 }
 
 export type Eligibility = {
-  /** Stripe で「継続中かつ開始から規定月数以上」を確かめられた */
+  /** Stripe で「本人の定期課金が継続中かつ開始から規定月数以上」を確かめられた */
   verified: boolean
-  /** Stripe では確かめられないが、DB 上は在籍がある（管理者の確認が要る） */
+  /** 確かめきれないが在籍の手がかりがある（管理者の確認が要る） */
   unverifiedEnrollment: boolean
   checks: EnrollmentCheck[]
 }
+
+const MAX_ENROLLMENTS = 10
 
 const ACTIVE_STATUSES: Stripe.Subscription.Status[] = ['active', 'trialing', 'past_due']
 
 function monthsAgo(months: number): Date {
   const d = new Date()
+  const day = d.getDate()
+  d.setDate(1)
   d.setMonth(d.getMonth() - months)
+  // 31日から3ヶ月戻すと月末が無い月にはみ出すので、その月の末日で止める
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(day, lastDay))
   return d
 }
 
-export async function checkSellerEligibility(customerId: string): Promise<Eligibility> {
+/**
+ * @param customerId    在籍を探す手がかり（customers 行）
+ * @param verifiedEmail MiraiID で確認済みのメール。Stripe の顧客メールと突き合わせる
+ */
+export async function checkSellerEligibility(customerId: string, verifiedEmail: string): Promise<Eligibility> {
   const empty: Eligibility = { verified: false, unverifiedEnrollment: false, checks: [] }
   if (!supabaseAdmin) return empty
 
@@ -55,6 +71,8 @@ export async function checkSellerEligibility(customerId: string): Promise<Eligib
     .from('school_enrollments')
     .select('id, student_name, status, start_date, stripe_subscription_id')
     .eq('customer_id', customerId)
+    .order('start_date', { ascending: true })
+    .limit(MAX_ENROLLMENTS)
   if (error) {
     console.error('[store-eligibility] enrollment lookup failed:', error)
     return empty
@@ -77,8 +95,12 @@ export async function checkSellerEligibility(customerId: string): Promise<Eligib
           startedAt: new Date(sub.start_date * 1000).toISOString(),
           customerEmail: 'email' in customer ? customer.email?.toLowerCase() ?? null : null,
         }
-        if (ACTIVE_STATUSES.includes(sub.status) && sub.start_date * 1000 <= threshold.getTime()) {
+        const longEnough = ACTIVE_STATUSES.includes(sub.status) && sub.start_date * 1000 <= threshold.getTime()
+        if (longEnough && stripeResult.customerEmail === verifiedEmail.toLowerCase()) {
           verified = true
+        } else if (longEnough) {
+          // 継続中だがメールが違う（本人が別のアドレスで申し込んだか、他人の定期課金か）
+          unverifiedEnrollment = true
         }
       } catch (err) {
         // 存在しない ID（書き換えられた可能性も）・Stripe 障害。確かめられないものは資格にしない
@@ -98,6 +120,8 @@ export async function checkSellerEligibility(customerId: string): Promise<Eligib
       dbStatus: e.status,
       stripe: stripeResult,
     })
+    // 確認できたらそれ以上 Stripe を呼ばない
+    if (verified) break
   }
 
   return { verified, unverifiedEnrollment, checks }

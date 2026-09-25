@@ -6,7 +6,7 @@ import { notifySellerReviewed } from '@/lib/store/notify'
 /**
  * 出品者の承認・却下・停止・停止解除。PATCH { status, review_note }
  * 結果は出品者のログインのメール（MiraiID で確認済みのもの）に送る。
- * 停止（suspended）は問題があったときに使うので、掲載中・審査中の作品も取り下げ（archived）にする。
+ * 承認済み以外（停止・却下）にしたら、掲載中・審査中の作品も取り下げ（archived）にする。
  * 停止を解除（approved に戻す）しても作品は戻さない。出品者が見直して審査に出し直す。
  */
 
@@ -23,6 +23,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const body = await request.json().catch(() => ({}))
   const status = body?.status
   const note = typeof body?.review_note === 'string' ? body.review_note.trim().slice(0, 2000) || null : null
+  // 画面で見ていた状態。見たあとに出品者が申請し直していたら（在籍情報が変わっていたら）通さない
+  const seenStatus = typeof body?.seen_status === 'string' ? body.seen_status : null
+  const seenAppliedAt = typeof body?.seen_applied_at === 'string' ? body.seen_applied_at : null
+  if (!seenStatus || !seenAppliedAt) {
+    return NextResponse.json({ error: '画面を読み込み直してください' }, { status: 400 })
+  }
   if (!(NEXT_STATUS as readonly string[]).includes(status)) {
     return NextResponse.json({ error: 'status が不正です' }, { status: 400 })
   }
@@ -31,14 +37,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .from('store_sellers')
     .update({ status, review_note: note, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('status', seenStatus)
+    .eq('applied_at', seenAppliedAt)
     .select('id, display_name, login_email')
     .maybeSingle()
-  if (error || !seller) {
+  if (error) {
     console.error('[admin/store/sellers] update failed:', error)
-    return NextResponse.json({ error: '更新に失敗しました' }, { status: error ? 500 : 404 })
+    return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 })
+  }
+  if (!seller) {
+    return NextResponse.json({ error: '出品者が申請し直したか、状態が変わっています。読み込み直してください' }, { status: 409 })
   }
 
-  if (status === 'suspended') {
+  if (status !== 'approved') {
     await supabaseAdmin!
       .from('store_products')
       .update({ status: 'archived', updated_at: new Date().toISOString() })

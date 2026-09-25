@@ -38,6 +38,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   let from: string
   let update: Record<string, unknown>
   if (action === 'approve') {
+    // ⚠ 見ていた版が必須。無しで承認すると、出品者が直前に差し替えた内容を見ずに掲載してしまう
+    if (!seenUpdatedAt) return NextResponse.json({ error: '画面を読み込み直してください' }, { status: 400 })
     if (seller?.status !== 'approved') {
       return NextResponse.json({ error: '出品者が承認されていません' }, { status: 409 })
     }

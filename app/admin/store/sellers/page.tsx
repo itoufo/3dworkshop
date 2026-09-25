@@ -87,15 +87,21 @@ export default function AdminStoreSellersPage() {
     load()
   }, [load])
 
-  async function decide(id: string, status: 'approved' | 'rejected' | 'suspended') {
-    const { ok, body } = await adminFetch(`/api/admin/store/sellers/${id}`, {
+  async function decide(s: Seller, status: 'approved' | 'rejected' | 'suspended') {
+    const { ok, body } = await adminFetch(`/api/admin/store/sellers/${s.id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status, review_note: notes[id] ?? '' }),
+      body: JSON.stringify({
+        status,
+        review_note: notes[s.id] ?? '',
+        seen_status: s.status,
+        seen_applied_at: s.applied_at,
+      }),
     })
     if (!ok) {
       setError(body.error || '更新に失敗しました')
       return
     }
+    setError(null)
     await load()
   }
 
@@ -148,17 +154,17 @@ export default function AdminStoreSellersPage() {
               />
               <div className="mt-3 flex flex-wrap gap-2">
                 {s.status !== 'approved' && (
-                  <button onClick={() => decide(s.id, 'approved')} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
+                  <button onClick={() => decide(s, 'approved')} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
                     {s.status === 'suspended' ? '停止を解除する' : '承認する'}
                   </button>
                 )}
                 {s.status === 'applied' && (
-                  <button onClick={() => decide(s.id, 'rejected')} className="px-4 py-2 rounded bg-gray-600 text-white text-sm">
+                  <button onClick={() => decide(s, 'rejected')} className="px-4 py-2 rounded bg-gray-600 text-white text-sm">
                     却下する
                   </button>
                 )}
                 {s.status === 'approved' && (
-                  <button onClick={() => decide(s.id, 'suspended')} className="px-4 py-2 rounded bg-red-600 text-white text-sm">
+                  <button onClick={() => decide(s, 'suspended')} className="px-4 py-2 rounded bg-red-600 text-white text-sm">
                     停止する（作品も取り下げ）
                   </button>
                 )}

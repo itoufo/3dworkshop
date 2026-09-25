@@ -10,8 +10,9 @@ export async function GET() {
   if (supabaseAdmin) {
     const { data } = await supabaseAdmin
       .from('store_products')
-      .select('id, updated_at')
+      .select('id, updated_at, store_sellers!inner(status)')
       .eq('status', 'published')
+      .eq('store_sellers.status', 'approved')
     for (const p of data ?? []) {
       urls.push({ loc: `${STORE_URL}/p/${p.id}`, lastmod: p.updated_at })
     }

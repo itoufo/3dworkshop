@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import { uploadSellerFile } from '@/lib/store/upload-client'
 import { splitPrice, SELLER_SHARE_PERCENT } from '@/lib/store/pricing'
@@ -72,6 +72,8 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
   const [uploading, setUploading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  // ⚠ busy（state）は再描画まで効かないので、素早い2度押しで下書きが2つできる。ref で同期的に止める
+  const inFlight = useRef(false)
 
   const set = <K extends keyof EditableProduct>(key: K, value: EditableProduct[K]) => setP((prev) => ({ ...prev, [key]: value }))
   const liveOrReviewing = p.status === 'published' || p.status === 'pending_review'
@@ -79,8 +81,11 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
   async function addImages(files: FileList | null) {
     if (!files) return
     setError(null)
+    // ⚠ p.image_urls はこの関数の中では古いまま（アップロードのたびに再描画されても変わらない）。
+    //   手元で数えないと上限を超えてアップロードし、あふれた分が置き去りになる
+    let count = p.image_urls.length
     for (const file of Array.from(files)) {
-      if (p.image_urls.length >= PRODUCT_IMAGES_MAX) break
+      if (count >= PRODUCT_IMAGES_MAX) break
       if (!IMAGE_TYPES[file.type]) {
         setError('画像は JPEG / PNG / WebP にしてください')
         continue
@@ -96,6 +101,7 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
         setError(result.error)
         continue
       }
+      count += 1
       setP((prev) => ({ ...prev, image_urls: [...prev.image_urls, result.publicUrl!].slice(0, PRODUCT_IMAGES_MAX) }))
     }
   }
@@ -122,6 +128,8 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
   }
 
   async function save(action: 'save' | 'submit' | 'withdraw') {
+    if (inFlight.current) return
+    inFlight.current = true
     setBusy(true)
     setError(null)
     setMessage(null)
@@ -180,6 +188,7 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
             : '保存しました'
       )
     } finally {
+      inFlight.current = false
       setBusy(false)
     }
   }

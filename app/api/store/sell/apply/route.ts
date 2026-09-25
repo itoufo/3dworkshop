@@ -4,6 +4,7 @@ import { requireStoreUser } from '@/lib/store/session'
 import { isSameOriginJson } from '@/lib/store/request'
 import { checkSellerEligibility } from '@/lib/store/eligibility'
 import { notifyAdminSellerApplied } from '@/lib/store/notify'
+import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { SELLER_BIO_MAX, SELLER_NAME_MAX, SELLER_SLUG_PATTERN } from '@/lib/store/product-rules'
 
 /**
@@ -24,6 +25,14 @@ export async function POST(request: NextRequest) {
   if ('denied' in auth) return auth.denied
   const { user } = auth
   if (!supabaseAdmin) return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+
+  // 申請のたびに Stripe を呼ぶので、回数を絞る
+  if (
+    (await tooManyRequests(`store-apply-ip:${clientIp(request.headers)}`, { windowMs: 60 * 60 * 1000, max: 10 })) ||
+    (await tooManyRequests(`store-apply-user:${user.miraiidUserId}`, { windowMs: 60 * 60 * 1000, max: 5 }))
+  ) {
+    return NextResponse.json({ error: '申請の回数が多すぎます。しばらく待ってからお試しください' }, { status: 429 })
+  }
 
   if (user.seller && user.seller.status !== 'rejected') {
     return NextResponse.json({ error: 'すでに申請済みです' }, { status: 409 })
@@ -47,7 +56,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `紹介文は${SELLER_BIO_MAX}文字までです` }, { status: 400 })
   }
 
-  const eligibility = await checkSellerEligibility(user.customerId)
+  const eligibility = await checkSellerEligibility(user.customerId, user.email)
   if (!eligibility.verified && !eligibility.unverifiedEnrollment) {
     return NextResponse.json({ error: '出品の条件（スクール在籍3ヶ月以上）を確認できませんでした' }, { status: 403 })
   }
