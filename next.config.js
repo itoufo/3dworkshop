@@ -54,6 +54,13 @@ const nextConfig = {
         destination: 'https://stores.3dlab.jp/',
         permanent: true,
       },
+      // ストアのホストで /store/* を直接開かれたら、本来の URL へ（同じ内容の URL を2つ作らない）
+      {
+        source: '/store/:path*',
+        has: onStoreHost,
+        destination: '/:path*',
+        permanent: true,
+      },
     ]
   },
   images: {

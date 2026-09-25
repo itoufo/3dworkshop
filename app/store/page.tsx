@@ -32,6 +32,7 @@ async function publishedProducts(): Promise<ListedProduct[]> {
 
 export const metadata: Metadata = {
   title: { absolute: 'みんなの作品ストア | 3DLab' },
+  alternates: { canonical: '/' },
 }
 
 const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`

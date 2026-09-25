@@ -17,12 +17,17 @@ export const metadata: Metadata = {
   },
   description:
     '3DLab のスクール生がつくった 3D データと、3DLab が印刷してお届けする作品のストア。データをダウンロードして自分で印刷することも、完成品を届けてもらうこともできます。',
-  alternates: { canonical: '/' },
+  // ⚠ canonical に URL を書かない。下のページすべてに引き継がれ、商品ページまで
+  //   トップを正規URLと名乗ってしまう。各ページで自分の URL を書く。
+  //   null で app/layout.tsx の canonical（https://3dlab.jp）も打ち消す。
+  alternates: { canonical: null },
   openGraph: {
     siteName: '3DLab みんなの作品ストア',
     url: STORE_URL,
     locale: 'ja_JP',
     type: 'website',
+    // ⚠ openGraph はここで丸ごと置き換わるので、画像も書き直す（無いと共有時に画像が出ない）
+    images: [{ url: `${MAIN_SITE_URL}/og-image.jpg`, width: 1200, height: 630 }],
   },
 }
 

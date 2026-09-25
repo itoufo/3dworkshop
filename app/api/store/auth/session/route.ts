@@ -14,7 +14,28 @@ import { issueStoreSession, STORE_SESSION_COOKIE, storeSessionCookieOptions } fr
  *   その行を使う（スクール在籍＝出品資格の判定がこの紐づけに依存する）。
  *   MiraiID 側でメール確認済みの人しか通さない（lib/store/miraiid.ts）。
  * ⚠ 既存の行の氏名は書き換えない。
+ * ⚠ 別サイトからの POST を受けない（ログイン CSRF）。受けると、攻撃者が自分の MiraiID の
+ *   トークンを被害者のブラウザに送らせ、被害者を攻撃者のアカウントでログインさせられる。
+ *   その後に被害者が入れた振込先やデータが攻撃者のアカウントに入る。
  */
+
+/** 同じホストのページから fetch された JSON だけを通す */
+function isSameOriginJson(request: NextRequest): boolean {
+  if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) return false
+  const origin = request.headers.get('origin')
+  const host = request.headers.get('host')
+  if (!origin || !host) return false
+  try {
+    return new URL(origin).host === host
+  } catch {
+    return false
+  }
+}
+
+/** LIKE の特殊文字（% _ \）を文字どおりに扱わせる */
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`)
+}
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,6 +43,10 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   if (!supabaseAdmin) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  if (!isSameOriginJson(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const ip = clientIp(request.headers)
@@ -48,14 +73,22 @@ export async function POST(request: NextRequest) {
   let customerId = identity?.customer_id as string | undefined
 
   if (!customerId) {
-    const { data: existing } = await supabaseAdmin
+    // ⚠ 大文字小文字を区別せずに探す。customers.email は入力のまま保存されている経路があり
+    //   （スクール申込など）、区別すると在籍中の生徒に空の別行ができて出品資格が消える。
+    //   複数当たったら最も古い行（最初に申し込んだときの行）を使う。
+    const { data: matches, error: lookupError } = await supabaseAdmin
       .from('customers')
       .select('id')
-      .eq('email', user.email)
-      .maybeSingle()
+      .ilike('email', escapeLike(user.email))
+      .order('created_at', { ascending: true })
+      .limit(1)
+    if (lookupError) {
+      console.error('[store-login] customer lookup failed:', lookupError)
+      return NextResponse.json({ error: 'ログインに失敗しました' }, { status: 500 })
+    }
 
-    if (existing) {
-      customerId = existing.id
+    if (matches && matches.length > 0) {
+      customerId = matches[0].id
     } else {
       const { data: created, error } = await supabaseAdmin
         .from('customers')

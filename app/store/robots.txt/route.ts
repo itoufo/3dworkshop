@@ -5,7 +5,6 @@ export function GET() {
     'User-agent: *',
     'Allow: /',
     'Disallow: /sell',
-    'Disallow: /login',
     'Disallow: /auth/',
     '',
     `Sitemap: ${STORE_URL}/sitemap.xml`,
