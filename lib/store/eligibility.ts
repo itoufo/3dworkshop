@@ -20,6 +20,14 @@ import { SELLER_MIN_ENROLLED_MONTHS } from './urls'
 // 同じメールで Stripe の顧客が複数できていることがある（実在の在籍で2件）。スクールの定期課金がどれに付いていても拾う
 const MAX_CUSTOMERS = 10
 const MAX_DB_ROWS = 20
+/**
+ * スクールの月謝として認める最低額（円）。app/school/apply/page.tsx の月謝（17,000円）。
+ * ⚠ 金額も見る。スクールの申込 API（create-school-checkout-session）は月謝の額をブラウザから
+ *   受け取っているので、50円の「スクールの定期課金」を作って3ヶ月待てば資格を得られてしまう。
+ *   月謝を変えたらここも変える。割引はクーポンで掛かるので、価格そのものは定価のまま。
+ */
+const SCHOOL_MONTHLY_FEE_MIN = 17000
+
 const ACTIVE_STATUSES: Stripe.Subscription.Status[] = ['active', 'trialing', 'past_due']
 
 export type EnrollmentCheck =
@@ -30,7 +38,9 @@ export type EnrollmentCheck =
       /** 定期課金が始まった日（ISO） */
       startedAt: string
       customerEmail: string | null
-      /** 継続中かつ規定月数以上（＝資格あり） */
+      /** 月謝の額（円） */
+      monthlyAmount: number | null
+      /** 継続中かつ規定月数以上かつ月謝が定額以上（＝資格あり） */
       qualifies: boolean
     }
   | {
@@ -73,13 +83,18 @@ async function stripeChecks(verifiedEmail: string, threshold: Date): Promise<Enr
       const subs = await stripe.subscriptions.list({ customer: customer.id, status: 'all', limit: 20 })
       for (const sub of subs.data) {
         if (sub.metadata?.type !== 'school_enrollment') continue
+        const monthlyAmount = sub.items.data[0]?.price?.unit_amount ?? null
         checks.push({
           source: 'stripe',
           subscriptionId: sub.id,
           status: sub.status,
           startedAt: new Date(sub.start_date * 1000).toISOString(),
           customerEmail: customer.email?.toLowerCase() ?? null,
-          qualifies: ACTIVE_STATUSES.includes(sub.status) && sub.start_date * 1000 <= threshold.getTime(),
+          monthlyAmount,
+          qualifies:
+            ACTIVE_STATUSES.includes(sub.status) &&
+            sub.start_date * 1000 <= threshold.getTime() &&
+            (monthlyAmount ?? 0) >= SCHOOL_MONTHLY_FEE_MIN,
         })
       }
     }

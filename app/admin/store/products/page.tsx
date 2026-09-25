@@ -131,7 +131,10 @@ export default function AdminStoreProductsPage() {
                     rows={2}
                     placeholder="差し戻しの理由（出品者に届きます）"
                     value={notes[p.id] ?? ''}
-                    onChange={(e) => setNotes({ ...notes, [p.id]: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setNotes((prev) => ({ ...prev, [p.id]: value }))
+                    }}
                   />
                   <div className="mt-3 flex flex-wrap gap-2">
                     {p.status === 'pending_review' && (

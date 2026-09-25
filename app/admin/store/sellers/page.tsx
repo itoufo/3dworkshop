@@ -11,6 +11,7 @@ type EnrollmentCheck =
       status: string
       startedAt: string
       customerEmail: string | null
+      monthlyAmount: number | null
       qualifies: boolean
     }
   | {
@@ -60,13 +61,14 @@ function Verification({ seller }: { seller: Seller }) {
     <div className="space-y-1 text-sm">
       <p className={qualified ? 'text-green-700 font-bold' : 'text-red-700 font-bold'}>
         {qualified
-          ? '✓ Stripe で確認済み（ログインのメールの定期課金が継続中・3ヶ月以上）'
+          ? '✓ Stripe で確認済み（ログインのメールの月謝が継続中・3ヶ月以上）'
           : '⚠ Stripe で確認できません。承認前に本人確認をしてください'}
       </p>
       {stripeChecks.map((c) =>
         c.source === 'stripe' ? (
           <p key={c.subscriptionId} className="text-gray-700">
-            Stripe: {c.status}／{date(c.startedAt)} 開始／{c.qualifies ? '資格あり' : '資格なし'}
+            Stripe: {c.status}／{date(c.startedAt)} 開始／月謝 {c.monthlyAmount != null ? `¥${c.monthlyAmount.toLocaleString('ja-JP')}` : '不明'}／
+            {c.qualifies ? '資格あり' : '資格なし'}
           </p>
         ) : null
       )}
@@ -167,10 +169,13 @@ export default function AdminStoreSellersPage() {
                 rows={2}
                 placeholder="出品者に送るコメント（却下の理由など）"
                 value={notes[s.id] ?? ''}
-                onChange={(e) => setNotes({ ...notes, [s.id]: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setNotes((prev) => ({ ...prev, [s.id]: value }))
+                }}
               />
               <div className="mt-3 flex flex-wrap gap-2">
-                {s.status !== 'approved' && (
+                {(s.status === 'applied' || s.status === 'suspended') && (
                   <button onClick={() => decide(s, 'approved')} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
                     {s.status === 'suspended' ? '停止を解除する' : '承認する'}
                   </button>

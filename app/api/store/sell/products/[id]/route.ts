@@ -73,11 +73,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     status = 'draft'
   }
 
-  const { error } = await supabaseAdmin
+  const { data: saved, error } = await supabaseAdmin
     .from('store_products')
     .update({ ...parsed.values, ...extra, status, updated_at: now })
     .eq('id', id)
     .eq('seller_id', sellerId)
+    // 読んだあとに管理者が差し戻した等で状態が変わっていたら上書きしない（差し戻しの理由が消える）
+    .eq('status', current.status)
+    .select('id')
+  if (!error && (!saved || saved.length === 0)) {
+    return NextResponse.json({ error: '状態が変わりました。画面を読み込み直してください' }, { status: 409 })
+  }
   if (error) {
     console.error('[store/products] update failed:', error)
     return NextResponse.json({ error: '保存に失敗しました' }, { status: 500 })
