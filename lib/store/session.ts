@@ -93,10 +93,13 @@ export async function currentStoreUser(): Promise<StoreUser | null> {
   const customer = identity?.customers as unknown as { id: string; email: string; name: string } | null
   if (!identity || !customer) return null
 
+  // ⚠ 出品者は customers 行ではなく MiraiID のユーザーで引く。customers は anon で
+  //   書き換えられるので、行経由だと他人の出品者アカウントに入れてしまう
+  //   （supabase/migrations/20260926_store_seller_identity.sql）
   const { data: seller } = await supabaseAdmin
     .from('store_sellers')
     .select('id, status, display_name, slug')
-    .eq('customer_id', customer.id)
+    .eq('miraiid_user_id', miraiidUserId)
     .maybeSingle()
 
   return {
