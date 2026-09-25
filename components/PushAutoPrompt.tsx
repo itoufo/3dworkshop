@@ -106,6 +106,9 @@ export default function PushAutoPrompt() {
     if (pathname?.startsWith('/admin')) return
     // 手順ページでは本文が同じことを案内しているので重ねない
     if (pathname === '/notify') return
+    // ストア（stores.3dlab.jp）には出さない。通知は 3dlab.jp の開催日程のお知らせで、
+    // 別ホストで購読すると届いた通知のリンク先がストア側に解決されて開けない
+    if (window.location.hostname.startsWith('stores.')) return
     if (!VAPID_PUBLIC_KEY) return
     // 画面遷移のたびに走らせない
     if (startedRef.current) return

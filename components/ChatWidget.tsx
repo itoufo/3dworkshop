@@ -455,7 +455,8 @@ export default function ChatWidget() {
           <br />
           入力内容は回答の生成のため外部のAIサービス（OpenAI）へ送信され、応対の改善のため当サイトに
           {CHAT_LOG_RETENTION_DAYS}日間記録されます。氏名・住所・電話番号などは入力しないでください（
-          <a href="/privacy" className="underline hover:text-gray-700">
+          {/* ⚠ 絶対URL。ストア（stores.3dlab.jp）でも表示されるので、相対だとストア側に解決されて 404 */}
+          <a href="https://3dlab.jp/privacy" className="underline hover:text-gray-700">
             プライバシーポリシー
           </a>
           ）。
@@ -553,7 +554,8 @@ export default function ChatWidget() {
 
             <p className="text-[11px] leading-tight text-gray-500">
               ご入力いただいた内容は、お問い合わせへの対応にのみ利用します（
-              <a href="/privacy" className="underline hover:text-gray-700">
+              {/* ⚠ 絶対URL。ストア（stores.3dlab.jp）でも表示されるので、相対だとストア側に解決されて 404 */}
+          <a href="https://3dlab.jp/privacy" className="underline hover:text-gray-700">
                 プライバシーポリシー
               </a>
               ）。

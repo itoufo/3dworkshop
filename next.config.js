@@ -12,8 +12,57 @@ const isNonProductionDeploy = process.env.VERCEL
   ? process.env.VERCEL_ENV !== 'production'
   : !!process.env.CONTEXT && process.env.CONTEXT !== 'production'
 
+// stores.3dlab.jp（出品マーケット）は同じアプリの app/store/ 以下で出す。
+// ホスト名が stores.* のリクエストだけ /store/* に書き換える。
+//   stores.localhost:<port> … ローカル確認用（Chrome などは *.localhost を 127.0.0.1 に向ける）
+// ⚠ middleware.ts は使わない（ホストリダイレクトは CDN 側、という決まり。上の headers() の注記）。
+// ⚠ /api/・/_next/・拡張子つきの静的ファイルは書き換えない。書き換えると
+//   ストア側で JS・画像・API が 404 になる。
+const STORE_HOST_PATTERN = '^stores\\.(3dlab\\.jp|localhost)$'
+const onStoreHost = [{ type: 'host', value: STORE_HOST_PATTERN }]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: '/', has: onStoreHost, destination: '/store' },
+        { source: '/sitemap.xml', has: onStoreHost, destination: '/store/sitemap.xml' },
+        { source: '/robots.txt', has: onStoreHost, destination: '/store/robots.txt' },
+        // ⚠ 書き換えは上から順に連鎖して効く。書き換え後の /store・/store/* を
+        //   もう一度書き換えないよう store 自体を除外する（除外しないと / が /store/store になって 404）
+        {
+          source: '/:path((?!api/|_next/|store(?:/|$))(?!.*\\.[A-Za-z0-9]+$).+)',
+          has: onStoreHost,
+          destination: '/store/:path',
+        },
+      ],
+    }
+  },
+  async redirects() {
+    // 3dlab.jp/store/* は stores.3dlab.jp へ。同じ内容が2つの URL に載らないようにする
+    return [
+      {
+        source: '/store/:path*',
+        has: [{ type: 'host', value: '^(www\\.)?3dlab\\.jp$' }],
+        destination: 'https://stores.3dlab.jp/:path*',
+        permanent: true,
+      },
+      {
+        source: '/store',
+        has: [{ type: 'host', value: '^(www\\.)?3dlab\\.jp$' }],
+        destination: 'https://stores.3dlab.jp/',
+        permanent: true,
+      },
+      // ストアのホストで /store/* を直接開かれたら、本来の URL へ（同じ内容の URL を2つ作らない）
+      {
+        source: '/store/:path*',
+        has: onStoreHost,
+        destination: '/:path*',
+        permanent: true,
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {

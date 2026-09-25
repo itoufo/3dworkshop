@@ -603,6 +603,21 @@ export async function POST(request: NextRequest) {
         break
       }
 
+      case 'customer.subscription.deleted': {
+        // スクールの月謝が止まった（解約・支払い失敗の末の自動解約）。
+        // ⚠ これを拾わないと、退会した生徒の在籍が active のまま残り、
+        //   ストアの出品資格（在籍3ヶ月以上）があるように見えてしまう。
+        const subscription = event.data.object as Stripe.Subscription
+        if (supabaseAdmin) {
+          const { error } = await supabaseAdmin
+            .from('school_enrollments')
+            .update({ status: 'cancelled' })
+            .eq('stripe_subscription_id', subscription.id)
+          if (error) throw new Error(`school enrollment cancel failed: ${error.message}`)
+        }
+        break
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
