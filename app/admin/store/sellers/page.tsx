@@ -3,12 +3,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminFetch } from '@/lib/store/admin-fetch'
 
-type EnrollmentCheck = {
-  enrollmentId: string
-  studentName: string | null
-  dbStatus: string | null
-  stripe: { subscriptionId: string; status: string; startedAt: string; customerEmail: string | null } | null
-}
+// lib/store/eligibility.ts の EnrollmentCheck と同じ形（申請時点の写し）
+type EnrollmentCheck =
+  | {
+      source: 'stripe'
+      subscriptionId: string
+      status: string
+      startedAt: string
+      customerEmail: string | null
+      qualifies: boolean
+    }
+  | {
+      source: 'db'
+      enrollmentId: string
+      studentName: string | null
+      dbStatus: string | null
+      startDate: string | null
+      subscriptionId: string | null
+    }
 
 type Seller = {
   id: string
@@ -34,35 +46,40 @@ const STATUS_LABEL: Record<Seller['status'], string> = {
 const date = (s: string) => new Date(s).toLocaleDateString('ja-JP')
 
 /**
- * 在籍の確かさ。Stripe の定期課金のメールがログインのメールと一致しているかを見る。
- * ⚠ DB の顧客情報（customer）は公開キーで書き換えられるので、判断の根拠にしない。
+ * 在籍の確認結果（申請時点）。
+ * Stripe の行は、ログインのメール（MiraiID で確認済み）で Stripe を探して見つかったスクールの定期課金。
+ * 「資格あり」は継続中かつ3ヶ月以上のものだけ。
+ * ⚠ DB の行は公開キーで書き換えられるので参考。DB にしか無い在籍は、承認前に本人確認が要る。
  */
 function Verification({ seller }: { seller: Seller }) {
   const checks = seller.enrollment_snapshot ?? []
-  if (checks.length === 0) return <p className="text-sm text-red-700">在籍の記録なし</p>
+  const stripeChecks = checks.filter((c) => c.source === 'stripe')
+  const dbChecks = checks.filter((c) => c.source === 'db')
+  const qualified = stripeChecks.some((c) => c.source === 'stripe' && c.qualifies)
   return (
-    <ul className="space-y-1">
-      {checks.map((c) => {
-        const match = c.stripe?.customerEmail && c.stripe.customerEmail === seller.login_email?.toLowerCase()
-        return (
-          <li key={c.enrollmentId} className="text-sm">
-            {c.stripe ? (
-              <>
-                <span className={match ? 'text-green-700' : 'text-red-700 font-bold'}>
-                  {match ? '✓ Stripe のメール一致' : '⚠ Stripe のメールが違う'}
-                </span>
-                <span className="text-gray-600">
-                  {' '}（{c.stripe.customerEmail ?? 'メールなし'}／{c.stripe.status}／{date(c.stripe.startedAt)} 開始）
-                </span>
-              </>
-            ) : (
-              <span className="text-amber-700 font-bold">⚠ Stripe を通っていない在籍（DB 上は {c.dbStatus}）。本人確認が要ります</span>
-            )}
-            {c.studentName && <span className="text-gray-600">・受講者 {c.studentName}</span>}
-          </li>
-        )
-      })}
-    </ul>
+    <div className="space-y-1 text-sm">
+      <p className={qualified ? 'text-green-700 font-bold' : 'text-red-700 font-bold'}>
+        {qualified
+          ? '✓ Stripe で確認済み（ログインのメールの定期課金が継続中・3ヶ月以上）'
+          : '⚠ Stripe で確認できません。承認前に本人確認をしてください'}
+      </p>
+      {stripeChecks.map((c) =>
+        c.source === 'stripe' ? (
+          <p key={c.subscriptionId} className="text-gray-700">
+            Stripe: {c.status}／{date(c.startedAt)} 開始／{c.qualifies ? '資格あり' : '資格なし'}
+          </p>
+        ) : null
+      )}
+      {dbChecks.map((c) =>
+        c.source === 'db' ? (
+          <p key={c.enrollmentId} className="text-gray-500">
+            DB（参考）: {c.dbStatus}／{c.startDate ? date(c.startDate) : '開始日なし'} 開始
+            {c.studentName && `／受講者 ${c.studentName}`}
+          </p>
+        ) : null
+      )}
+      {checks.length === 0 && <p className="text-gray-500">在籍の記録なし</p>}
+    </div>
   )
 }
 
@@ -111,7 +128,7 @@ export default function AdminStoreSellersPage() {
     <div className="p-6 max-w-5xl">
       <h1 className="text-2xl font-bold text-gray-900">ストア: 出品者の審査</h1>
       <p className="mt-2 text-gray-600">
-        承認の前に、Stripe の定期課金（スクールの月謝）のメールとログインのメールが一致しているかを確かめてください。
+        「Stripe で確認済み」でない申請は、承認の前に本人確認をしてください（スクールの名簿と照らす等）。
       </p>
       <div className="mt-4 flex gap-2">
         {(['applied', 'all'] as const).map((f) => (

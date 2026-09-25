@@ -37,7 +37,7 @@ export async function notifyAdminSellerApplied(input: { displayName: string; log
   const subject = `【ストア】出品者の申請: ${input.displayName}`
   const html = layout('出品者の申請がありました', `
   <p>表示名: ${esc(input.displayName)}<br>ログインのメール: ${esc(input.loginEmail)}</p>
-  ${input.flagged ? '<p style="color:#b91c1c;">⚠ 在籍を Stripe で確かめられなかったか、メールが一致しません。承認前に確認してください。</p>' : ''}
+  ${input.flagged ? '<p style="color:#b91c1c;">⚠ 在籍を Stripe で確かめられませんでした。承認前に本人確認をしてください。</p>' : ''}
   <p><a href="${MAIN_SITE_URL}/admin/store/sellers">管理画面で確認する</a></p>`)
   await safeSend(STORE_ADMIN_NOTIFY, subject, html, STORE_ADMIN_CC)
 }

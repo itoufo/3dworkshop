@@ -29,11 +29,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { data: product } = await supabaseAdmin!
     .from('store_products')
-    .select('id, title, status, updated_at, seller:store_sellers(status, login_email)')
+    .select('id, title, status, updated_at, seller:store_sellers(id, status, identity:store_identities(email))')
     .eq('id', id)
     .maybeSingle()
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  const seller = product.seller as unknown as { status: string; login_email: string | null } | null
+  const seller = product.seller as unknown as {
+    id: string
+    status: string
+    identity: { email: string } | null
+  } | null
 
   let from: string
   let update: Record<string, unknown>
@@ -72,9 +76,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: '出品者が内容を変えたか、状態が変わっています。一覧を読み込み直してください' }, { status: 409 })
   }
 
-  if (seller?.login_email) {
+  // ⚠ 承認と同時に出品者が停止された場合、掲載中のまま残らないよう、承認後に出品者の状態を見直す。
+  //   停止の解除で審査なしに掲載へ戻るのを防ぐ（停止時の取り下げと同じ扱いにする）
+  if (action === 'approve' && seller) {
+    const { data: latest } = await supabaseAdmin!.from('store_sellers').select('status').eq('id', seller.id).single()
+    if (latest?.status !== 'approved') {
+      await supabaseAdmin!.from('store_products').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', id)
+      return NextResponse.json({ error: '出品者の状態が変わったため、掲載しませんでした' }, { status: 409 })
+    }
+  }
+
+  const to = seller?.identity?.email
+  if (to) {
     await notifySellerReviewed({
-      to: seller.login_email,
+      to,
       kind: 'product',
       approved: action === 'approve',
       name: product.title,

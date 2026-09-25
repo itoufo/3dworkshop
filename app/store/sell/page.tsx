@@ -8,6 +8,7 @@ import { MAIN_SITE_URL, SELLER_MIN_ENROLLED_MONTHS } from '@/lib/store/urls'
 import { PRODUCT_STATUS_LABEL, type ProductStatus } from '@/lib/store/product-rules'
 import SellNav from '@/components/store/SellNav'
 import ApplyForm from './ApplyForm'
+import { tooManyRequests } from '@/lib/rate-limit'
 
 export const metadata: Metadata = {
   title: '出品者メニュー',
@@ -86,6 +87,15 @@ export default async function SellPage() {
   }
 
   // 未申請・却下 → 資格を確かめて申請フォームか案内を出す
+  // ⚠ 表示のたびに Stripe を呼ぶので、1人あたりの回数を絞る（決済と共用のレート制限を守る）
+  if (await tooManyRequests(`store-eligibility-user:${user.miraiidUserId}`, { windowMs: 60 * 60 * 1000, max: 30 })) {
+    return (
+      <Panel>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">作品を出品する</h1>
+        <p className="mt-4 text-base text-gray-700">確認の回数が多すぎます。しばらく待ってから開き直してください。</p>
+      </Panel>
+    )
+  }
   const eligibility = await checkSellerEligibility(user.customerId, user.email)
   const canApply = eligibility.verified || eligibility.unverifiedEnrollment
 

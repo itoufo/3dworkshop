@@ -88,14 +88,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '申請に失敗しました' }, { status: 500 })
   }
 
-  // Stripe で確かめられなかった／Stripe のメールがログインのメールと違う → 管理者に目立たせる
-  const emailMismatch = eligibility.checks.some(
-    (c) => c.stripe?.customerEmail && c.stripe.customerEmail !== user.email
-  )
+  // Stripe で確かめられなかった → 管理者に目立たせる
   await notifyAdminSellerApplied({
     displayName,
     loginEmail: user.email,
-    flagged: !eligibility.verified || emailMismatch,
+    flagged: !eligibility.verified,
   })
 
   return NextResponse.json({ ok: true })

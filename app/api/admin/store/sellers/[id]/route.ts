@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .eq('id', id)
     .eq('status', seenStatus)
     .eq('applied_at', seenAppliedAt)
-    .select('id, display_name, login_email')
+    .select('id, display_name, identity:store_identities(email)')
     .maybeSingle()
   if (error) {
     console.error('[admin/store/sellers] update failed:', error)
@@ -57,9 +57,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .in('status', ['published', 'pending_review'])
   }
 
-  if (seller.login_email && status !== 'suspended') {
+  // 通知は今の MiraiID のメールへ（申請時の写し login_email ではなく。あとで変えている場合がある）
+  const to = (seller.identity as unknown as { email: string } | null)?.email
+  if (to && status !== 'suspended') {
     await notifySellerReviewed({
-      to: seller.login_email,
+      to,
       kind: 'seller',
       approved: status === 'approved',
       name: seller.display_name,
