@@ -18,6 +18,7 @@ import {
   MessageCircle,
   MessageSquare,
   Package,
+  Store,
   Tag,
   Users,
   X,
@@ -76,6 +77,9 @@ const groups: NavGroup[] = [
       { href: '/admin/products', label: '商品管理', icon: Package },
       { href: '/admin/cookie-cutter', label: 'クッキー型の注文', icon: Cookie },
       { href: '/admin?tab=coupons', label: 'クーポン', icon: Tag, tab: 'coupons', match: '/admin/coupons' },
+      // stores.3dlab.jp（出品マーケット）の審査。出品者用の画面はストア側（/sell）にある
+      { href: '/admin/store/sellers', label: 'ストア: 出品者', icon: Store },
+      { href: '/admin/store/products', label: 'ストア: 作品', icon: Store },
     ],
   },
   {

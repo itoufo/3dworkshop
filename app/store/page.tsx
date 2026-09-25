@@ -19,8 +19,10 @@ async function publishedProducts(): Promise<ListedProduct[]> {
   if (!supabaseAdmin) return []
   const { data, error } = await supabaseAdmin
     .from('store_products')
-    .select('id, title, image_urls, sell_data, data_price, sell_print, print_price, store_sellers(display_name, slug)')
+    // ⚠ 出品者が承認済みのものだけ。停止・却下された出品者の作品を出さない
+    .select('id, title, image_urls, sell_data, data_price, sell_print, print_price, store_sellers!inner(display_name, slug)')
     .eq('status', 'published')
+    .eq('store_sellers.status', 'approved')
     .order('published_at', { ascending: false })
     .limit(60)
   if (error) {

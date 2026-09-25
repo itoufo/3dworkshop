@@ -51,6 +51,10 @@ export type SellerStatus = 'applied' | 'approved' | 'rejected' | 'suspended'
 export interface StoreUser {
   miraiidUserId: string
   customerId: string
+  /**
+   * MiraiID で確認済みのメール（store_identities.email）。
+   * ⚠ customers.email ではない。customers は anon で書き換えられるので、本人確認や通知先に使えない
+   */
   email: string
   name: string
   seller: {
@@ -87,22 +91,25 @@ export async function currentStoreUser(): Promise<StoreUser | null> {
 
   const { data: identity } = await supabaseAdmin
     .from('store_identities')
-    .select('customer_id, customers(id, email, name)')
+    .select('customer_id, email, customers(id, name)')
     .eq('miraiid_user_id', miraiidUserId)
     .maybeSingle()
-  const customer = identity?.customers as unknown as { id: string; email: string; name: string } | null
+  const customer = identity?.customers as unknown as { id: string; name: string } | null
   if (!identity || !customer) return null
 
+  // ⚠ 出品者は customers 行ではなく MiraiID のユーザーで引く。customers は anon で
+  //   書き換えられるので、行経由だと他人の出品者アカウントに入れてしまう
+  //   （supabase/migrations/20260926_store_seller_identity.sql）
   const { data: seller } = await supabaseAdmin
     .from('store_sellers')
     .select('id, status, display_name, slug')
-    .eq('customer_id', customer.id)
+    .eq('miraiid_user_id', miraiidUserId)
     .maybeSingle()
 
   return {
     miraiidUserId,
     customerId: customer.id,
-    email: customer.email,
+    email: identity.email,
     name: customer.name,
     seller: seller
       ? { id: seller.id, status: seller.status as SellerStatus, displayName: seller.display_name, slug: seller.slug }
