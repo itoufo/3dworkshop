@@ -8,7 +8,10 @@ export default function StoreLogoutButton({ className }: { className?: string })
   async function logout() {
     setBusy(true)
     try {
-      await fetch('/api/store/auth/session', { method: 'DELETE' })
+      await fetch('/api/store/auth/session', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
     } finally {
       window.location.href = '/'
     }

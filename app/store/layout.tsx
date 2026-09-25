@@ -23,7 +23,6 @@ export const metadata: Metadata = {
   alternates: { canonical: null },
   openGraph: {
     siteName: '3DLab みんなの作品ストア',
-    url: STORE_URL,
     locale: 'ja_JP',
     type: 'website',
     // ⚠ openGraph はここで丸ごと置き換わるので、画像も書き直す（無いと共有時に画像が出ない）

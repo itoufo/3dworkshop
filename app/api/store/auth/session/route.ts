@@ -32,9 +32,13 @@ function isSameOriginJson(request: NextRequest): boolean {
   }
 }
 
-/** LIKE の特殊文字（% _ \）を文字どおりに扱わせる */
+/**
+ * ilike の特殊文字（% _ \ *）を文字どおりに扱わせる。
+ * ⚠ * も含める。PostgREST は like/ilike の値の * を % に読み替える。
+ *   * はメールアドレスに使える文字なので、放っておくと同じドメインの別人の行に当たる。
+ */
 function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (c) => `\\${c}`)
+  return value.replace(/[\\%_*]/g, (c) => `\\${c}`)
 }
 
 export const runtime = 'nodejs'
@@ -123,7 +127,11 @@ export async function POST(request: NextRequest) {
   return res
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  // 別サイトから勝手にログアウトさせられないようにする
+  if (!isSameOriginJson(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   const res = NextResponse.json({ ok: true })
   res.cookies.set(STORE_SESSION_COOKIE, '', { ...storeSessionCookieOptions, maxAge: 0 })
   return res

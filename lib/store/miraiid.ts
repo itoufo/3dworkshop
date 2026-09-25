@@ -15,6 +15,9 @@ export interface MiraiidUser {
  *   （失効・削除されたユーザーを弾くため）。
  * ⚠ メールが確認済みの人しか通さない。この後メールアドレスで customers 行に
  *   紐づけるので、確認前のメールを信じると他人の購入履歴に入れてしまう。
+ *   これが成り立つのは MiraiID 側で「メール確認」が有効（mailer_autoconfirm = false、
+ *   2026-09-25 確認）で、有効な外部ログイン（Google・Apple）がメールを確認済みで渡すから。
+ *   MiraiID の設定で自動確認を有効にしたら、ここの紐づけを見直すこと。
  */
 export async function verifyMiraiidToken(accessToken: unknown): Promise<MiraiidUser | null> {
   if (!miraiidConfigured()) return null
