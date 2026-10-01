@@ -9,10 +9,13 @@ export default function FamilyFriendlyBadge({
   className = '',
   tone = 'default',
   size = 'md',
+  label = '親子におすすめ',
 }: {
   className?: string
   tone?: 'default' | 'onColor'
   size?: 'sm' | 'md' | 'lg'
+  /** 表示文言。英語ページでは英語を渡す */
+  label?: string
 }) {
   const toneClass =
     tone === 'onColor'
@@ -37,7 +40,7 @@ export default function FamilyFriendlyBadge({
       }
     >
       <span aria-hidden className={emojiClass}>👨‍👩‍👧</span>
-      親子におすすめ
+      {label}
     </span>
   )
 }

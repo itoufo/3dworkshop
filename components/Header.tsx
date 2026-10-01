@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Menu, X, ChevronDown, User } from 'lucide-react'
+import { Menu, X, ChevronDown, User, Globe } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { WorkshopCategory } from '@/types'
+import { englishPathFor, japanesePathFor } from '@/lib/i18n'
 
 /**
  * ヘッダー。
@@ -66,6 +68,13 @@ const NAV_ENTRIES: NavEntry[] = [
   },
 ]
 
+/** 英語ページ（/en）のヘッダー項目。英語版のあるページだけ */
+const EN_NAV: { href: string; label: string }[] = [
+  { href: '/en/workshops', label: 'Workshops' },
+  { href: '/en#access', label: 'Access' },
+  { href: '/en/faq', label: 'FAQ' },
+]
+
 const linkClass =
   'text-gray-700 hover:text-purple-600 font-medium transition-colors whitespace-nowrap'
 
@@ -76,6 +85,16 @@ export default function Header() {
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [mobileWorkshopExpanded, setMobileWorkshopExpanded] = useState(false)
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
+  const pathname = usePathname() || '/'
+  const isEnglish = pathname === '/en' || pathname.startsWith('/en/')
+  /** 英語版のあるワークショップ。日本語の詳細ページから英語へ切り替える先を決めるのに使う */
+  const [englishWorkshopIds, setEnglishWorkshopIds] = useState<Set<string> | null>(null)
+  const isWorkshopDetail = /^\/workshops\/[0-9a-f-]{36}$/.test(pathname)
+
+  // 言語の切り替え先。英語版のないページからは /en のトップへ
+  const switchHref = isEnglish
+    ? japanesePathFor(pathname)
+    : englishPathFor(pathname, isWorkshopDetail ? englishWorkshopIds ?? new Set() : undefined) ?? '/en'
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -106,8 +125,92 @@ export default function Header() {
         .order('sort_order', { ascending: true })
       if (data) setCategories(data as WorkshopCategory[])
     }
-    loadCategories()
-  }, [])
+    // 英語ページのヘッダーはカテゴリ（日本語）を出さないので読まない
+    if (!isEnglish) loadCategories()
+  }, [isEnglish])
+
+  useEffect(() => {
+    if (isEnglish || !isWorkshopDetail) return
+    let cancelled = false
+    supabase
+      .from('workshops')
+      .select('id')
+      .eq('show_on_english_site', true)
+      .then(({ data }) => {
+        if (!cancelled) setEnglishWorkshopIds(new Set((data ?? []).map((r) => r.id as string)))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isEnglish, isWorkshopDetail])
+
+  /** 日本語 / English の切り替え。今いる言語を強調し、もう一方へのリンクにする。
+   *  ⚠ display（inline-flex / hidden）は呼び出し側で渡す。ここで inline-flex を持つと hidden が効かない */
+  const languageSwitch = (className: string) => (
+    <Link
+      href={switchHref}
+      hrefLang={isEnglish ? 'ja' : 'en'}
+      onClick={closeMenu}
+      className={`items-center gap-1.5 rounded-full border border-purple-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors whitespace-nowrap ${className}`}
+      aria-label={isEnglish ? '日本語のページへ' : 'English version'}
+    >
+      <Globe className="w-4 h-4 shrink-0" aria-hidden />
+      <span className={isEnglish ? 'text-gray-500' : 'font-bold text-purple-700'}>日本語</span>
+      <span className="text-gray-300" aria-hidden>/</span>
+      <span className={isEnglish ? 'font-bold text-purple-700' : 'text-gray-500'}>English</span>
+    </Link>
+  )
+
+  if (isEnglish) {
+    return (
+      <>
+        <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-sm z-50" lang="en">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16 gap-3">
+              <Link href="/en" className="flex items-center shrink-0" onClick={closeMenu}>
+                <Image src="/logo.png" alt="3DLab" width={180} height={60} className="h-12 w-auto sm:h-14" sizes="168px" priority />
+              </Link>
+              <nav className="hidden md:flex items-center gap-6">
+                {EN_NAV.map((item) => (
+                  <Link key={item.href} href={item.href} className={linkClass}>
+                    {item.label}
+                  </Link>
+                ))}
+                {languageSwitch('inline-flex')}
+              </nav>
+              <div className="flex md:hidden items-center gap-2">
+                {languageSwitch('inline-flex')}
+                <button
+                  onClick={toggleMenu}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                >
+                  {isMenuOpen ? <X className="w-6 h-6 text-gray-700" /> : <Menu className="w-6 h-6 text-gray-700" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+        {isMenuOpen && (
+          <>
+            <div className="md:hidden fixed inset-x-0 top-16 bg-white border-t border-gray-200 shadow-lg z-50" lang="en">
+              <nav className="px-4 py-4 space-y-1">
+                <Link href="/en" className="block px-4 py-3 text-base text-gray-700 hover:bg-purple-50 rounded-lg font-medium" onClick={closeMenu}>
+                  Home
+                </Link>
+                {EN_NAV.map((item) => (
+                  <Link key={item.href} href={item.href} className="block px-4 py-3 text-base text-gray-700 hover:bg-purple-50 rounded-lg font-medium" onClick={closeMenu}>
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            <div className="md:hidden fixed inset-0 bg-black/20 z-40" onClick={closeMenu} style={{ top: '64px' }} />
+          </>
+        )}
+      </>
+    )
+  }
 
   return (
     <>
@@ -226,6 +329,18 @@ export default function Header() {
                 )
               )}
 
+              {/* 言語の切り替え。⚠ 横一列の余裕は100px前後なので、lg では「English」だけの小さい形にする */}
+              <Link
+                href={switchHref}
+                hrefLang="en"
+                className="xl:hidden inline-flex items-center gap-1 rounded-full border border-purple-200 px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors"
+                aria-label="English version"
+              >
+                <Globe className="w-4 h-4 shrink-0" aria-hidden />
+                EN
+              </Link>
+              {languageSwitch('hidden xl:inline-flex')}
+
               {/* マイページ。幅が足りないときはアイコンだけにする */}
               <Link
                 href="/account"
@@ -239,6 +354,17 @@ export default function Header() {
               </Link>
             </nav>
 
+            {/* Mobile: 言語の切り替えはメニューを開かなくても押せるように外に出す */}
+            <div className="lg:hidden flex items-center gap-2">
+            <Link
+              href={switchHref}
+              hrefLang="en"
+              className="inline-flex items-center gap-1 rounded-full border border-purple-200 px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors"
+              aria-label="English version"
+            >
+              <Globe className="w-4 h-4 shrink-0" aria-hidden />
+              English
+            </Link>
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}
@@ -251,6 +377,7 @@ export default function Header() {
                 <Menu className="w-6 h-6 text-gray-700" />
               )}
             </button>
+            </div>
           </div>
         </div>
       </header>

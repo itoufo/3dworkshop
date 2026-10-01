@@ -60,3 +60,61 @@ export function getConsentText(workshop: { consent_text?: string | null }): stri
   const custom = workshop.consent_text?.trim()
   return custom ? custom : DEFAULT_CONSENT_TEXT
 }
+
+/**
+ * 上の既定本文の英訳。英語ページ（/en）に載せるワークショップの consent_text に入れて使う
+ * （例: Create Your Own 3D Figure with AI — Tokyo Workshop with English Support）。
+ * サーバーは getConsentText(workshop) を同意の記録として保存するので、英語ページで見せた本文と記録が一致する。
+ * ⚠ 日本語の本文を直したら、こちらと該当ワークショップの consent_text も直すこと
+ */
+export const DEFAULT_CONSENT_TEXT_EN = `Create Your Own 3D Figure with AI × 3D Printer — Participation Agreement
+Organizer: 3DLab (Walker Inc. / sunU Inc.)
+In cooperation with: MUTOH INDUSTRIES LTD.
+Before taking part in this event, please read the following and book only if you agree.
+
+1. About the event
+In this event, you design an original character with the help of AI and make it into a figure with a 3D printer.
+For a safe and smooth event, we ask all participants and parents or guardians to follow the staff's instructions.
+
+2. About creating the data
+AI is a tool that supports creative work, and what it generates is not always accurate or appropriate. The AI may also be unable to generate certain content, even if you enter it. The character designs and figures made at this event are for the participants' personal enjoyment.
+
+3. About the 3D printers
+3D printers will be running during the event.
+For safety, please observe the following:
+・Do not touch a 3D printer while it is running.
+・Follow the staff's instructions.
+・Children of elementary school age or younger must take part together with a parent or guardian.
+
+4. About 3D-printed items
+・Because of how 3D printing works, items may show layer lines (marks from the stacked layers), small bumps, individual differences, and slight variations in color and texture. These are characteristics of the 3D printing process; thank you for your understanding.
+・Depending on the design and shape, fine details may be changed or simplified because of printing limitations.
+・Because of how 3D printing works, thin parts, fine decorations, and protruding parts may come off or break after printing or during use. This is due to the printing process and the design; thank you for your understanding.
+・The items are for display. They may contain small parts, so keep them out of the reach of small children to prevent accidents such as swallowing or choking.
+・Because of how 3D printing works, we cannot guarantee that the finished item will look exactly as imagined, or that items will be made to identical quality.
+
+5. About your finished item
+・We pack finished items with cushioning to prevent damage and ship them with care. However, because of how 3D printing works, fine decorations and thin parts may break or come off from impacts during shipping. Thank you for your understanding.
+・We ship to the address you registered when booking. If an item cannot be delivered because of an incorrect address, a move, or similar reasons, we will contact you at the email address you registered.
+・If we do not receive a reply within two weeks of the date we send that email, we will assume you do not wish to receive the item and may have to dispose of it. Please note that we cannot remake or reship an item after it has been disposed of.
+・The organizer is not responsible for damage, loss, deformation, or similar issues after the item has been handed over.
+
+6. Photos and videos
+We take photos and videos during the event to record it and for publicity. These photos and videos may be used in the following:
+・The websites of the organizer (3DLab) and the cooperating company (MUTOH INDUSTRIES LTD.)
+・Social media (Instagram, Facebook, X, LINE, YouTube, etc.)
+・Promotional materials such as brochures, flyers, and posters
+・Event reports and records of past activities
+・Other publicity and PR for this event and related activities
+If you do not want to appear in photos or videos, please tell the staff at reception or before the event starts. We will accommodate your request as far as possible, but in photos or videos of the whole venue it may not be possible to keep you out of the frame entirely. Thank you for your understanding.
+
+7. Personal information
+We use the personal information you provide to run this event, to contact participants, and to respond to inquiries. Except where required by law, we will not provide it to third parties without your consent.
+
+8. Disclaimer
+・We take great care with safety during the event. However, except in cases of intent or gross negligence on the part of the organizer, the organizer is not responsible for accidents, injuries, theft, loss, or similar incidents involving participants or occurring under a parent's or guardian's supervision.
+・The event may be changed or canceled because of natural disasters, emergencies, transport delays, equipment problems, sudden illness of the instructor, or other unavoidable circumstances.
+・The organizer is not responsible for damage that occurs during the event and is not caused by the organizer's intent or gross negligence.
+
+About your agreement
+By checking "I have read and agree to the participation agreement" on the booking form and completing your booking, you agree to the contents of this agreement. For group bookings, the agreement of the person making the booking (the representative) means that all participants have read and agreed to its contents.`

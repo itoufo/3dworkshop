@@ -58,6 +58,7 @@ export default function NewWorkshopPage() {
     is_private: false,
     preview_password: '',
     collect_demographics: false,
+    show_on_english_site: false,
     early_bird_enabled: false,
     early_bird_discount: '',
     early_bird_slots: '',
@@ -105,6 +106,7 @@ export default function NewWorkshopPage() {
         is_private: src.is_private === true,
         preview_password: src.preview_password || '',
         collect_demographics: src.collect_demographics === true,
+        show_on_english_site: src.show_on_english_site === true,
         early_bird_enabled: src.early_bird_enabled === true,
         early_bird_discount: src.early_bird_discount?.toString() || '',
         early_bird_slots: src.early_bird_slots?.toString() || '',
@@ -228,6 +230,7 @@ export default function NewWorkshopPage() {
           is_private: workshop.is_private,
           preview_password: workshop.preview_password.trim() || null,
           collect_demographics: workshop.collect_demographics,
+          show_on_english_site: workshop.show_on_english_site,
           early_bird_enabled: workshop.early_bird_enabled,
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
           early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
@@ -474,6 +477,24 @@ export default function NewWorkshopPage() {
                   />
                 </button>
               </div>
+            </div>
+
+            {/* 英語ページ（/en）に載せる */}
+            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={workshop.show_on_english_site}
+                  onChange={(e) => setWorkshop({ ...workshop, show_on_english_site: e.target.checked })}
+                  className="mt-1 w-5 h-5 text-indigo-600 rounded"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-700">英語ページ（/en）に載せる</span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    英語で案内できるワークショップだけオンにします。英語ページにはタイトル・説明文がそのまま出るので、英語で書いてください
+                  </span>
+                </span>
+              </label>
             </div>
 
             {/* 早割チケット設定 */}

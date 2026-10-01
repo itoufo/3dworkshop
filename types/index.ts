@@ -40,6 +40,8 @@ export interface Workshop {
   early_bird_slots?: number | null
   // 参加同意書の本文。null なら lib/consent-default.ts の既定本文
   consent_text?: string | null
+  // 英語ページ（/en）に載せるか
+  show_on_english_site?: boolean
   // 予約0人のときの締切: (開催日 − days_before 日) の time（JST）。null なら開始時刻でのみ締切
   zero_booking_cutoff_days_before?: number | null
   zero_booking_cutoff_time?: string | null

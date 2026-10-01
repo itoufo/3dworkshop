@@ -12,8 +12,9 @@ import { formatPrice, isFreePrice } from '@/lib/price'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
 import { getConsentText } from '@/lib/consent-default'
-import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst } from '@/lib/booking-deadline'
+import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst, formatCutoffJstEn } from '@/lib/booking-deadline'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
+import { BOOKING_TEXT, type BookingText, type Locale } from '@/lib/i18n'
 
 // 開始時刻（JST）を過ぎていない回。端末のタイムゾーンに左右されないよう JST で比べる
 function getUpcomingSessions(w: Workshop): WorkshopSession[] {
@@ -42,9 +43,14 @@ interface WorkshopBookingSectionProps {
   workshop: Workshop
   relatedWorkshops: Workshop[]
   isPastWorkshop: boolean
+  /** 表示言語。英語ページ（/en）では 'en' */
+  locale?: Locale
 }
 
-export default function WorkshopBookingSection({ workshop, relatedWorkshops, isPastWorkshop }: WorkshopBookingSectionProps) {
+export default function WorkshopBookingSection({ workshop, relatedWorkshops, isPastWorkshop, locale = 'ja' }: WorkshopBookingSectionProps) {
+  const t: BookingText = BOOKING_TEXT[locale]
+  // 完了ページ（英語ページからの予約は /en/success）
+  const successPath = locale === 'en' ? '/en/success' : '/success'
   const upcomingSessions = useMemo(() => getUpcomingSessions(workshop), [workshop])
   // 予約0人の締切を過ぎて受付終了になった回（参加者数が要るので API で確かめる）
   const [closedSessionIds, setClosedSessionIds] = useState<Set<string>>(new Set())
@@ -168,7 +174,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     if (!availability || isClosed || (availability.total_participants ?? 1) > 0 || !selectedSession) return null
     const cutoff = zeroBookingCutoffJst(workshop, selectedSession)
     if (!cutoff || cutoff.getTime() >= sessionStartJst(selectedSession).getTime()) return null
-    return formatCutoffJst(cutoff)
+    return locale === 'en' ? formatCutoffJstEn(cutoff) : formatCutoffJst(cutoff)
   })()
 
   // 参加費0円の回（無料の特別開催など）。Stripe は最低¥50のため決済自体を通さない
@@ -309,14 +315,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         setCouponValidation({
           loading: false,
           valid: false,
-          error: data.error
+          // サーバーの文言は日本語なので、英語ページでは英文に置き換える
+          error: t.useServerError ? data.error : 'This coupon code cannot be used.'
         })
       }
     } catch {
       setCouponValidation({
         loading: false,
         valid: false,
-        error: 'クーポンの検証中にエラーが発生しました'
+        error: t.couponCheckError
       })
     }
   }
@@ -426,19 +433,19 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // 同意の日時と本文はサーバー側で記録する
-          body: JSON.stringify({ booking_id: bookingData.id, consent: agreedToConsent }),
+          body: JSON.stringify({ booking_id: bookingData.id, consent: agreedToConsent, locale }),
         })
         const freeData = await freeRes.json()
 
         if (freeRes.status === 409 && freeData?.code === 'booking_closed') {
           gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'closed' })
-          alert(`${freeData.error}。ほかの日程をお選びください。`)
+          alert(t.closedAlert(freeData.error))
           window.location.reload()
           return
         }
         if (!freeRes.ok || !freeData?.booking) {
           gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'free_confirm' })
-          alert(freeData?.error || '予約の確定に失敗しました。お手数ですが、少し時間をおいて再度お試しください。')
+          alert((t.useServerError && freeData?.error) || t.freeConfirmFailed)
           setSubmitting(false)
           return
         }
@@ -452,7 +459,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         })
         checkoutStartedRef.current = true
 
-        window.location.href = `/success?booking_id=${bookingData.id}`
+        window.location.href = `${successPath}?booking_id=${bookingData.id}`
         return
       }
 
@@ -470,6 +477,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           coupon_id: appliedCoupon?.id,
           discount_amount: couponValidation.discount_amount || 0,
           consent: agreedToConsent,
+          locale,
         }),
       })
 
@@ -479,12 +487,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       // リダイレクトされず「処理中…」で固まるため、明示的にエラー化する）
       if (response.status === 409 && data?.code === 'booking_closed') {
         gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'closed' })
-        alert(`${data.error}。ほかの日程をお選びください。`)
+        alert(t.closedAlert(data.error))
         window.location.reload()
         return
       }
       if (!response.ok || !sessionId) {
-        throw new Error(data?.error || '決済ページの作成に失敗しました')
+        throw new Error(data?.error || t.checkoutCreateFailed)
       }
 
       // GA4: begin_checkout（Stripe へリダイレクトする直前）
@@ -498,7 +506,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       checkoutStartedRef.current = true // 決済へ進んだので離脱としてカウントしない
 
       const stripe = await stripePromise
-      if (!stripe) throw new Error('決済モジュールの読み込みに失敗しました')
+      if (!stripe) throw new Error(t.stripeLoadFailed)
       // redirectToCheckout は失敗しても例外を投げず { error } を返すため戻り値を検証する
       const { error: redirectError } = await stripe.redirectToCheckout({ sessionId })
       if (redirectError) throw redirectError
@@ -506,7 +514,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     } catch (err) {
       console.error('Error creating booking', err)
       gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'checkout' })
-      alert('予約の作成中にエラーが発生しました。お手数ですが、少し時間をおいて再度お試しください。')
+      alert(t.bookingFailed)
       setSubmitting(false)
     }
   }
@@ -590,44 +598,45 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
         <div className="mb-4">
           <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full mb-3">
-            開催リクエスト受付中
+            {t.requestBadge}
           </span>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">開催日程をリクエスト</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{t.requestTitle}</h3>
           <p className="text-sm text-gray-600">
-            現在受付中の日程はありません。ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。
+            {t.requestBody}
           </p>
         </div>
-        <WorkshopRequestForm workshopId={workshop.id} />
+        {/* リクエストフォームは日本語のみ。英語ページはメールでの問い合わせを案内する */}
+        {locale === 'ja' && <WorkshopRequestForm workshopId={workshop.id} />}
       </div>
     )
   }
 
   return (
     <>
-      {submitting && <LoadingOverlay message={isFree ? '予約を確定しています...' : '決済画面へ移動しています...'} />}
+      {submitting && <LoadingOverlay message={isFree ? t.confirmingOverlay : t.redirectingOverlay} />}
       <div id="booking-form" className="bg-white rounded-2xl shadow-xl overflow-hidden sticky top-24">
         {/* Price Header */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 text-white">
-          <p className="text-sm text-white/80 mb-1">参加費（1名あたり）</p>
+          <p className="text-sm text-white/80 mb-1">{t.pricePerPerson}</p>
           <div className="flex items-end justify-between">
             <span className="text-3xl font-bold">{formatPrice(workshop.price)}</span>
             {availability && (
               cannotBook ? (
                 <span className="inline-flex items-center px-3 py-1 bg-red-500 rounded-full text-sm font-bold">
-                  {isClosed ? '受付終了' : '満席'}
+                  {isClosed ? t.closed : t.full}
                 </span>
               ) : (
                 <span className="inline-flex items-center px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
-                  残り{availability.available_spots}名
+                  {t.spotsLeft(availability.available_spots)}
                 </span>
               )
             )}
           </div>
           {earlyBirdActive && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm font-medium">
-              <span>🎉 早割 先着{earlyBird!.slots}組・1名¥{earlyBird!.discount.toLocaleString()}引き</span>
+              <span>{t.earlyBirdBanner(earlyBird!.slots, earlyBird!.discount)}</span>
               <span className="ml-auto rounded-full bg-yellow-300 px-2 py-0.5 text-xs font-bold text-purple-900">
-                残り{earlyBird!.remaining}組
+                {t.earlyBirdRemaining(earlyBird!.remaining)}
               </span>
             </div>
           )}
@@ -636,17 +645,15 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         <div className="p-6">
         {/* Event Info Card */}
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-xl p-5 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-3">開催情報</h3>
+          <h3 className="font-semibold text-gray-900 mb-3">{t.eventInfo}</h3>
           <div className="space-y-3">
             {upcomingSessions.length >= 2 ? (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">開催日程を選択</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">{t.chooseDate}</p>
                 <div className="space-y-2">
                   {upcomingSessions.map((s) => {
-                    const dateLabel = new Date(`${s.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
-                      month: 'long', day: 'numeric', weekday: 'short'
-                    })
-                    const timeLabel = s.event_time ? `${s.event_time.slice(0, 5)} 開始` : ''
+                    const dateLabel = t.sessionDate(s.event_date)
+                    const timeLabel = s.event_time ? t.sessionStartTime(s.event_time.slice(0, 5)) : ''
                     const selected = s.id === selectedSession?.id
                     const closed = closedSessionIds.has(s.id)
                     return (
@@ -675,10 +682,10 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                         </div>
                         {closed && (
                           <span className="ml-2 flex-shrink-0 rounded-full bg-gray-300 px-2 py-0.5 text-xs font-bold text-gray-700">
-                            受付終了
+                            {t.closed}
                           </span>
                         )}
-                        {s.is_family_friendly && <FamilyFriendlyBadge className="ml-2 flex-shrink-0" />}
+                        {s.is_family_friendly && <FamilyFriendlyBadge className="ml-2 flex-shrink-0" label={locale === 'en' ? 'Great for families' : undefined} />}
                       </label>
                     )
                   })}
@@ -689,16 +696,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 <div className="flex items-center text-sm text-gray-700">
                   <Calendar className="w-4 h-4 mr-2 text-purple-600" />
                   <span className="font-medium text-gray-900">
-                    {new Date(`${selectedSession.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
-                      year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
-                    })}
+                    {t.fullDate(selectedSession.event_date)}
                   </span>
                 </div>
                 {selectedSession.event_time && (
                   <div className="flex items-center text-sm text-gray-700">
                     <Clock className="w-4 h-4 mr-2 text-purple-600" />
                     <span className="font-medium text-gray-900">
-                      {selectedSession.event_time.slice(0, 5)} 開始{workshop.duration ? `（${workshop.duration}分間）` : ''}
+                      {t.startTimeWithDuration(selectedSession.event_time.slice(0, 5), workshop.duration)}
                     </span>
                   </div>
                 )}
@@ -707,9 +712,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               <div className="flex items-center text-sm text-gray-700">
                 <Calendar className="w-4 h-4 mr-2 text-purple-600" />
                 <span className="font-medium text-gray-900">
-                  {new Date(workshop.event_date).toLocaleDateString('ja-JP', {
-                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
-                  })}
+                  {t.workshopDate(workshop.event_date)}
                 </span>
               </div>
             ) : null}
@@ -717,9 +720,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               <div className="flex items-start gap-2 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 px-3 py-2.5">
                 <span aria-hidden className="text-xl leading-none">👨‍👩‍👧</span>
                 <div className="text-sm leading-snug">
-                  <p className="font-bold text-orange-700">親子におすすめの回です</p>
+                  <p className="font-bold text-orange-700">{t.familyTitle}</p>
                   <p className="text-orange-800/80 text-xs mt-0.5">
-                    保護者1名の同伴が<span className="font-bold">無料</span>・定員に含みません。お子様の人数だけでご予約ください。
+                    {t.familyBody.before}<span className="font-bold">{t.familyBody.strong}</span>{t.familyBody.after}
                   </p>
                 </div>
               </div>
@@ -733,14 +736,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <div className="flex items-center text-sm text-gray-700">
               <Users className="w-4 h-4 mr-2 text-purple-600" />
               <span className="font-medium text-gray-900">
-                定員 {workshop.max_participants}名
+                {t.capacity(workshop.max_participants)}
                 {availability && (
                   <>
                     {cannotBook ? (
-                      <span className="ml-2 text-red-600 font-bold">（{isClosed ? '受付終了' : '満席'}）</span>
+                      <span className="ml-2 text-red-600 font-bold">{t.capacityState(isClosed ? t.closed : t.full)}</span>
                     ) : (
                       <span className="ml-2 text-green-600">
-                        （残り{availability.available_spots}名）
+                        {t.capacityLeft(availability.available_spots)}
                       </span>
                     )}
                   </>
@@ -750,12 +753,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             {zeroCutoffLabel && (
               <div className="flex items-center text-sm text-gray-700">
                 <Clock className="w-4 h-4 mr-2 text-purple-600" />
-                <span className="font-medium text-gray-900">申込締切 {zeroCutoffLabel}</span>
+                <span className="font-medium text-gray-900">{t.cutoff(zeroCutoffLabel)}</span>
               </div>
             )}
             {availability && availability.manual_participants > 0 && (
               <div className="text-xs text-orange-600 ml-6">
-                ※ 他媒体からの予約: {availability.manual_participants}名
+                {t.manualParticipants(availability.manual_participants)}
               </div>
             )}
           </div>
@@ -763,17 +766,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
         {isClosed ? (
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
-            <p className="text-gray-800 font-semibold mb-2">この回の受付は終了しました</p>
+            <p className="text-gray-800 font-semibold mb-2">{t.closedTitle}</p>
             <p className="text-sm text-gray-600">
               {upcomingSessions.some(s => !closedSessionIds.has(s.id) && s.id !== selectedSession?.id)
-                ? 'ほかの日程をお選びください。'
-                : '次回の開催をお待ちください。'}
+                ? t.closedOther
+                : t.closedNext}
             </p>
           </div>
         ) : availability?.is_full ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-800 font-semibold mb-2">このワークショップは満席です</p>
-            <p className="text-sm text-red-600">キャンセル待ちをご希望の場合は、お問い合わせください。</p>
+            <p className="text-red-800 font-semibold mb-2">{t.fullTitle}</p>
+            <p className="text-sm text-red-600">{t.fullBody}</p>
           </div>
         ) : (
           <>
@@ -783,18 +786,18 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center"
             >
               <Calendar className="w-5 h-5 mr-2" />
-              予約する
+              {t.book}
               <ArrowRight className="w-5 h-5 ml-2" />
             </button>
 
             <div className="mt-4 space-y-1.5 text-xs text-gray-500">
               <div className="flex items-center justify-center">
                 <Shield className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
-                {isFree ? '参加費はかかりません（お支払いなし）' : '安全な決済はStripeで処理されます'}
+                {isFree ? t.noPayment : t.stripeSecure}
               </div>
               <div className="flex items-center justify-center">
                 <Clock className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
-                ご予約は約3分で完了します
+                {t.threeMinutes}
               </div>
             </div>
           </>
@@ -812,25 +815,23 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="予約フォーム"
+            aria-label={t.formLabel}
             className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
           >
             <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">予約フォーム</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t.formLabel}</h2>
                 {selectedSession && (
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {new Date(`${selectedSession.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
-                      year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
-                    })}
-                    {selectedSession.event_time ? ` ${selectedSession.event_time.slice(0, 5)}〜` : ''}
+                    {t.modalDate(selectedSession.event_date)}
+                    {selectedSession.event_time ? t.modalTime(selectedSession.event_time.slice(0, 5)) : ''}
                   </p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => requestClose('x_button')}
-                aria-label="閉じる"
+                aria-label={t.close}
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -842,42 +843,42 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             入力に進む理由を先に見せる（開いて即離脱の対策） */}
         <div className="mb-5 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 p-4">
           <div className="flex items-end justify-between">
-            <span className="text-sm text-gray-600">参加費（1名あたり）</span>
+            <span className="text-sm text-gray-600">{t.pricePerPerson}</span>
             <span className="text-2xl font-black text-gray-900">{formatPrice(workshop.price)}</span>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             {workshop.duration ? (
               <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-gray-700">
-                <Clock className="w-3.5 h-3.5 mr-1 text-purple-500" />所要 {workshop.duration}分
+                <Clock className="w-3.5 h-3.5 mr-1 text-purple-500" />{t.duration(workshop.duration)}
               </span>
             ) : null}
             {availability && !availability.is_full && (
               <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-gray-700">
-                <Users className="w-3.5 h-3.5 mr-1 text-purple-500" />残り{availability.available_spots}名
+                <Users className="w-3.5 h-3.5 mr-1 text-purple-500" />{t.spotsLeft(availability.available_spots)}
               </span>
             )}
             {earlyBirdActive && (
               <span className="inline-flex items-center rounded-full bg-pink-100 text-pink-700 px-3 py-1 font-bold">
-                早割 1名¥{earlyBird!.discount.toLocaleString()}引き
+                {t.earlyBirdChip(earlyBird!.discount)}
               </span>
             )}
             {isFamilySession && (
               <span className="inline-flex items-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 font-bold">
-                👨‍👩‍👧 保護者同伴 無料
+                {t.companionFreeChip}
               </span>
             )}
           </div>
           <p className="mt-3 text-xs text-gray-500">
             {isFree
-              ? '下記フォームにご入力のうえ、そのままご予約を確定してください（所要1〜2分・お支払いはありません）。'
-              : '下記フォームにご入力のうえ、決済へお進みください（所要1〜2分）。'}
+              ? t.introFree
+              : t.introPaid}
           </p>
         </div>
         <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-4">
           {/* Participants */}
           <div>
             <label htmlFor="booking-participants" className="block text-sm font-medium text-gray-700 mb-2">
-              参加人数
+              {t.participants}
             </label>
             <select
               id="booking-participants"
@@ -892,17 +893,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             >
               {[...Array(Math.min(availability?.available_spots || workshop.max_participants, 5))].map((_, i) => (
                 <option key={i + 1} value={i + 1}>
-                  {i + 1}名
+                  {t.people(i + 1)}
                 </option>
               ))}
             </select>
             {isFamilySession ? (
               <p className="mt-2 text-xs text-gray-500">
-                制作にご参加される方の人数です。付き添いのみの保護者は含めず、下の「同伴者（付き添い）」でご指定ください（1名まで無料）。
+                {t.participantsHelpFamily}
               </p>
             ) : (
               <p className="mt-2 text-xs text-gray-500">
-                付き添いの保護者も参加される場合は、この参加人数に含めてください（1名につき1席分の料金がかかります）。
+                {t.participantsHelp}
               </p>
             )}
           </div>
@@ -911,7 +912,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <div>
             <label htmlFor="booking-name" className="block text-sm font-medium text-gray-700 mb-2">
               <User className="w-4 h-4 inline mr-1" />
-              お名前
+              {t.name}
             </label>
             <input
               id="booking-name"
@@ -920,7 +921,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
               value={booking.name}
               onChange={(e) => setBooking({ ...booking, name: e.target.value })}
-              placeholder="山田 太郎"
+              placeholder={t.namePlaceholder}
             />
           </div>
 
@@ -928,7 +929,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <div>
             <label htmlFor="booking-email" className="block text-sm font-medium text-gray-700 mb-2">
               <Mail className="w-4 h-4 inline mr-1" />
-              メールアドレス
+              {t.email}
             </label>
             <input
               id="booking-email"
@@ -945,7 +946,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <div>
             <label htmlFor="booking-phone" className="block text-sm font-medium text-gray-700 mb-2">
               <Phone className="w-4 h-4 inline mr-1" />
-              電話番号
+              {t.phone}
             </label>
             <input
               id="booking-phone"
@@ -954,7 +955,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
               value={booking.phone}
               onChange={(e) => setBooking({ ...booking, phone: e.target.value })}
-              placeholder="090-1234-5678"
+              placeholder={t.phonePlaceholder}
             />
           </div>
 
@@ -968,14 +969,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 checked={booking.hasMinors}
                 onChange={(e) => setBooking({ ...booking, hasMinors: e.target.checked })}
               />
-              <span className="ml-2 text-sm font-medium text-gray-700">高校生以下の参加者が含まれる</span>
+              <span className="ml-2 text-sm font-medium text-gray-700">{t.hasMinors}</span>
             </label>
 
             {booking.hasMinors && (
               <>
                 <div>
                   <label htmlFor="booking-minor-count" className="block text-sm font-medium text-gray-700 mb-2">
-                    高校生以下の人数
+                    {t.minorCount}
                   </label>
                   <select
                     id="booking-minor-count"
@@ -988,20 +989,20 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   >
                     {[...Array(booking.participants)].map((_, i) => (
                       <option key={i + 1} value={i + 1}>
-                        {i + 1}名
+                        {t.people(i + 1)}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <span className="block text-sm font-medium text-gray-700 mb-2">学年</span>
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t.grade}</span>
                   <div className="space-y-3">
                     {booking.minorGrades.map((grade, i) => (
                       <div key={i}>
                         {booking.minorCount > 1 && (
                           <label htmlFor={`booking-minor-grade-${i}`} className="block text-xs text-gray-500 mb-1">
-                            {i + 1}人目
+                            {t.nthPerson(i + 1)}
                           </label>
                         )}
                         <select
@@ -1015,10 +1016,10 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                             setBooking({ ...booking, minorGrades: next })
                           }}
                         >
-                          <option value="">選択してください</option>
+                          <option value="">{t.selectPlaceholder}</option>
                           {GRADE_OPTIONS.map((g) => (
                             <option key={g} value={g}>
-                              {g}
+                              {t.gradeLabel(g)}
                             </option>
                           ))}
                         </select>
@@ -1028,14 +1029,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  ※参加対象は小学生以上です。未就学のお子様はご参加いただけません。
+                  {t.minorsNote}
                 </p>
 
                 {hasElementary && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
                     {isFamilySession
-                      ? '小学生の参加者がいる場合、保護者1名の付き添いが必要です。この日程は親子向けのため、付き添いの保護者1名は無料・定員外です（下の「同伴者（付き添い）」でご指定ください）。'
-                      : '小学生の参加者がいる場合、保護者の付き添いが必要です。付き添いの保護者も上の「参加人数」に含めてください（1名につき1席分の料金がかかります）。'}
+                      ? t.elementaryFamily
+                      : t.elementary}
                   </div>
                 )}
               </>
@@ -1045,8 +1046,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             {isFamilySession && (
               <div className="pt-2 border-t border-gray-100">
                 <label htmlFor="booking-companion-count" className="block text-sm font-medium text-gray-700 mb-2">
-                  同伴者（付き添いの保護者）
-                  <span className="ml-2 text-xs font-normal text-purple-700">親子向け日程・無料</span>
+                  {t.companion}
+                  <span className="ml-2 text-xs font-normal text-purple-700">{t.companionTag}</span>
                 </label>
                 <select
                   id="booking-companion-count"
@@ -1054,11 +1055,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   value={booking.companionCount}
                   onChange={(e) => setBooking({ ...booking, companionCount: parseInt(e.target.value) })}
                 >
-                  <option value={0}>なし</option>
-                  <option value={1}>1名</option>
+                  <option value={0}>{t.none}</option>
+                  <option value={1}>{t.onePerson}</option>
                 </select>
                 <p className="mt-2 text-xs text-gray-500">
-                  ご自身は制作せず、付き添いのみの保護者の方です。1名まで無料で、上の「参加人数」（料金・残席）には含めません。2名以上で付き添われる場合は、2人目以降を「参加人数」に含めてください。
+                  {t.companionHelp}
                 </p>
               </div>
             )}
@@ -1069,7 +1070,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="booking-age" className="block text-sm font-medium text-gray-700 mb-2">
-                  年齢
+                  {t.age}
                 </label>
                 <input
                   id="booking-age"
@@ -1085,7 +1086,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
 
               <div>
                 <label htmlFor="booking-gender" className="block text-sm font-medium text-gray-700 mb-2">
-                  性別
+                  {t.gender}
                 </label>
                 <select
                   id="booking-gender"
@@ -1093,11 +1094,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   value={booking.gender}
                   onChange={(e) => setBooking({ ...booking, gender: e.target.value })}
                 >
-                  <option value="">選択しない</option>
-                  <option value="male">男性</option>
-                  <option value="female">女性</option>
-                  <option value="other">その他</option>
-                  <option value="prefer_not_to_say">回答しない</option>
+                  <option value="">{t.genderNone}</option>
+                  <option value="male">{t.genderMale}</option>
+                  <option value="female">{t.genderFemale}</option>
+                  <option value="other">{t.genderOther}</option>
+                  <option value="prefer_not_to_say">{t.genderNoAnswer}</option>
                 </select>
               </div>
             </div>
@@ -1113,9 +1114,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             >
               <span>
                 <Tag className="w-4 h-4 inline mr-1" />
-                クーポンコードをお持ちの方
+                {t.couponToggle}
                 {appliedCoupon && (
-                  <span className="ml-2 text-green-600 font-normal">✓ {appliedCoupon.code} 適用中</span>
+                  <span className="ml-2 text-green-600 font-normal">{t.couponApplied(appliedCoupon.code)}</span>
                 )}
               </span>
               <ChevronDown
@@ -1142,19 +1143,19 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                       disabled={!couponCode.trim() || couponValidation.loading}
                       className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
-                      {couponValidation.loading ? '検証中...' : '適用'}
+                      {couponValidation.loading ? t.couponChecking : t.couponApply}
                     </button>
                   </div>
                 ) : (
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-green-800">
-                        ✓ {appliedCoupon.code} - {appliedCoupon.description || 'クーポンが適用されました'}
+                        ✓ {appliedCoupon.code} - {appliedCoupon.description || t.couponDefaultDescription}
                       </p>
                       <p className="text-xs text-green-600 mt-1">
                         {appliedCoupon.discount_type === 'percentage'
-                          ? `${appliedCoupon.discount_value}%割引`
-                          : `¥${appliedCoupon.discount_value.toLocaleString()}割引`}
+                          ? t.couponPercent(appliedCoupon.discount_value)
+                          : t.couponFixed(appliedCoupon.discount_value)}
                       </p>
                     </div>
                     <button
@@ -1178,31 +1179,31 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <div className="border-t border-gray-200 pt-6">
             <div className="space-y-2 mb-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">参加費 × {booking.participants}名</span>
+                <span className="text-gray-600">{t.priceTimes(booking.participants)}</span>
                 <span className="text-lg text-gray-900">
                   {formatPrice(workshop.price * booking.participants)}
                 </span>
               </div>
               {isFamilySession && booking.companionCount > 0 && (
                 <div className="flex justify-between items-center text-purple-700">
-                  <span>同伴者（付き添い）× {booking.companionCount}名</span>
-                  <span>無料</span>
+                  <span>{t.companionLine(booking.companionCount)}</span>
+                  <span>{t.free}</span>
                 </div>
               )}
               {earlyBirdActive && (
                 <div className="flex justify-between items-center text-pink-600">
-                  <span>早割（1名¥{earlyBird!.discount.toLocaleString()}引き × {booking.participants}名）</span>
+                  <span>{t.earlyBirdLine(earlyBird!.discount, booking.participants)}</span>
                   <span>-¥{earlyBirdDiscount.toLocaleString()}</span>
                 </div>
               )}
               {couponValidation.valid && couponValidation.discount_amount && (
                 <div className="flex justify-between items-center text-green-600">
-                  <span>クーポン割引</span>
+                  <span>{t.couponLine}</span>
                   <span>-¥{couponValidation.discount_amount.toLocaleString()}</span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                <span className="text-gray-900 font-semibold">合計金額</span>
+                <span className="text-gray-900 font-semibold">{t.total}</span>
                 <span className="text-2xl font-bold text-gray-900">
                   {formatPrice(Math.max(0, (workshop.price * booking.participants) - earlyBirdDiscount - (couponValidation.discount_amount || 0)))}
                 </span>
@@ -1215,25 +1216,26 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 hasSaved={hasSaved}
                 onForget={forget}
                 fromAccount={fromAccount}
+                locale={locale}
               />
             </div>
 
             <div className="space-y-1 mb-6">
               <p className="text-xs text-gray-500">
                 {isFree
-                  ? '※ 参加費・材料費ともに無料です。当日のお支払いはありません'
-                  : '※ 料金には材料費・設備使用料が含まれています'}
+                  ? t.noteFreeIncluded
+                  : t.noteIncluded}
               </p>
               <p className="text-xs text-gray-500">
                 {isFree
-                  ? '※ ご都合が悪くなった場合は、席をお譲りできるようお早めにご連絡ください'
-                  : '※ 開催日の前日まで無料でキャンセル・全額返金いたします'}
+                  ? t.noteFreeCancel
+                  : t.noteCancel}
               </p>
             </div>
 
             {/* 参加同意書 */}
             <div className="mb-6">
-              <p className="text-sm font-semibold text-gray-800 mb-2">参加同意書</p>
+              <p className="text-sm font-semibold text-gray-800 mb-2">{t.consentTitle}</p>
               <div className="max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3">
                 {consentText}
               </div>
@@ -1246,7 +1248,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   className="mt-0.5 w-5 h-5 text-purple-600 border-2 border-gray-400 rounded focus:ring-2 focus:ring-purple-500 cursor-pointer flex-shrink-0"
                 />
                 <span className="text-sm text-gray-700">
-                  参加同意書の内容を確認し、同意します <span className="text-red-500 font-bold">*</span>
+                  {t.consentAgree} <span className="text-red-500 font-bold">*</span>
                 </span>
               </label>
             </div>
@@ -1256,17 +1258,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               disabled={submitting || !agreedToConsent}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? '処理中...' : isFree ? '予約を確定する' : '決済画面へ進む'}
+              {submitting ? t.processing : isFree ? t.confirmBooking : t.proceedToPayment}
             </button>
             {!agreedToConsent && !submitting && (
               <p className="mt-2 text-center text-sm text-gray-600">
-                参加同意書の「同意します」にチェックすると進めます
+                {t.consentHint}
               </p>
             )}
 
             <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
               <Shield className="w-4 h-4 mr-1" />
-              {isFree ? 'お支払いは発生しません' : '安全な決済はStripeで処理されます'}
+              {isFree ? t.noPaymentShort : t.stripeSecure}
             </div>
           </div>
         </form>
@@ -1282,7 +1284,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           className="lg:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"
         >
           <Calendar className="w-5 h-5" />
-          <span>予約する</span>
+          <span>{t.book}</span>
         </button>
       )}
     </>

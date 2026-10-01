@@ -70,6 +70,29 @@ export const getAllWorkshops = cache(async (): Promise<Workshop[]> => {
   return ((data as unknown as Workshop[]) || []).map(normalizeSessions)
 })
 
+// 英語ページ（/en）用。管理画面で「英語ページに載せる」をオンにした公開ワークショップだけ。
+// getAllWorkshops と同じ軽量 select（show_on_english_site で絞るだけ）
+export const getEnglishWorkshops = cache(async (): Promise<Workshop[]> => {
+  const { data } = await supabase
+    .from('workshops')
+    .select(SELECT_FOR_LISTING)
+    .eq('is_service', false)
+    .eq('is_private', false)
+    .eq('show_on_english_site', true)
+    .order('event_date', { ascending: true })
+  return ((data as unknown as Workshop[]) || []).map(normalizeSessions)
+})
+
+// 英語版のあるワークショップの id（日本語ページのヘッダーから /en へ切り替える先を決める）
+export const getEnglishWorkshopIds = cache(async (): Promise<string[]> => {
+  const { data } = await supabase
+    .from('workshops')
+    .select('id')
+    .eq('is_private', false)
+    .eq('show_on_english_site', true)
+  return (data ?? []).map((r) => r.id as string)
+})
+
 // 「特別ワークショップ」バナー用。ピン留め(is_pinned)されていて、かつ今後の開催
 // (upcoming session)がある公開ワークショップの先頭を返す。無ければ null。
 // ※ 管理画面のピン留めトグルがそのままバナー掲載の ON/OFF を兼ねる。

@@ -17,6 +17,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1.0,
     },
+    // 英語ページ（/en）。英語版のある日本語ページと対で載せる
+    {
+      url: `${baseUrl}/en`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/en/workshops`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/en/faq`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
     {
       url: `${baseUrl}/workshops`,
       lastModified: new Date(),
@@ -119,7 +138,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const { data: workshops } = await supabase
       .from('workshops')
-      .select('id, updated_at, event_date')
+      .select('id, updated_at, event_date, show_on_english_site')
       .eq('is_service', false)
       .eq('is_private', false)
       .order('event_date', { ascending: false })
@@ -130,6 +149,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     }))
+
+    // 英語ページに載せているワークショップの英語版
+    const englishWorkshopPages: MetadataRoute.Sitemap = (workshops || [])
+      .filter((workshop) => workshop.show_on_english_site)
+      .map((workshop) => ({
+        url: `${baseUrl}/en/workshops/${workshop.id}`,
+        lastModified: workshop.updated_at ? new Date(workshop.updated_at) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
 
     // カテゴリピラーページを動的に追加
     const { data: categories } = await supabase
@@ -178,7 +207,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }))
 
-    return [...staticPages, ...workshopPages, ...categoryPages, ...blogPages, ...surveyPages]
+    return [...staticPages, ...workshopPages, ...englishWorkshopPages, ...categoryPages, ...blogPages, ...surveyPages]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return staticPages
