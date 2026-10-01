@@ -100,6 +100,7 @@ export default function AdminStoreOrdersPage() {
       <p className="mt-2 text-gray-600">
         完成品の注文は、データを取り出して印刷・発送したら「発送済みにする」を押してください。
         返金は Stripe の管理画面で行い、そのあと「返金済みにする」を押します（データのダウンロードもそこで止まります）。
+        カートでまとめて買われた注文（同じ注文番号の行）の一部だけを返金したときは、返金した行だけ「返金済みにする」を押してください（全額返金なら Stripe 側の返金で自動で返金済みになります）。
       </p>
       <div className="mt-4 flex gap-2 flex-wrap">
         {FILTERS.map((f) => (

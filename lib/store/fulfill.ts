@@ -33,11 +33,12 @@ export async function fulfillStorePayment(
   if (pendingError) throw pendingError
   if (!pending || pending.length === 0) {
     // 払われたのに注文の行が1つも無いなら、決済画面を作ったあと行を入れる前に止まった。人が気づけるよう知らせる
-    const { count } = await (
+    const { count, error: countError } = await (
       'checkoutId' in match
         ? supabaseAdmin.from('store_orders').select('id', { count: 'exact', head: true }).eq('checkout_id', match.checkoutId)
         : supabaseAdmin.from('store_orders').select('id', { count: 'exact', head: true }).eq('id', match.orderId)
     )
+    if (countError) throw countError
     if (count === 0) {
       console.error('[store-fulfill] paid session has no order rows:', session.id)
       await notifyAdminOrphanPayment(session.id, session.customer_details?.email ?? null)
@@ -78,11 +79,12 @@ export async function fulfillStorePayment(
 
   // メールは決済の全行が paid になってから、1回だけ。まだ pending が残っていれば、残りを処理する再送に任せる
   const [scopeColumn, scopeValue] = 'checkoutId' in match ? ['checkout_id', match.checkoutId] : ['id', match.orderId]
-  const { count: stillPending } = await supabaseAdmin
+  const { count: stillPending, error: stillPendingError } = await supabaseAdmin
     .from('store_orders')
     .select('id', { count: 'exact', head: true })
     .eq(scopeColumn, scopeValue)
     .eq('status', 'pending')
+  if (stillPendingError) throw stillPendingError
   if (stillPending) return
 
   // 送る役を1つに決める（notified_at を条件つきで埋めた側だけが送る。同時に届いた再送は0行になる）
@@ -103,9 +105,9 @@ export async function fulfillStorePayment(
     .eq(scopeColumn, scopeValue)
     .in('status', ['paid', 'shipped'])
   if (readError || !paid || paid.length === 0) {
-    // 支払いの記録は済んでいる。メールが出せないだけなので、管理画面で拾えるよう記録して終える
-    console.error('[store-fulfill] read for email failed:', readError)
-    return
+    // 送る役を手放してから投げる（Stripe の再送でもう一度送れるように）
+    await supabaseAdmin.from('store_orders').update({ notified_at: null }).in('id', claimed.map((c) => c.id))
+    throw readError ?? new Error('[store-fulfill] no paid rows to notify')
   }
   paid.sort((a, b) => a.created_at.localeCompare(b.created_at))
 

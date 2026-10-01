@@ -16,3 +16,6 @@ CREATE INDEX IF NOT EXISTS idx_store_orders_payment_intent ON public.store_order
 -- ⚠ 行ごとに paid にするので、途中で失敗した再送や、同じイベントの同時到着で、
 --   残りの行だけのメールが出ないよう、送る前にこの列を条件つきで埋めて「送る役」を1つに決める
 ALTER TABLE public.store_orders ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
+-- この列ができる前に支払われた注文は、メールを送り済みとして埋める（Stripe の再送で同じメールを2度出さない）
+UPDATE public.store_orders SET notified_at = COALESCE(paid_at, updated_at)
+ WHERE notified_at IS NULL AND status IN ('paid', 'shipped', 'refunded');
