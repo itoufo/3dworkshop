@@ -9,6 +9,7 @@ import { getPublicProduct, hasLiked, likeCounts } from '@/lib/store/catalog'
 import { currentStoreUser } from '@/lib/store/session'
 import { jsonLdString } from '@/lib/json-ld'
 import { STORE_URL } from '@/lib/store/urls'
+import { printPriceRange } from '@/lib/store/variants'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -45,7 +46,8 @@ export default async function StoreProductPage({ params }: Props) {
 
   const dataPrice = product.sell_data ? product.data_price : null
   const printPrice = product.sell_print ? product.print_price : null
-  const prices = [dataPrice, printPrice].filter((p): p is number => p != null)
+  const printRange = printPriceRange(product)
+  const prices = [dataPrice, printRange?.min, printRange?.max].filter((p): p is number => p != null)
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -60,7 +62,7 @@ export default async function StoreProductPage({ params }: Props) {
       priceCurrency: 'JPY',
       lowPrice: Math.min(...prices),
       highPrice: Math.max(...prices),
-      offerCount: prices.length,
+      offerCount: (dataPrice != null ? 1 : 0) + (product.sell_print ? Math.max(1, product.print_variants.length) : 0),
       availability: 'https://schema.org/InStock',
     },
   }
@@ -107,6 +109,8 @@ export default async function StoreProductPage({ params }: Props) {
             dataPrice={dataPrice}
             printPrice={printPrice}
             printSpec={product.print_spec}
+            axes={product.option_axes}
+            variants={product.print_variants}
             defaultName={user?.name ?? ''}
             defaultEmail={user?.email ?? ''}
           />

@@ -1,5 +1,6 @@
 import 'server-only'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import type { StoreVariant } from './variants'
 
 /**
  * 公開中の作品・出品者を読む（作品ページ・出品者ページ・決済で共通）。
@@ -18,13 +19,15 @@ export interface PublicProduct {
   sell_print: boolean
   print_price: number | null
   print_spec: string | null
+  option_axes: string[]
+  print_variants: StoreVariant[]
   published_at: string | null
   updated_at: string
   seller: { id: string; display_name: string; slug: string; bio: string | null; avatar_url: string | null }
 }
 
 const PRODUCT_COLUMNS =
-  'id, title, description, image_urls, sell_data, data_price, data_file_name, sell_print, print_price, print_spec, published_at, updated_at, seller:store_sellers!inner(id, display_name, slug, bio, avatar_url, status)'
+  'id, title, description, image_urls, sell_data, data_price, data_file_name, sell_print, print_price, print_spec, option_axes, print_variants, published_at, updated_at, seller:store_sellers!inner(id, display_name, slug, bio, avatar_url, status)'
 
 export async function getPublicProduct(id: string): Promise<PublicProduct | null> {
   if (!supabaseAdmin || !/^[0-9a-f-]{36}$/i.test(id)) return null

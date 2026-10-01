@@ -19,6 +19,14 @@ import {
   extensionOf,
   type ProductStatus,
 } from '@/lib/store/product-rules'
+import {
+  VARIANT_AXES_MAX,
+  VARIANT_AXIS_NAME_MAX,
+  VARIANT_VALUE_MAX,
+  VARIANTS_MAX,
+  newVariantId,
+  type EditableVariant,
+} from '@/lib/store/variants'
 
 export type EditableProduct = {
   id: string | null
@@ -34,6 +42,10 @@ export type EditableProduct = {
   sell_print: boolean
   print_price: string
   print_spec: string
+  /** 完成品の選択肢（サイズ・色など）を使うか */
+  use_variants: boolean
+  option_axes: string[]
+  variants: EditableVariant[]
 }
 
 export const EMPTY_PRODUCT: EditableProduct = {
@@ -50,6 +62,9 @@ export const EMPTY_PRODUCT: EditableProduct = {
   sell_print: false,
   print_price: '',
   print_spec: '',
+  use_variants: false,
+  option_axes: [''],
+  variants: [],
 }
 
 const input = 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-base'
@@ -77,6 +92,29 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
 
   const set = <K extends keyof EditableProduct>(key: K, value: EditableProduct[K]) => setP((prev) => ({ ...prev, [key]: value }))
   const liveOrReviewing = p.status === 'published' || p.status === 'pending_review'
+
+  const setAxis = (i: number, name: string) =>
+    setP((prev) => ({ ...prev, option_axes: prev.option_axes.map((a, j) => (j === i ? name : a)) }))
+  const addAxis = () =>
+    setP((prev) => ({
+      ...prev,
+      option_axes: [...prev.option_axes, ''],
+      variants: prev.variants.map((v) => ({ ...v, values: [...v.values, ''] })),
+    }))
+  const removeAxis = (i: number) =>
+    setP((prev) => ({
+      ...prev,
+      option_axes: prev.option_axes.filter((_, j) => j !== i),
+      variants: prev.variants.map((v) => ({ ...v, values: v.values.filter((_, j) => j !== i) })),
+    }))
+  const setVariant = (id: string, patch: Partial<EditableVariant>) =>
+    setP((prev) => ({ ...prev, variants: prev.variants.map((v) => (v.id === id ? { ...v, ...patch } : v)) }))
+  const addVariant = () =>
+    setP((prev) => ({
+      ...prev,
+      variants: [...prev.variants, { id: newVariantId(), values: prev.option_axes.map(() => ''), price: prev.print_price }],
+    }))
+  const removeVariant = (id: string) => setP((prev) => ({ ...prev, variants: prev.variants.filter((v) => v.id !== id) }))
 
   async function addImages(files: FileList | null) {
     if (!files) return
@@ -142,8 +180,20 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
       sell_data: p.sell_data,
       data_price: p.sell_data ? Number(p.data_price) : null,
       sell_print: p.sell_print,
-      print_price: p.sell_print ? Number(p.print_price) : null,
+      print_price: p.sell_print && !p.use_variants ? Number(p.print_price) : null,
       print_spec: p.print_spec,
+      // 選択肢。項目名が空の列は API 側で捨てる
+      option_axes: p.sell_print && p.use_variants ? p.option_axes : [],
+      print_variants:
+        p.sell_print && p.use_variants
+          ? p.variants.map((v) => ({
+              id: v.id,
+              price: Number(v.price),
+              options: Object.fromEntries(
+                p.option_axes.map((axis, i) => [axis.trim(), v.values[i] ?? '']).filter(([axis]) => axis),
+              ),
+            }))
+          : [],
     }
 
     try {
@@ -285,11 +335,108 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
           </label>
           {p.sell_print && (
             <div className="ml-6 space-y-3">
-              <label className="block mt-2">
-                <span className="text-base text-gray-700">価格（円・送料込み）</span>
-                <input className={input} inputMode="numeric" value={p.print_price} onChange={(e) => set('print_price', e.target.value.replace(/[^0-9]/g, ''))} />
-                <ShareNote kind="print" price={p.print_price} />
+              <label className="flex items-center gap-2 mt-2 text-base text-gray-800">
+                <input
+                  type="checkbox"
+                  checked={p.use_variants}
+                  onChange={(e) => {
+                    const on = e.target.checked
+                    setP((prev) => ({
+                      ...prev,
+                      use_variants: on,
+                      // 初めて付けるときは、いまの価格で1行目を用意しておく
+                      variants:
+                        on && prev.variants.length === 0
+                          ? [{ id: newVariantId(), values: prev.option_axes.map(() => ''), price: prev.print_price }]
+                          : prev.variants,
+                    }))
+                  }}
+                />
+                サイズや色などを選べるようにする（組み合わせごとに価格を決める）
               </label>
+              {!p.use_variants ? (
+                <label className="block">
+                  <span className="text-base text-gray-700">価格（円・送料込み）</span>
+                  <input className={input} inputMode="numeric" value={p.print_price} onChange={(e) => set('print_price', e.target.value.replace(/[^0-9]/g, ''))} />
+                  <ShareNote kind="print" price={p.print_price} />
+                </label>
+              ) : (
+                <div className="space-y-4 rounded-lg bg-gray-50 p-4">
+                  <div>
+                    <p className="text-base text-gray-700">選ぶ項目（{VARIANT_AXES_MAX}つまで。例: サイズ、色）</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {p.option_axes.map((axis, i) => (
+                        <span key={i} className="flex items-center gap-1">
+                          <input
+                            className="w-36 rounded-lg border border-gray-300 px-3 py-2 text-base"
+                            maxLength={VARIANT_AXIS_NAME_MAX}
+                            value={axis}
+                            placeholder={i === 0 ? 'サイズ' : '色'}
+                            aria-label={`選ぶ項目${i + 1}の名前`}
+                            onChange={(e) => setAxis(i, e.target.value)}
+                          />
+                          {p.option_axes.length > 1 && (
+                            <button type="button" onClick={() => removeAxis(i)} className="px-2 text-base text-gray-500" aria-label={`選ぶ項目${i + 1}を外す`}>
+                              ×
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                      {p.option_axes.length < VARIANT_AXES_MAX && (
+                        <button type="button" onClick={addAxis} className="px-3 py-2 rounded-lg border border-dashed border-gray-400 text-base text-gray-700">
+                          ＋ 項目を足す
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-base text-gray-700">組み合わせと価格（円・送料込み。{VARIANTS_MAX}個まで）</p>
+                    <div className="mt-2 space-y-2">
+                      {p.variants.map((v, row) => (
+                        <div key={v.id} className="flex flex-wrap items-center gap-2">
+                          {p.option_axes.map((axis, i) => (
+                            <input
+                              key={i}
+                              className="w-36 rounded-lg border border-gray-300 px-3 py-2 text-base"
+                              maxLength={VARIANT_VALUE_MAX}
+                              value={v.values[i] ?? ''}
+                              placeholder={axis || `項目${i + 1}`}
+                              aria-label={`${row + 1}行目の${axis || `項目${i + 1}`}`}
+                              onChange={(e) => setVariant(v.id, { values: v.values.map((x, j) => (j === i ? e.target.value : x)) })}
+                            />
+                          ))}
+                          <input
+                            className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-base"
+                            inputMode="numeric"
+                            value={v.price}
+                            placeholder="価格"
+                            aria-label={`${row + 1}行目の価格`}
+                            onChange={(e) => setVariant(v.id, { price: e.target.value.replace(/[^0-9]/g, '') })}
+                          />
+                          <span className="text-base text-gray-600">
+                            {Number.isInteger(Number(v.price)) && Number(v.price) >= PRICE_MIN
+                              ? `取り分 ${yen(splitPrice('print', Number(v.price)).sellerAmount)}`
+                              : ''}
+                          </span>
+                          {p.variants.length > 1 && (
+                            <button type="button" onClick={() => removeVariant(v.id)} className="px-2 text-base text-gray-500" aria-label={`${row + 1}行目を消す`}>
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {p.variants.length < VARIANTS_MAX && (
+                      <button type="button" onClick={addVariant} className="mt-2 px-3 py-2 rounded-lg border border-dashed border-gray-400 text-base text-gray-700">
+                        ＋ 組み合わせを足す
+                      </button>
+                    )}
+                    <p className="mt-2 text-base text-gray-500">
+                      あなたの取り分は完成品の価格の {SELLER_SHARE_PERCENT.print}% です。購入者は項目ごとのボタンで選びます。
+                    </p>
+                  </div>
+                </div>
+              )}
               <label className="block">
                 <span className="text-base text-gray-700">印刷の仕様（大きさ・色・素材など）</span>
                 <textarea className={input} rows={3} maxLength={PRODUCT_PRINT_SPEC_MAX} value={p.print_spec} onChange={(e) => set('print_spec', e.target.value)} />

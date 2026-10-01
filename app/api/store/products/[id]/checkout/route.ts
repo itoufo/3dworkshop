@@ -8,6 +8,7 @@ import { isSameOriginJson } from '@/lib/store/request'
 import { currentStoreUser } from '@/lib/store/session'
 import { STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/orders'
 import { STORE_URL } from '@/lib/store/urls'
+import { resolveOffer } from '@/lib/store/variants'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
   try {
     const { id } = await context.params
-    const body = (await request.json().catch(() => ({}))) as { kind?: unknown; name?: unknown; email?: unknown }
+    const body = (await request.json().catch(() => ({}))) as { kind?: unknown; name?: unknown; email?: unknown; variantId?: unknown }
     const kind: StoreOrderKind | null = body.kind === 'data' || body.kind === 'print' ? body.kind : null
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     const email = typeof body.email === 'string' ? body.email.trim() : ''
@@ -50,10 +51,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const product = await getPublicProduct(id)
     if (!product) return NextResponse.json({ message: '作品が見つかりません' }, { status: 404 })
 
-    const price = kind === 'data' ? (product.sell_data ? product.data_price : null) : product.sell_print ? product.print_price : null
-    if (price == null) {
-      return NextResponse.json({ message: 'この作品はその買い方では販売していません' }, { status: 400 })
-    }
+    const offer = resolveOffer(product, kind, body.variantId)
+    if ('error' in offer) return NextResponse.json({ message: offer.error }, { status: 400 })
+    const { price } = offer
 
     // ⚠ データが無いと、払ってもらってから渡せない・印刷できない。決済の前に確かめる
     const { data: files } = await supabaseAdmin
@@ -83,6 +83,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         buyer_customer_id: user?.customerId ?? null,
         buyer_email: email,
         buyer_name: name,
+        // 買った時点の組み合わせ（サイズ・色など）
+        variant_id: offer.variantId,
+        variant_label: offer.variantLabel,
         // 買った時点のデータ。あとで出品者が差し替えても、この注文はこのファイルを使う
         data_file_path: files.data_file_path,
         data_file_name: files.data_file_name,
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
             price_data: {
               currency: 'jpy',
               product_data: {
-                name: `${product.title}（${kind === 'data' ? '3D データ' : '完成品'}）`,
+                name: `${product.title}（${kind === 'data' ? '3D データ' : offer.variantLabel ? `完成品・${offer.variantLabel}` : '完成品'}）`,
                 description:
                   kind === 'data'
                     ? `3Dプリント用データ／ダウンロード期限 ${STORE_DOWNLOAD_VALID_DAYS}日`
