@@ -484,7 +484,7 @@ export async function POST(request: NextRequest) {
             productTitle: product?.title ?? '作品',
             buyerName: order.buyer_name || session.customer_details?.name || 'お客様',
             buyerEmail: order.buyer_email || session.customer_details?.email || '',
-            downloadUrl: downloadToken ? `${STORE_URL}/download/${downloadToken}` : undefined,
+            downloadUrl: downloadToken ? `${STORE_URL}/download#${downloadToken}` : undefined,
             downloadValidDays: STORE_DOWNLOAD_VALID_DAYS,
             downloadMaxCount: STORE_DOWNLOAD_MAX_COUNT,
             shippingLines,

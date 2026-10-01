@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!order || order.kind !== 'data' || order.status !== 'paid' || !order.download_token) {
       return NextResponse.json({ error: '支払い済みのデータ購入ではありません' }, { status: 409 })
     }
-    return NextResponse.json({ url: `${STORE_URL}/api/store/download/${order.download_token}` })
+    return NextResponse.json({ url: `${STORE_URL}/download#${order.download_token}` })
   }
 
   let update: Record<string, unknown>

@@ -168,7 +168,12 @@ export default function RootLayout({
                 }
               } catch (e) {}
               gtag('js', new Date());
-              gtag('config', '${GA_MEASUREMENT_ID}');
+              // ストアのダウンロードページは URL の # の後ろが購入者の合言葉。page_location に載せない
+              if (location.pathname === '/download') {
+                gtag('config', '${GA_MEASUREMENT_ID}', { page_location: location.origin + location.pathname });
+              } else {
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              }
             `,
           }}
         />

@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 function fail(message: string, status: number) {
-  return new NextResponse(message, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } })
+  return NextResponse.json({ error: message }, { status, headers: { 'Cache-Control': 'no-store' } })
 }
 
 /**
@@ -17,12 +17,12 @@ function fail(message: string, status: number) {
  *
  * ⚠ bucket は非公開のまま。渡すのは寿命 60 秒の署名付き URL だけ。
  * ⚠ 回数は「読んだ値のまま」の条件つきで +1 する。同時に何度も叩かれても上限を超えない。
- * ⚠ 数えるのは POST（ダウンロードページのボタン）だけ。メールの安全確認やリンクのプレビューは
+ * ⚠ 数えるのは POST（ダウンロードページのボタンからの fetch）だけ。署名付き URL を JSON で返す。メールの安全確認やリンクのプレビューは
  *   GET でリンクを開くので、GET で数えると購入者が押す前に回数が減る。GET はページへ戻すだけ。
  */
 export async function GET(_request: NextRequest, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params
-  return NextResponse.redirect(`${STORE_URL}/download/${encodeURIComponent(token)}`, 303)
+  return NextResponse.redirect(`${STORE_URL}/download#${encodeURIComponent(token)}`, 303)
 }
 
 export async function POST(_request: NextRequest, context: { params: Promise<{ token: string }> }) {
@@ -81,7 +81,9 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ t
         .eq('download_count', order.download_count + 1)
       return fail('データの取得に失敗しました。時間をおいて再度お試しください', 500)
     }
-    return NextResponse.redirect(signed.signedUrl, { status: 303, headers: { 'Cache-Control': 'no-store' } })
+    // ⚠ リダイレクトではなく JSON で返す。ページはフォームでなく fetch で呼ぶ
+    //   （フォームにすると Google アナリティクスが送信先 URL＝合言葉ごと記録する）
+    return NextResponse.json({ url: signed.signedUrl }, { headers: { 'Cache-Control': 'no-store' } })
   }
   return fail('混み合っています。時間をおいて再度お試しください', 503)
 }
