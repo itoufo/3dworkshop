@@ -11,6 +11,12 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import { FolderOpen, Calendar, Lock, Copy, Users, Ticket, FileText } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
 import { DEFAULT_CONSENT_TEXT } from '@/lib/consent-default'
+import ZeroBookingCutoffField, {
+  DEFAULT_ZERO_BOOKING_CUTOFF,
+  zeroBookingCutoffFromWorkshop,
+  zeroBookingCutoffToColumns,
+  zeroBookingCutoffError,
+} from '@/components/admin/ZeroBookingCutoffField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -22,6 +28,8 @@ export default function EditWorkshop() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
+  // 予約0人のときの締切（formData とは別に持つ）
+  const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -94,6 +102,7 @@ export default function EditWorkshop() {
           early_bird_slots: workshopData.early_bird_slots?.toString() || '',
           consent_text: workshopData.consent_text || ''
         })
+        setZeroCutoff(zeroBookingCutoffFromWorkshop(workshopData))
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
         }
@@ -118,6 +127,12 @@ export default function EditWorkshop() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 予約0人の締切が ON なのに値が不正なら保存しない（黙って OFF で保存しない）
+    const cutoffError = zeroBookingCutoffError(zeroCutoff)
+    if (cutoffError) {
+      alert(cutoffError)
+      return
+    }
     
     // 価格のバリデーション
     if (parseInt(formData.price) < 50) {
@@ -184,6 +199,7 @@ export default function EditWorkshop() {
           early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
           consent_text: formData.consent_text.trim() || null,
+          ...zeroBookingCutoffToColumns(zeroCutoff),
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -475,6 +491,7 @@ export default function EditWorkshop() {
                 placeholder={DEFAULT_CONSENT_TEXT}
               />
             </div>
+            <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

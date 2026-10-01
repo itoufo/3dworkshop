@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import type { Workshop, WorkshopCategory, WorkshopSession } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
+import { jstToday, sessionStartJst } from '@/lib/booking-deadline'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -19,8 +20,9 @@ const SELECT_FOR_LISTING =
   'category:workshop_categories(id, name, slug), ' +
   'sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)'
 
+// JST の今日。Vercel の関数は UTC で動くので toISOString() を素で使うと 0〜9時に前日になる
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0]
+  return jstToday()
 }
 
 function normalizeSessions(w: Workshop): Workshop {
@@ -160,10 +162,16 @@ export async function getRelatedWorkshops(workshopId: string, categoryId: string
 
 // ============ Session ヘルパー ============
 
+// 予約を受け付けうる回。日付を渡さなければ、開始時刻（JST）を過ぎた当日の回も除く。
+// 予約0人の締切は参加者数が要るのでここでは見ない（/api/check-availability が判定する）
 export function getUpcomingSessions(workshop: Workshop, todayDate?: string): WorkshopSession[] {
   const today = todayDate || todayIso()
+  const now = Date.now()
   return (workshop.sessions ?? []).filter(
-    s => s.status === 'scheduled' && s.event_date >= today
+    s =>
+      s.status === 'scheduled' &&
+      s.event_date >= today &&
+      (todayDate !== undefined || sessionStartJst(s).getTime() > now)
   )
 }
 

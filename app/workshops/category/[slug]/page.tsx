@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
+import { jstToday, sessionStartJst } from '@/lib/booking-deadline'
 import MobileCategoryFloatingCta from '@/components/MobileCategoryFloatingCta'
 import MediaCoverage from '@/components/MediaCoverage'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
@@ -46,9 +47,9 @@ interface SessionRef {
   workshop_duration: number
 }
 
+// JST の今日。Vercel の関数は UTC で動くので、素の Date だと 0〜9時に前日になる
 function todayIso(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return jstToday()
 }
 
 function formatDateLong(iso: string): string {
@@ -97,6 +98,7 @@ export default async function CategoryPillarPage({ params }: Props) {
     .order('updated_at', { ascending: false })
 
   const today = todayIso()
+  const nowMs = Date.now()
 
   // 全 upcoming session をフラット化
   const upcomingSessions: SessionRef[] = []
@@ -116,7 +118,8 @@ export default async function CategoryPillarPage({ params }: Props) {
         workshop_max_participants: w.max_participants,
         workshop_duration: w.duration,
       }
-      if (s.status === 'scheduled' && s.event_date >= today) upcomingSessions.push(ref)
+      // 開始時刻（JST）を過ぎた当日の回は予約できないので数えない
+      if (s.status === 'scheduled' && s.event_date >= today && sessionStartJst(s).getTime() > nowMs) upcomingSessions.push(ref)
       else if (s.event_date < today) pastSessions.push(ref)
     }
   }
