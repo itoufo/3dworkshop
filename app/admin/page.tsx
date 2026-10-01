@@ -87,6 +87,8 @@ export default function AdminDashboard() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [categories, setCategories] = useState<(WorkshopCategory & { workshop_count: number })[]>([])
+  /** 日程（workshop_sessions）を1件でも持つワークショップ。売上を開催日で数えてよいかの判定に使う */
+  const [workshopIdsWithSessions, setWorkshopIdsWithSessions] = useState<Set<string>>(new Set())
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -227,6 +229,13 @@ export default function AdminDashboard() {
       setCoupons(couponsData || [])
       setBlogPosts(blogPostsData || [])
       setCategories(categoriesWithCount)
+
+      // 日程を持つワークショップの一覧（オーダーメイド等の「日程のない商品」と区別する）
+      const { data: sessionRows, error: sessionRowsError } = await supabase
+        .from('workshop_sessions')
+        .select('workshop_id')
+      if (sessionRowsError) console.error('Error fetching workshop sessions:', sessionRowsError)
+      setWorkshopIdsWithSessions(new Set((sessionRows || []).map((r) => r.workshop_id as string)))
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -378,9 +387,13 @@ export default function AdminDashboard() {
   /**
    * 売上を計上する月。開催日（予約した回の日付）で振り分ける。
    * ⚠ 申込日（created_at）ではない。9月に申し込まれた10月開催の予約は10月の売上。
-   *   開催日の入っていない古い行だけ申込日で数える
+   * ⚠ ただし日程を持たないワークショップ（【オーダーメイド】フィギュア作成・NFC搭載カード・追加印刷など）は
+   *   申込日で数える。これらの開催日は 2026-12-31 / 2030-12-31 といった仮の日付で、
+   *   開催日で数えると実在しない月に売上が積まれる
    */
   const salesMonthKey = (b: Booking): string => {
+    const isProductWithoutSchedule = !b.session_id && !workshopIdsWithSessions.has(b.workshop_id)
+    if (isProductWithoutSchedule) return monthKeyOf(new Date(b.created_at))
     const eventDate = b.booking_date || b.workshop_session?.event_date || b.workshop?.event_date
     // 'YYYY-MM-DD' の文字列をそのまま切る（Date に通すと UTC 解釈で月がずれることがある）
     if (eventDate && /^\d{4}-\d{2}/.test(eventDate)) return eventDate.slice(0, 7)
@@ -521,7 +534,7 @@ export default function AdminDashboard() {
                 <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
                 売上の月別推移
               </h3>
-              <p className="text-sm text-gray-600 mt-1">開催日ベース・先2ヶ月は予約済みの分（キャンセル除く）。濃い部分が手取り、薄い部分が販売手数料</p>
+              <p className="text-sm text-gray-600 mt-1">開催日ベース（日程のないオーダーメイド等は申込日）・先2ヶ月は予約済みの分（キャンセル除く）。濃い部分が手取り、薄い部分が販売手数料</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500">今月開催分</p>
