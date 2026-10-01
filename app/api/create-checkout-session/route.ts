@@ -136,7 +136,8 @@ export async function POST(request: NextRequest) {
       .update({
         stripe_session_id: session.id,
         coupon_id: coupon_id || null,
-        discount_amount: totalDiscount
+        // 実際に請求した額と一致させる（¥50 への切り上げ・満額超えの割引を反映）
+        discount_amount: base - unitAmount
       })
       .eq('id', booking_id)
 
