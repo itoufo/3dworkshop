@@ -23,7 +23,7 @@ export interface DeadlineSession {
   event_time?: string | null // HH:MM or HH:MM:SS
 }
 
-export type CloseReason = 'started' | 'zero_booking_cutoff'
+export type CloseReason = 'started' | 'zero_booking_cutoff' | 'no_session'
 
 export interface BookableResult {
   bookable: boolean
@@ -54,8 +54,12 @@ function minusDays(date: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10)
 }
 
+/**
+ * 回の開始時刻。開始時刻が入っていない回は、その日の 23:59（JST）まで受け付ける。
+ * ⚠ 00:00 扱いにすると、当日になった瞬間に「開始済み」で一覧から消える
+ */
 export function sessionStartJst(session: DeadlineSession): Date {
-  return jstDate(session.event_date, session.event_time)
+  return jstDate(session.event_date, session.event_time || '23:59')
 }
 
 /** 0人締切の時刻。設定がなければ null */
@@ -77,7 +81,11 @@ export function isSessionBookable({
 }: {
   workshop: DeadlineWorkshop
   session: DeadlineSession
-  /** 申込者本人を除いた現在の参加者数（サイト予約＋手入力人数） */
+  /**
+   * 申込者本人を除いた、確定済みの参加者数（確定 or 支払済みのサイト予約＋手入力人数）。
+   * ⚠ 未払いの仮予約（pending）は数えない。途中で離脱した仮予約や、anon キーで
+   *   誰でも作れる行で「0人ではない」扱いになり、締切後も開いたままになるため
+   */
   totalParticipants: number
   now?: Date
 }): BookableResult {
@@ -110,4 +118,5 @@ export function formatCutoffJst(d: Date): string {
 export const CLOSE_REASON_LABEL: Record<CloseReason, string> = {
   started: '開始時刻を過ぎたため受付を終了しました',
   zero_booking_cutoff: '受付期間が終了しました',
+  no_session: 'この日程は受付していません',
 }

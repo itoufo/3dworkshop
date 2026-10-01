@@ -12,6 +12,7 @@ import ZeroBookingCutoffField, {
   DEFAULT_ZERO_BOOKING_CUTOFF,
   zeroBookingCutoffFromWorkshop,
   zeroBookingCutoffToColumns,
+  zeroBookingCutoffError,
 } from '@/components/admin/ZeroBookingCutoffField'
 import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy } from 'lucide-react'
 
@@ -162,6 +163,12 @@ export default function NewWorkshopPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 予約0人の締切が ON なのに値が不正なら保存しない（黙って OFF で保存しない）
+    const cutoffError = zeroBookingCutoffError(zeroCutoff)
+    if (cutoffError) {
+      alert(cutoffError)
+      return
+    }
 
     if (parseInt(workshop.price) < 50) {
       alert('価格は50円以上で設定してください')

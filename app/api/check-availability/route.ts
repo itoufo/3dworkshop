@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
+import { sumBookedParticipants, sumConfirmedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import { isSessionBookable, type DeadlineSession } from '@/lib/booking-deadline'
 
 export async function GET(request: NextRequest) {
@@ -28,8 +28,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 予約締切（開始時刻・予約0人の締切）の判定結果をレスポンスに載せる
+    // totalParticipants は確定済みの参加者数（0人締切の判定用。仮予約は数えない）
     const deadlineFields = (target: DeadlineSession | null, totalParticipants: number) => {
-      if (!target) return { is_closed: false, closes_at: null, close_reason: null }
+      if (!target) return { is_closed: true, closes_at: null, close_reason: 'no_session' as const }
       const r = isSessionBookable({ workshop, session: target, totalParticipants })
       return {
         is_closed: !r.bookable,
@@ -95,12 +96,21 @@ export async function GET(request: NextRequest) {
         available_spots: Math.max(0, availableSpots),
         is_full: isCancelled || availableSpots <= 0,
         is_cancelled: isCancelled,
-        ...deadlineFields(session, totalParticipants),
+        ...deadlineFields(
+          session,
+          (await sumConfirmedParticipants(supabaseAdmin, { workshopId, sessionId })) + manualParticipants
+        ),
         early_bird,
       })
     }
 
     // ワークショップ全体カウント (legacy / back-compat)
+    const { count: scheduledSessionCount, error: countError } = await supabaseAdmin
+      .from('workshop_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('workshop_id', workshopId)
+      .eq('status', 'scheduled')
+    if (countError) throw countError
     const bookedParticipants = await sumBookedParticipants(supabaseAdmin, { workshopId })
     const manualParticipants = workshop.manual_participants || 0
     const totalParticipants = bookedParticipants + manualParticipants
@@ -114,9 +124,13 @@ export async function GET(request: NextRequest) {
       total_participants: totalParticipants,
       available_spots: Math.max(0, availableSpots),
       is_full: availableSpots <= 0,
+      // 日程のあるワークショップは回を指定しないと予約できない（回ごとの空席・締切から漏れるため）。
+      // 日程が1つも無い旧形式だけ、ワークショップの開催日で判定する
       ...deadlineFields(
-        workshop.event_date ? { event_date: workshop.event_date, event_time: workshop.event_time } : null,
-        totalParticipants
+        workshop.event_date && (scheduledSessionCount ?? 0) === 0
+          ? { event_date: workshop.event_date, event_time: workshop.event_time }
+          : null,
+        (await sumConfirmedParticipants(supabaseAdmin, { workshopId })) + manualParticipants
       ),
       early_bird,
     })

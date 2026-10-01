@@ -14,6 +14,7 @@ import ZeroBookingCutoffField, {
   DEFAULT_ZERO_BOOKING_CUTOFF,
   zeroBookingCutoffFromWorkshop,
   zeroBookingCutoffToColumns,
+  zeroBookingCutoffError,
 } from '@/components/admin/ZeroBookingCutoffField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
@@ -123,6 +124,12 @@ export default function EditWorkshop() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 予約0人の締切が ON なのに値が不正なら保存しない（黙って OFF で保存しない）
+    const cutoffError = zeroBookingCutoffError(zeroCutoff)
+    if (cutoffError) {
+      alert(cutoffError)
+      return
+    }
     
     // 価格のバリデーション
     if (parseInt(formData.price) < 50) {

@@ -31,13 +31,25 @@ export function zeroBookingCutoffFromWorkshop(w: {
   }
 }
 
-/** フォームの値 → DB の値（OFF なら両方 null） */
+/** ON なのに値が不正なときのエラー文。正しければ null。⚠ 保存前に必ず確かめる（黙って OFF で保存しない） */
+export function zeroBookingCutoffError(v: ZeroBookingCutoffValue): string | null {
+  if (!v.enabled) return null
+  const days = Number(v.daysBefore)
+  if (v.daysBefore.trim() === '' || !Number.isInteger(days) || days < 0 || days > 30) {
+    return '予約0人のときの締切: 「何日前」は 0〜30 の整数で入力してください'
+  }
+  if (!/^\d{2}:\d{2}$/.test(v.time)) {
+    return '予約0人のときの締切: 時刻を入力してください'
+  }
+  return null
+}
+
+/** フォームの値 → DB の値（OFF なら両方 null）。呼ぶ前に zeroBookingCutoffError で確かめること */
 export function zeroBookingCutoffToColumns(v: ZeroBookingCutoffValue) {
-  const days = parseInt(v.daysBefore)
-  if (!v.enabled || Number.isNaN(days) || !v.time) {
+  if (!v.enabled || zeroBookingCutoffError(v)) {
     return { zero_booking_cutoff_days_before: null, zero_booking_cutoff_time: null }
   }
-  return { zero_booking_cutoff_days_before: days, zero_booking_cutoff_time: v.time }
+  return { zero_booking_cutoff_days_before: Number(v.daysBefore), zero_booking_cutoff_time: v.time }
 }
 
 // 設定の読み違いを防ぐための例示（土曜 14:00 開始の回）
@@ -50,6 +62,7 @@ export default function ZeroBookingCutoffField({
   value: ZeroBookingCutoffValue
   onChange: (v: ZeroBookingCutoffValue) => void
 }) {
+  const error = zeroBookingCutoffError(value)
   const columns = zeroBookingCutoffToColumns(value)
   const example = zeroBookingCutoffJst(columns, EXAMPLE_SESSION)
 
@@ -101,6 +114,7 @@ export default function ZeroBookingCutoffField({
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
           <p className="text-xs text-gray-500">
             「0日前の 00:00」が前日 24:00 です。
             {example && (

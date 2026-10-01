@@ -12,6 +12,7 @@ import { formatPrice, isFreePrice } from '@/lib/price'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
 import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst } from '@/lib/booking-deadline'
+import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 
 // 開始時刻（JST）を過ぎていない回。端末のタイムゾーンに左右されないよう JST で比べる
 function getUpcomingSessions(w: Workshop): WorkshopSession[] {
@@ -147,7 +148,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     // 予約締切（開始時刻・予約0人の締切）
     is_closed?: boolean
     closes_at?: string | null
-    close_reason?: 'started' | 'zero_booking_cutoff' | null
+    close_reason?: 'started' | 'zero_booking_cutoff' | 'no_session' | null
     early_bird?: {
       enabled: boolean
       discount: number
@@ -425,6 +426,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         })
         const freeData = await freeRes.json()
 
+        if (freeRes.status === 409 && freeData?.code === 'booking_closed') {
+          gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'closed' })
+          alert(`${freeData.error}。ほかの日程をお選びください。`)
+          window.location.reload()
+          return
+        }
         if (!freeRes.ok || !freeData?.booking) {
           gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'free_confirm' })
           alert(freeData?.error || '予約の確定に失敗しました。お手数ですが、少し時間をおいて再度お試しください。')
@@ -562,6 +569,30 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             </a>
           </div>
         )}
+      </div>
+    )
+  }
+
+  // 申し込める回が1つも残っていない（ISR のページが古く、開始済みの回しか持っていない場合も含む）。
+  // 予約フォームは出さず、詳細ページの「リクエスト受付中」と同じ形でリクエストを受ける
+  const hasSessions = (workshop.sessions ?? []).length > 0
+  const noBookableSession = hasSessions
+    ? upcomingSessions.every(s => closedSessionIds.has(s.id))
+    : availability?.close_reason === 'no_session' || availability?.close_reason === 'started' ||
+      availability?.close_reason === 'zero_booking_cutoff'
+  if (noBookableSession) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
+        <div className="mb-4">
+          <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full mb-3">
+            開催リクエスト受付中
+          </span>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">開催日程をリクエスト</h3>
+          <p className="text-sm text-gray-600">
+            現在受付中の日程はありません。ご希望の日程や条件をお送りください。開催可能になりましたらメールでお知らせします。
+          </p>
+        </div>
+        <WorkshopRequestForm workshopId={workshop.id} />
       </div>
     )
   }

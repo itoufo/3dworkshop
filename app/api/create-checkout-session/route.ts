@@ -28,12 +28,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
     }
 
-    // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める
-    if (booking_id) {
-      const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
-      if (deadline.closed) {
-        return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
-      }
+    // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める。
+    // ⚠ booking_id なしで呼ばれると締切を確かめられないので受け付けない
+    if (!booking_id) {
+      return NextResponse.json({ error: 'booking_id is required' }, { status: 400 })
+    }
+    const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
+    if (deadline.closed) {
+      return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
     }
 
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
