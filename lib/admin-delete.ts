@@ -19,6 +19,7 @@ const ALLOWED_TABLES = [
   'workshop_categories',
   'blog_posts',
   'products',
+  'product_series',
 ] as const
 
 export type AdminDeletableTable = (typeof ALLOWED_TABLES)[number]

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
 import { SHIPPING_FEE, SHIPPING_LEAD_TIME_TEXT, shippingFeeLabel } from '@/lib/shipping'
@@ -34,6 +34,16 @@ export default function ProductPurchaseForm({ productId, unitPrice, stockQuantit
   // stock_quantity が null の商品は在庫無制限（受注生産）として扱う
   const maxQuantity = stockQuantity === null ? 20 : Math.min(20, stockQuantity)
   const soldOut = stockQuantity !== null && stockQuantity <= 0
+
+  // 別の商品に切り替わったら、前の商品で出た決済エラーは消す
+  useEffect(() => {
+    setErrorMsg(null)
+  }, [productId])
+
+  // シリーズのページでは、入力を保ったまま別の商品に切り替わる。数量だけ新しい上限に収める
+  useEffect(() => {
+    setForm((f) => (f.quantity > Math.max(1, maxQuantity) ? { ...f, quantity: Math.max(1, maxQuantity) } : f))
+  }, [maxQuantity])
   const total = unitPrice * form.quantity + SHIPPING_FEE
 
   async function handleSubmit(e: React.FormEvent) {

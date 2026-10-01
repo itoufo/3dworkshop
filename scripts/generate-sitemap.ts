@@ -60,6 +60,11 @@ interface ProductRow {
   updated_at?: string
 }
 
+interface SeriesRow {
+  slug: string
+  updated_at?: string
+}
+
 interface SitemapUrl {
   loc: string
   lastmod?: string
@@ -273,11 +278,13 @@ function generateBlogUrls(blogPosts: BlogPost[]): SitemapUrl[] {
  */
 async function fetchProducts(): Promise<ProductRow[]> {
   try {
+    // シリーズの子商品は単独のページを持たない（シリーズのページへ転送される）ので載せない
     const { data, error } = await supabase
       .from('products')
       .select('id, updated_at')
       .eq('is_active', true)
       .neq('category', '3d_printing')
+      .is('series_id', null)
       .order('updated_at', { ascending: false })
 
     if (error) {
@@ -290,6 +297,48 @@ async function fetchProducts(): Promise<ProductRow[]> {
     console.error('Error fetching products:', error)
     return []
   }
+}
+
+/**
+ * 公開中の物販シリーズ（サイズ・色などを1ページで選ぶ商品のまとまり）
+ */
+async function fetchProductSeries(): Promise<SeriesRow[]> {
+  try {
+    const { data, error } = await supabase
+      .from('product_series')
+      .select('id, slug, updated_at')
+      .eq('is_active', true)
+
+    if (error) {
+      console.error('Error fetching product series:', error)
+      return []
+    }
+
+    // 公開中の子商品が無いシリーズのページは 404 になるので載せない
+    const { data: items, error: itemsError } = await supabase
+      .from('products')
+      .select('series_id')
+      .eq('is_active', true)
+      .not('series_id', 'is', null)
+    if (itemsError) {
+      console.error('Error fetching product series items:', itemsError)
+      return []
+    }
+    const withItems = new Set((items ?? []).map((i) => i.series_id))
+    return (data || []).filter((s) => withItems.has(s.id)).map(({ slug, updated_at }) => ({ slug, updated_at }))
+  } catch (error) {
+    console.error('Error fetching product series:', error)
+    return []
+  }
+}
+
+function generateSeriesUrls(series: SeriesRow[]): SitemapUrl[] {
+  return series.map((s) => ({
+    loc: `/products/series/${s.slug}`,
+    lastmod: s.updated_at || new Date().toISOString(),
+    changefreq: 'weekly' as const,
+    priority: 0.7,
+  }))
 }
 
 /**
@@ -350,24 +399,27 @@ async function main() {
 
   // データ取得
   console.log('📡 Fetching data from Supabase...')
-  const [workshops, blogPosts, surveys, products] = await Promise.all([
+  const [workshops, blogPosts, surveys, products, productSeries] = await Promise.all([
     fetchWorkshops(),
     fetchBlogPosts(),
     fetchSurveys(),
     fetchProducts(),
+    fetchProductSeries(),
   ])
 
   console.log(`✨ Found ${workshops.length} workshops`)
   console.log(`✨ Found ${blogPosts.length} blog posts`)
   console.log(`✨ Found ${surveys.length} surveys`)
   console.log(`✨ Found ${products.length} products`)
+  console.log(`✨ Found ${productSeries.length} product series`)
 
   // URL生成
   const workshopUrls = generateWorkshopUrls(workshops)
   const blogUrls = generateBlogUrls(blogPosts)
   const surveyUrls = generateSurveyUrls(surveys)
   const productUrls = generateProductUrls(products)
-  const allUrls = [...staticPages, ...workshopUrls, ...blogUrls, ...surveyUrls, ...productUrls]
+  const seriesUrls = generateSeriesUrls(productSeries)
+  const allUrls = [...staticPages, ...workshopUrls, ...blogUrls, ...surveyUrls, ...productUrls, ...seriesUrls]
 
   console.log(`📝 Total URLs: ${allUrls.length}`)
 

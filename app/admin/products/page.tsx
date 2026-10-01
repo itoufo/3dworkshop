@@ -5,16 +5,20 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
+import { adminJson } from '@/lib/admin-api-client'
+import { variantLabel } from '@/lib/product-variants'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { firstImageUrl, isVideoUrl } from '@/lib/media'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { Package, Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import type { Product, ProductSeries } from '@/lib/products'
 
 export default function AdminProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
+  // シリーズ名とページの行き先を出すため。非公開のシリーズも引けるように管理 API で読む
+  const [seriesById, setSeriesById] = useState<Record<string, ProductSeries>>({})
   const [loading, setLoading] = useState(true)
   const [navigating, setNavigating] = useState(false)
 
@@ -27,6 +31,8 @@ export default function AdminProductsPage() {
       console.error('Error loading products:', error)
     }
     setProducts((data as Product[]) ?? [])
+    const seriesRes = await adminJson<{ series: ProductSeries[] }>('/api/admin/product-series')
+    if (seriesRes.ok) setSeriesById(Object.fromEntries(seriesRes.data.series.map((s) => [s.id, s])))
     setLoading(false)
   }, [])
 
@@ -120,6 +126,12 @@ export default function AdminProductsPage() {
                       >
                         {product.is_active ? '公開中' : '非公開'}
                       </span>
+                      {product.series_id && seriesById[product.series_id] && (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700">
+                          {seriesById[product.series_id].name}：
+                          {variantLabel(product, seriesById[product.series_id].option_axes) || '値が未入力'}
+                        </span>
+                      )}
                       {product.category !== 'product' && (
                         <span className="px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">
                           {product.category}
@@ -141,7 +153,11 @@ export default function AdminProductsPage() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <a
-                      href={`/products/${product.id}`}
+                      href={
+                        product.series_id && seriesById[product.series_id]
+                          ? `/products/series/${seriesById[product.series_id].slug}?v=${product.id}`
+                          : `/products/${product.id}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50"

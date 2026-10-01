@@ -1,12 +1,13 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
+import { jsonLdString } from '@/lib/json-ld'
 import Footer from '@/components/Footer'
 import ProductGallery from '@/components/ProductGallery'
 import ShareButtons from '@/components/ShareButtons'
 import ProductPurchaseForm from '@/components/ProductPurchaseForm'
 import MediaCoverage from '@/components/MediaCoverage'
-import { getProduct } from '@/lib/products'
+import { getProduct, getSeriesSlug } from '@/lib/products'
 import { firstImageUrl, imageUrlsOnly } from '@/lib/media'
 import { SHIPPING_LEAD_TIME_TEXT, shippingFeeLabel } from '@/lib/shipping'
 import { Truck, Package, ShieldCheck } from 'lucide-react'
@@ -23,6 +24,8 @@ export async function generateStaticParams() {
     .select('id')
     .eq('is_active', true)
     .neq('category', '3d_printing')
+    // シリーズの子商品は単独のページを持たない（シリーズのページへ転送する）
+    .is('series_id', null)
   return (data ?? []).map(({ id }) => ({ id }))
 }
 
@@ -72,6 +75,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const product = await getProduct(id)
   if (!product || !product.is_active) notFound()
 
+  // シリーズの子商品は、シリーズのページでその商品を選んだ状態に転送する
+  // （注文確認メールや決済キャンセルの戻り先はこの URL のままなので、ここで受ける）
+  if (product.series_id) {
+    const slug = await getSeriesSlug(product.series_id)
+    if (!slug) notFound()
+    redirect(`/products/series/${slug}?v=${product.id}`)
+  }
+
   const media = product.media_urls ?? []
   const images = imageUrlsOnly(media)
   const inStock = product.stock_quantity === null || product.stock_quantity > 0
@@ -99,7 +110,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(productJsonLd) }}
       />
       <Header />
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
