@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getConsentText } from '@/lib/consent-default'
+import { getConsentTextFor } from '@/lib/consent-default'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 import { toLocale } from '@/lib/i18n'
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
     await supabaseAdmin
       .from('bookings')
-      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentText(workshop) })
+      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)) })
       .eq('id', booking_id)
 
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）

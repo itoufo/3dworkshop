@@ -40,6 +40,10 @@ export interface Workshop {
   consent_text?: string | null
   // 英語ページ（/en）に載せるか
   show_on_english_site?: boolean
+  // 英語ページ（/en）専用の文言。空なら日本語の列を使う。⚠ 日本語の列に英語を入れない（日本語ページまで英語になる）
+  title_en?: string | null
+  description_en?: string | null
+  consent_text_en?: string | null
   // 予約0人のときの締切: (開催日 − days_before 日) の time（JST）。null なら開始時刻でのみ締切
   zero_booking_cutoff_days_before?: number | null
   zero_booking_cutoff_time?: string | null

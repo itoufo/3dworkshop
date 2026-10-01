@@ -20,6 +20,21 @@ const SELECT_FOR_LISTING =
   'category:workshop_categories(id, name, slug), ' +
   'sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)'
 
+// 英語ページ用の一覧 select。日本語の title / description に加えて英語の列も取る
+const SELECT_FOR_ENGLISH_LISTING = SELECT_FOR_LISTING + ', title_en, description_en'
+
+/**
+ * 英語ページ（/en）で表示する文言に差し替える。title_en / description_en が空なら日本語の列を使う。
+ * ⚠ 英語は専用の列に持つ。共有の title / description に英語を入れると日本語ページまで英語になる
+ */
+export function toEnglishWorkshop<T extends Workshop>(w: T): T {
+  return {
+    ...w,
+    title: w.title_en?.trim() || w.title,
+    description: w.description_en?.trim() || w.description,
+  }
+}
+
 // JST の今日。Vercel の関数は UTC で動くので toISOString() を素で使うと 0〜9時に前日になる
 function todayIso(): string {
   return jstToday()
@@ -73,14 +88,16 @@ export const getAllWorkshops = cache(async (): Promise<Workshop[]> => {
 // 英語ページ（/en）用。管理画面で「英語ページに載せる」をオンにした公開ワークショップだけ。
 // getAllWorkshops と同じ軽量 select（show_on_english_site で絞るだけ）
 export const getEnglishWorkshops = cache(async (): Promise<Workshop[]> => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('workshops')
-    .select(SELECT_FOR_LISTING)
+    .select(SELECT_FOR_ENGLISH_LISTING)
     .eq('is_service', false)
     .eq('is_private', false)
     .eq('show_on_english_site', true)
     .order('event_date', { ascending: true })
-  return ((data as unknown as Workshop[]) || []).map(normalizeSessions)
+  // ⚠ 列が無い（マイグレーション未適用）と黙って0件になるので、ログには残す
+  if (error) console.error('getEnglishWorkshops failed:', error)
+  return ((data as unknown as Workshop[]) || []).map(normalizeSessions).map(toEnglishWorkshop)
 })
 
 // 英語版のあるワークショップの id（日本語ページのヘッダーから /en へ切り替える先を決める）
@@ -88,6 +105,7 @@ export const getEnglishWorkshopIds = cache(async (): Promise<string[]> => {
   const { data } = await supabase
     .from('workshops')
     .select('id')
+    .eq('is_service', false)
     .eq('is_private', false)
     .eq('show_on_english_site', true)
   return (data ?? []).map((r) => r.id as string)

@@ -10,7 +10,7 @@ import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { FolderOpen, Calendar, Lock, Copy, Users, Ticket, FileText } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
-import { DEFAULT_CONSENT_TEXT } from '@/lib/consent-default'
+import { DEFAULT_CONSENT_TEXT, DEFAULT_CONSENT_TEXT_EN } from '@/lib/consent-default'
 import ZeroBookingCutoffField, {
   DEFAULT_ZERO_BOOKING_CUTOFF,
   zeroBookingCutoffFromWorkshop,
@@ -49,6 +49,9 @@ export default function EditWorkshop() {
     preview_password: '',
     collect_demographics: false,
     show_on_english_site: false,
+    title_en: '',
+    description_en: '',
+    consent_text_en: '',
     early_bird_enabled: false,
     early_bird_discount: '',
     early_bird_slots: '',
@@ -99,6 +102,9 @@ export default function EditWorkshop() {
           preview_password: workshopData.preview_password || '',
           collect_demographics: workshopData.collect_demographics === true,
           show_on_english_site: workshopData.show_on_english_site === true,
+        title_en: workshopData.title_en || '',
+        description_en: workshopData.description_en || '',
+        consent_text_en: workshopData.consent_text_en || '',
           early_bird_enabled: workshopData.early_bird_enabled === true,
           early_bird_discount: workshopData.early_bird_discount?.toString() || '',
           early_bird_slots: workshopData.early_bird_slots?.toString() || '',
@@ -198,6 +204,9 @@ export default function EditWorkshop() {
           preview_password: formData.preview_password.trim() || null,
           collect_demographics: formData.collect_demographics,
           show_on_english_site: formData.show_on_english_site,
+          title_en: formData.title_en.trim() || null,
+          description_en: formData.description_en.trim() || null,
+          consent_text_en: formData.consent_text_en.trim() || null,
           early_bird_enabled: formData.early_bird_enabled,
           early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
@@ -430,10 +439,43 @@ export default function EditWorkshop() {
                 <span>
                   <span className="block text-sm font-medium text-gray-700">英語ページ（/en）に載せる</span>
                   <span className="block text-xs text-gray-500 mt-1">
-                    英語で案内できるワークショップだけオンにします。英語ページにはタイトル・説明文がそのまま出るので、英語で書いてください
+                    英語で案内できるワークショップだけオンにします。英語ページには下の英語欄の文言を出します（空欄の欄は日本語のまま出ます）。日本語ページの文言は変わりません
                   </span>
                 </span>
               </label>
+              {formData.show_on_english_site && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語タイトル</label>
+                    <input
+                      type="text"
+                      value={formData.title_en}
+                      onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      placeholder="Create Your Own 3D Figure with AI"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の説明</label>
+                    <textarea
+                      rows={4}
+                      value={formData.description_en}
+                      onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の参加同意書（空欄なら既定の英語の同意書）</label>
+                    <textarea
+                      rows={6}
+                      value={formData.consent_text_en}
+                      onChange={(e) => setFormData({ ...formData, consent_text_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      placeholder={DEFAULT_CONSENT_TEXT_EN}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 早割チケット設定 */}

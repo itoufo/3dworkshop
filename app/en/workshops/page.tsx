@@ -18,7 +18,14 @@ export const metadata: Metadata = {
     canonical: '/en/workshops',
     languages: { ja: '/workshops', en: '/en/workshops', 'x-default': '/workshops' },
   },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: 'https://3dlab.jp/en/workshops', images: ['/og-image.jpg'] },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: 'https://3dlab.jp/en/workshops',
+    images: ['/og-image.jpg'],
+    locale: 'en_US',
+    siteName: '3DLab Tokyo',
+  },
 }
 
 export default async function EnglishWorkshopsPage() {

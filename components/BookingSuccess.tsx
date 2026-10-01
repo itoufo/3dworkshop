@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
+import EnglishFooter from '@/components/en/EnglishFooter'
 import { gaEvent, GA_CURRENCY } from '@/lib/gtag'
 import { formatPrice } from '@/lib/price'
 import { enDateMedium, type Locale } from '@/lib/i18n'
@@ -264,7 +265,7 @@ export default function BookingSuccess({ locale = 'ja' }: { locale?: Locale }) {
     }>
       <SuccessContent locale={locale} />
     </Suspense>
-    <Footer />
+    {locale === 'en' ? <EnglishFooter /> : <Footer />}
     </>
   )
 }

@@ -62,10 +62,9 @@ export function getConsentText(workshop: { consent_text?: string | null }): stri
 }
 
 /**
- * 上の既定本文の英訳。英語ページ（/en）に載せるワークショップの consent_text に入れて使う
- * （例: Create Your Own 3D Figure with AI — Tokyo Workshop with English Support）。
- * サーバーは getConsentText(workshop) を同意の記録として保存するので、英語ページで見せた本文と記録が一致する。
- * ⚠ 日本語の本文を直したら、こちらと該当ワークショップの consent_text も直すこと
+ * 上の既定本文の英訳。英語ページ（/en）でワークショップに consent_text_en がないときに使う。
+ * ⚠ 英語は consent_text（日本語ページと共用）に入れない。入れると日本語ページの同意書まで英語になる
+ * ⚠ 日本語の本文を直したら、こちらも直すこと
  */
 export const DEFAULT_CONSENT_TEXT_EN = `Create Your Own 3D Figure with AI × 3D Printer — Participation Agreement
 Organizer: 3DLab (Walker Inc. / sunU Inc.)
@@ -118,3 +117,21 @@ We use the personal information you provide to run this event, to contact partic
 
 About your agreement
 By checking "I have read and agree to the participation agreement" on the booking form and completing your booking, you agree to the contents of this agreement. For group bookings, the agreement of the person making the booking (the representative) means that all participants have read and agreed to its contents.`
+
+
+/** 英語ページ（/en）で表示・記録する同意書の本文 */
+export function getEnglishConsentText(workshop: { consent_text_en?: string | null }): string {
+  const custom = workshop.consent_text_en?.trim()
+  return custom ? custom : DEFAULT_CONSENT_TEXT_EN
+}
+
+/**
+ * 表示した言語の同意書。予約フォームの表示とサーバーの記録（consent_text_snapshot）の両方でこれを使い、
+ * 見せた本文と記録が必ず一致するようにする
+ */
+export function getConsentTextFor(
+  workshop: { consent_text?: string | null; consent_text_en?: string | null },
+  locale: 'ja' | 'en',
+): string {
+  return locale === 'en' ? getEnglishConsentText(workshop) : getConsentText(workshop)
+}

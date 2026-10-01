@@ -13,7 +13,7 @@ import type { Workshop } from '@/types'
 const FEATURES = [
   { icon: Sparkles, title: 'Beginners welcome', body: 'No experience with AI, design, or 3D printing needed. We guide you step by step.' },
   { icon: Shield, title: 'Safety first', body: 'Learn how to use the equipment safely.' },
-  { icon: Heart, title: 'Your figure is mailed to you', body: 'Your finished piece is printed after the workshop and sent to an address in Japan.' },
+  { icon: Heart, title: 'Shipped after the workshop', body: 'In figure workshops, your finished piece is printed after the workshop and shipped to you (see the participation agreement).' },
   { icon: Users, title: 'Small groups', body: 'Small classes so instructors can help each person.' },
 ]
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getConsentText } from '@/lib/consent-default'
+import { getConsentTextFor } from '@/lib/consent-default'
+import { toLocale } from '@/lib/i18n'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
@@ -107,7 +108,8 @@ export async function POST(request: NextRequest) {
         total_amount: 0,
         discount_amount: 0,
         consent_agreed_at: consentAgreedAt,
-        consent_text_snapshot: getConsentText(workshop),
+        // 予約フォームで見せた言語の本文を記録する（/en は英語の同意書）
+        consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)),
       })
       .eq('id', booking_id)
       .select(`

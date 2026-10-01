@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     canonical: '/en/faq',
     languages: { ja: '/faq', en: '/en/faq', 'x-default': '/faq' },
   },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: 'https://3dlab.jp/en/faq' },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: 'https://3dlab.jp/en/faq', locale: 'en_US', siteName: '3DLab Tokyo' },
 }
 
 type QA = { q: string; a: string }
@@ -33,7 +33,7 @@ const ITEMS: QA[] = [
   },
   {
     q: 'Can two children of elementary school age or younger take part with one accompanying parent?',
-    a: 'Yes. On sessions marked "Great for families", one parent who only accompanies is free and does not count toward the session capacity, so please enter the two children as the number of participants when booking. On regular sessions without that mark, please include the accompanying parent in the number of participants (charged as one seat). Families are very welcome either way.',
+    a: 'Yes. On sessions marked "Recommended for families", one parent who only accompanies is free and does not count toward the session capacity, so please enter the two children as the number of participants when booking. On regular sessions without that mark, please include the accompanying parent in the number of participants (charged as one seat). Families are very welcome either way.',
   },
   {
     q: 'Can I base my design on a hand-drawn picture?',
@@ -53,7 +53,7 @@ const ITEMS: QA[] = [
   },
   {
     q: 'Can I take my figure home on the day?',
-    a: 'No. Your finished figure is printed after the workshop and mailed to you, so a delivery address in Japan where you can receive the parcel is required. Shipping is available within Japan only.',
+    a: 'In figure workshops, your finished figure is printed after the workshop and shipped to you, as described in the participation agreement shown on the booking form. If you have questions about delivery, please email us.',
   },
 ]
 

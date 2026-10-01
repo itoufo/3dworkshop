@@ -11,7 +11,7 @@ import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
 import { formatPrice, isFreePrice } from '@/lib/price'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
-import { getConsentText } from '@/lib/consent-default'
+import { getConsentTextFor } from '@/lib/consent-default'
 import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst, formatCutoffJstEn } from '@/lib/booking-deadline'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import { BOOKING_TEXT, type BookingText, type Locale } from '@/lib/i18n'
@@ -136,7 +136,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [agreedToConsent, setAgreedToConsent] = useState(false)
-  const consentText = useMemo(() => getConsentText(workshop), [workshop])
+  const consentText = useMemo(() => getConsentTextFor(workshop, locale), [workshop, locale])
   // GA4: モーダル離脱計測用。開いた(add_to_cart)のに決済(begin_checkout)へ進まず閉じたら離脱。
   const checkoutStartedRef = useRef(false)
   // GA4: フォームに一度でも触れたか。「開いただけ」と「入力したが送信手前で離脱」を分離する。
@@ -685,7 +685,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                             {t.closed}
                           </span>
                         )}
-                        {s.is_family_friendly && <FamilyFriendlyBadge className="ml-2 flex-shrink-0" label={locale === 'en' ? 'Great for families' : undefined} />}
+                        {s.is_family_friendly && <FamilyFriendlyBadge className="ml-2 flex-shrink-0" label={locale === 'en' ? 'Recommended for families' : undefined} />}
                       </label>
                     )
                   })}

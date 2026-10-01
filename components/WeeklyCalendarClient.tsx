@@ -172,7 +172,7 @@ export default function WeeklyCalendarClient({
                         </span>
                         <span className="block mt-1 text-base text-gray-600">{formatPrice(e.price)}</span>
                         {e.familyFriendly && (
-                          <FamilyFriendlyBadge size="sm" className="mt-2" label={locale === 'en' ? 'Great for families' : undefined} />
+                          <FamilyFriendlyBadge size="sm" className="mt-2" label={locale === 'en' ? 'Recommended for families' : undefined} />
                         )}
                       </Link>
                     </li>

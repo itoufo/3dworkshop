@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: 'https://3dlab.jp/en',
+    // ⚠ app/en/layout.tsx の openGraph はページ側の openGraph で丸ごと置き換わるので、ここにも書く
+    locale: 'en_US',
+    siteName: '3DLab Tokyo',
     images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: '3DLab Tokyo' }],
   },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: ['/og-image.jpg'] },
@@ -35,7 +38,7 @@ const STEPS = [
   { icon: Sparkles, title: 'Imagine', body: 'Start from an idea, a photo, or a drawing of the character you want to make.' },
   { icon: Wand2, title: 'Design with AI', body: 'Use generative AI to develop your own character or mascot, with help from our instructors.' },
   { icon: Box, title: 'Turn it into 3D data', body: 'Learn how a design becomes 3D data that a printer can read.' },
-  { icon: Printer, title: 'See it printed', body: 'Watch a live 3D printer demonstration. Your figure is printed after the session and mailed to you.' },
+  { icon: Printer, title: 'See it printed', body: 'Watch a live 3D printer demonstration. In figure workshops, your figure is printed after the session and shipped to you.' },
 ]
 
 export default async function EnglishHomePage() {
@@ -90,7 +93,7 @@ export default async function EnglishHomePage() {
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center">What you will do</h2>
             <p className="mt-4 text-lg text-gray-600 text-center max-w-2xl mx-auto">
-              A 2-hour workshop that takes you from an idea to a 3D-printed figure.
+              A hands-on workshop that takes you from an idea to a 3D-printed figure.
             </p>
             <ol className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {STEPS.map(({ icon: Icon, title, body }, i) => (

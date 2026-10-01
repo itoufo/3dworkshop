@@ -136,12 +136,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ワークショップページを動的に追加
   try {
-    const { data: workshops } = await supabase
-      .from('workshops')
-      .select('id, updated_at, event_date, show_on_english_site')
-      .eq('is_service', false)
-      .eq('is_private', false)
-      .order('event_date', { ascending: false })
+    type SitemapWorkshopRow = { id: string; updated_at: string | null; event_date: string | null; show_on_english_site?: boolean }
+    const fetchWorkshops = async (columns: string) => {
+      const res = await supabase
+        .from('workshops')
+        .select(columns)
+        .eq('is_service', false)
+        .eq('is_private', false)
+        .order('event_date', { ascending: false })
+      return { data: res.data as unknown as SitemapWorkshopRow[] | null, error: res.error }
+    }
+    // ⚠ show_on_english_site の列が無い（マイグレーション未適用）とクエリごと失敗し、
+    //   catch に落ちてワークショップ・カテゴリ・ブログの URL が全部サイトマップから消える。英語の列なしで取り直す
+    const first = await fetchWorkshops('id, updated_at, event_date, show_on_english_site')
+    let workshops = first.data
+    if (first.error) {
+      console.error('sitemap: workshops with show_on_english_site failed, retrying without it:', first.error)
+      workshops = (await fetchWorkshops('id, updated_at, event_date')).data
+    }
 
     const workshopPages: MetadataRoute.Sitemap = (workshops || []).map((workshop) => ({
       url: `${baseUrl}/workshops/${workshop.id}`,
