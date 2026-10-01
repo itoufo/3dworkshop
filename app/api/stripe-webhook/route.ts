@@ -533,7 +533,8 @@ export async function POST(request: NextRequest) {
             booking.minor_count,
             booking.minor_grades,
             workshop.workshop_categories?.email_production_notes,
-            booking.companion_count
+            booking.companion_count,
+            booking.consent_agreed_at
           )
 
           const emailResult = await sendEmail({

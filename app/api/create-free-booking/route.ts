@@ -48,6 +48,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This workshop requires payment' }, { status: 400 })
     }
 
+    // 参加同意書への同意がない予約は確定しない
+    if (!booking.consent_agreed_at) {
+      return NextResponse.json({ error: '参加同意書への同意が必要です' }, { status: 400 })
+    }
+
     // 二重確定を防ぐ（リトライ・二重送信時は既存の予約をそのまま返す）
     if (booking.status === 'confirmed') {
       return NextResponse.json({ success: true, booking })
@@ -131,7 +136,8 @@ export async function POST(request: NextRequest) {
         booking.minor_count,
         booking.minor_grades,
         workshop.workshop_categories?.email_production_notes,
-        booking.companion_count
+        booking.companion_count,
+        booking.consent_agreed_at
       )
 
       const emailResult = await sendEmail({

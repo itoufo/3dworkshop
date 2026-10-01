@@ -27,6 +27,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
     }
 
+    // 参加同意書への同意がない予約は決済に進めない（予約行はブラウザから作られるので、ここで確かめる）
+    const { data: bookingRow } = await supabaseAdmin
+      .from('bookings')
+      .select('consent_agreed_at')
+      .eq('id', booking_id)
+      .single()
+
+    if (!bookingRow) {
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+    if (!bookingRow.consent_agreed_at) {
+      return NextResponse.json({ error: '参加同意書への同意が必要です' }, { status: 400 })
+    }
+
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
     const qty = participants || 1
     const base = workshop.price * qty

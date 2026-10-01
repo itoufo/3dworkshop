@@ -36,6 +36,8 @@ export interface Workshop {
   early_bird_enabled?: boolean
   early_bird_discount?: number | null
   early_bird_slots?: number | null
+  // 参加同意書の本文。null なら lib/consent-default.ts の既定本文
+  consent_text?: string | null
   sessions?: WorkshopSession[]
   created_at?: string
   updated_at?: string
@@ -123,6 +125,8 @@ export interface Booking {
   minor_grades?: string | null
   // 同伴者（付き添いの保護者）: 親子向け日程で1名まで無料・定員にカウントしない
   companion_count?: number | null
+  consent_agreed_at?: string | null
+  consent_text_snapshot?: string | null
   created_at: string
   updated_at?: string
   // Joined fields (when using Supabase .select() with relations)
