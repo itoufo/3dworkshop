@@ -152,8 +152,8 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             
             <div class="highlight">
               <p style="margin: 0;"><strong>📍 教室所在地</strong></p>
-              <p style="margin: 5px 0;">文京区湯島3-14-8 5F（湯島駅から徒歩3分）</p>
-              <p style="margin: 5px 0;">営業時間：10:00-19:00（定休日：火曜日）</p>
+              <p style="margin: 5px 0;">文京区湯島3-14-8 5F（湯島駅から徒歩約1分）</p>
+              <p style="margin: 5px 0;">営業時間：10:00-17:00（定休日：不定休）</p>
             </div>
             
             <h3 style="color: #9333ea;">今後の流れ</h3>
