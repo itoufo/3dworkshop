@@ -72,3 +72,76 @@ export async function notifySellerReviewed(input: {
   <p><a href="${STORE_URL}/sell">出品者メニューを開く</a></p>`)
   await safeSend(input.to, subject, html)
 }
+
+const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`
+
+export interface PaidStoreOrder {
+  id: string
+  kind: 'data' | 'print'
+  price: number
+  sellerAmount: number
+  productId: string
+  productTitle: string
+  buyerName: string
+  buyerEmail: string
+  /** データ購入のときだけ */
+  downloadUrl?: string
+  downloadValidDays?: number
+  downloadMaxCount?: number
+  /** 印刷のときだけ。⚠ 出品者宛てには載せない */
+  shippingLines?: string[]
+  shippingLeadTimeText?: string
+  sellerName: string
+  sellerEmail: string | null
+}
+
+/**
+ * 支払いが済んだ注文を、購入者・管理者・出品者に知らせる。
+ * ⚠ 出品者には購入者の名前・メール・住所を渡さない（発送は 3DLab がするので要らない）。
+ */
+export async function notifyStoreOrderPaid(o: PaidStoreOrder) {
+  const kindLabel = o.kind === 'data' ? '3D データ' : '完成品'
+  const orderNo = o.id.slice(0, 8)
+
+  // 購入者
+  {
+    const subject = `ご購入ありがとうございます: ${o.productTitle}`
+    const body =
+      o.kind === 'data'
+        ? `<p>${esc(o.buyerName)} 様</p>
+  <p>「${esc(o.productTitle)}」の 3D データをご購入いただき、ありがとうございます。下のボタンからダウンロードできます。</p>
+  <p style="margin:24px 0;"><a href="${esc(o.downloadUrl ?? '')}" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:bold;">データをダウンロード</a></p>
+  <p style="font-size:14px;color:#4b5563;">ダウンロードは ${o.downloadValidDays} 日間・${o.downloadMaxCount} 回までです。このメールは保存しておいてください。<br>
+  データはご自身で印刷して楽しむためのものです。再配布・再販売はできません。</p>`
+        : `<p>${esc(o.buyerName)} 様</p>
+  <p>「${esc(o.productTitle)}」の完成品をご注文いただき、ありがとうございます。3DLab が印刷して、${esc(o.shippingLeadTimeText ?? '')}します。</p>
+  ${o.shippingLines?.length ? `<p>お届け先:<br>${o.shippingLines.map(esc).join('<br>')}</p>` : ''}`
+    const html = layout('ご購入ありがとうございます', `${body}
+  <p>注文番号: ${orderNo}<br>${kindLabel}: ${yen(o.price)}（税込・送料込）</p>
+  <p style="font-size:14px;color:#4b5563;">ご不明な点は 3dlab@sunu25.com までお問い合わせください。</p>`)
+    await safeSend(o.buyerEmail, subject, html)
+  }
+
+  // 管理者（印刷はここから作業が始まる）
+  {
+    const subject = `【ストア】${o.kind === 'print' ? '印刷の注文' : 'データの販売'}: ${o.productTitle}`
+    const html = layout(subject.replace('【ストア】', ''), `
+  <p>作品: ${esc(o.productTitle)}<br>出品者: ${esc(o.sellerName)}<br>種類: ${kindLabel}<br>
+  価格: ${yen(o.price)}（出品者の取り分 ${yen(o.sellerAmount)}）<br>注文番号: ${orderNo}</p>
+  <p>購入者: ${esc(o.buyerName)}（${esc(o.buyerEmail)}）</p>
+  ${o.shippingLines?.length ? `<p>お届け先:<br>${o.shippingLines.map(esc).join('<br>')}</p>` : ''}
+  <p><a href="${MAIN_SITE_URL}/admin/store/orders">管理画面で注文を見る</a></p>`)
+    await safeSend(STORE_ADMIN_NOTIFY, subject, html, STORE_ADMIN_CC)
+  }
+
+  // 出品者
+  if (o.sellerEmail) {
+    const subject = `作品が売れました: ${o.productTitle}`
+    const html = layout('作品が売れました', `
+  <p>${esc(o.sellerName)} さん</p>
+  <p>「${esc(o.productTitle)}」の${kindLabel}が売れました。${o.kind === 'print' ? '印刷と発送は 3DLab が行います。' : ''}</p>
+  <p>価格: ${yen(o.price)}<br>あなたの取り分: <strong>${yen(o.sellerAmount)}</strong></p>
+  <p><a href="${STORE_URL}/sell">出品者メニューを開く</a></p>`)
+    await safeSend(o.sellerEmail, subject, html)
+  }
+}

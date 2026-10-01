@@ -16,6 +16,13 @@ export async function GET() {
     for (const p of data ?? []) {
       urls.push({ loc: `${STORE_URL}/p/${p.id}`, lastmod: p.updated_at })
     }
+    const { data: sellers } = await supabaseAdmin
+      .from('store_sellers')
+      .select('slug, updated_at')
+      .eq('status', 'approved')
+    for (const s of sellers ?? []) {
+      urls.push({ loc: `${STORE_URL}/s/${s.slug}`, lastmod: s.updated_at })
+    }
   }
 
   const body =

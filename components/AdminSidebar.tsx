@@ -82,6 +82,7 @@ const groups: NavGroup[] = [
       // stores.3dlab.jp（出品マーケット）の審査。出品者用の画面はストア側（/sell）にある
       { href: '/admin/store/sellers', label: 'ストア: 出品者', icon: Store },
       { href: '/admin/store/products', label: 'ストア: 作品', icon: Store },
+      { href: '/admin/store/orders', label: 'ストア: 注文', icon: Store },
     ],
   },
   {
