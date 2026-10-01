@@ -8,7 +8,10 @@
 import { PRICE_MAX, PRICE_MIN } from './product-rules'
 
 export interface StoreVariant {
-  /** 注文・カートが指す目印。編集しても同じ組み合わせなら変えない */
+  /**
+   * 注文・カートが指す目印。⚠ 組み合わせ（項目の値）に結びつく。同じ組み合わせなら編集しても変えず、
+   * 違う組み合わせには必ず別の id を振る（カートの行が、いつの間にか別の品物を指さないように）
+   */
   id: string
   options: Record<string, string>
   price: number
@@ -19,10 +22,18 @@ export const VARIANTS_MAX = 30
 export const VARIANT_AXIS_NAME_MAX = 20
 export const VARIANT_VALUE_MAX = 30
 
-const ID_PATTERN = /^[a-z0-9]{8,16}$/
-
 export function newVariantId(): string {
-  return globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+  // ⚠ randomUUID は https か localhost でしか使えない（LAN の http で確かめるときに落ちる）
+  const bytes = new Uint8Array(6)
+  globalThis.crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** 項目名に使えない名前（オブジェクトの仕組みの名前と重なり、値が消える） */
+const RESERVED_AXIS_NAMES = new Set(['__proto__', 'constructor', 'prototype'])
+
+function combinationKey(options: Record<string, string>, axes: string[]): string {
+  return JSON.stringify(axes.map((a) => options[a]))
 }
 
 /** 出品者の編集画面で持つ組み合わせ。値は項目の並び順で持つ（項目名を書き換えても値がずれないように） */
@@ -73,18 +84,32 @@ export function printPriceRange(product: {
 export function parseVariantsInput(
   rawAxes: unknown,
   rawVariants: unknown,
+  /** 保存済みの組み合わせ。同じ組み合わせの id を引き継ぐ */
+  previous: StoreVariant[] = [],
+  previousAxes: string[] = [],
 ): { axes: string[]; variants: StoreVariant[] } | { error: string } {
   const axesIn = Array.isArray(rawAxes) ? rawAxes : []
   const axes: string[] = []
   for (const a of axesIn) {
     const name = typeof a === 'string' ? a.trim() : ''
     if (!name) continue
+    if (RESERVED_AXIS_NAMES.has(name)) return { error: `「${name}」は項目の名前に使えません` }
     if (name.length > VARIANT_AXIS_NAME_MAX) return { error: `選ぶ項目の名前は${VARIANT_AXIS_NAME_MAX}文字までです` }
     if (axes.includes(name)) return { error: `選ぶ項目「${name}」が重なっています` }
     axes.push(name)
   }
   if (axes.length > VARIANT_AXES_MAX) return { error: `選ぶ項目は${VARIANT_AXES_MAX}つまでです` }
+  // 選択肢を使うつもりで項目名を書き忘れた（空の名前だけが届いた）
+  if (axes.length === 0 && axesIn.length > 0) return { error: '選ぶ項目の名前（例: サイズ）を入れてください' }
   if (axes.length === 0) return { axes: [], variants: [] }
+
+  // 保存済みの組み合わせ → id。項目の並びが同じときだけ引き継ぐ（項目を足し引きしたら別の品物）
+  const previousIds = new Map<string, string>()
+  if (JSON.stringify(previousAxes) === JSON.stringify(axes)) {
+    for (const v of previous) {
+      if (v && typeof v.id === 'string' && v.options) previousIds.set(combinationKey(v.options, axes), v.id)
+    }
+  }
 
   const variantsIn = Array.isArray(rawVariants) ? rawVariants : []
   if (variantsIn.length === 0) return { error: '組み合わせを1つ以上入れてください' }
@@ -94,7 +119,7 @@ export function parseVariantsInput(
   const seenKeys = new Set<string>()
   const seenIds = new Set<string>()
   for (const raw of variantsIn) {
-    const r = (raw && typeof raw === 'object' ? raw : {}) as { id?: unknown; options?: unknown; price?: unknown }
+    const r = (raw && typeof raw === 'object' ? raw : {}) as { options?: unknown; price?: unknown }
     const optsIn = (r.options && typeof r.options === 'object' ? r.options : {}) as Record<string, unknown>
     const options: Record<string, string> = {}
     for (const axis of axes) {
@@ -103,7 +128,7 @@ export function parseVariantsInput(
       if (value.length > VARIANT_VALUE_MAX) return { error: `「${axis}」の値は${VARIANT_VALUE_MAX}文字までです` }
       options[axis] = value
     }
-    const key = JSON.stringify(axes.map((a) => options[a]))
+    const key = combinationKey(options, axes)
     if (seenKeys.has(key)) return { error: `同じ組み合わせが2つあります（${variantName({ options }, axes)}）` }
     seenKeys.add(key)
 
@@ -111,8 +136,9 @@ export function parseVariantsInput(
     if (!Number.isInteger(price) || price < PRICE_MIN || price > PRICE_MAX) {
       return { error: `「${variantName({ options }, axes)}」の価格は ${PRICE_MIN}〜${PRICE_MAX.toLocaleString()} 円の整数で入れてください` }
     }
-    // ⚠ 送られてきた id は形だけ確かめて引き継ぐ（カートや注文が指している組み合わせを保つため）。重なれば振り直す
-    let id = typeof r.id === 'string' && ID_PATTERN.test(r.id) ? r.id : newVariantId()
+    // ⚠ id はブラウザの値を使わず、保存済みの同じ組み合わせから引き継ぐ。無ければ新しく振る。
+    //   行の値を書き換えて別の組み合わせにしたら、id も変わる（カートの行が別の品物を指さない）
+    let id = previousIds.get(key) ?? newVariantId()
     if (seenIds.has(id)) id = newVariantId()
     seenIds.add(id)
     variants.push({ id, options, price })

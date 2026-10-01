@@ -22,7 +22,7 @@ export default async function SellProductsPage() {
   const user = await approvedSellerOrRedirect('/sell/products')
   const { data: products } = await supabaseAdmin!
     .from('store_products')
-    .select('id, title, image_urls, status, review_note, sell_data, data_price, sell_print, print_price, updated_at')
+    .select('id, title, image_urls, status, review_note, sell_data, data_price, sell_print, print_price, print_variants, updated_at')
     .eq('seller_id', user.seller.id)
     .order('updated_at', { ascending: false })
 
@@ -50,7 +50,12 @@ export default async function SellProductsPage() {
                   <p className="mt-1 text-base font-bold text-gray-900 truncate">{p.title}</p>
                   <p className="text-base text-gray-600">
                     {p.sell_data && p.data_price != null && <span className="mr-3">データ {yen(p.data_price)}</span>}
-                    {p.sell_print && p.print_price != null && <span>完成品 {yen(p.print_price)}</span>}
+                    {p.sell_print && p.print_price != null && (
+                      <span>
+                        完成品 {yen(p.print_price)}
+                        {new Set(((p.print_variants ?? []) as { price: number }[]).map((v) => v.price)).size > 1 && '〜'}
+                      </span>
+                    )}
                   </p>
                   {p.status === 'rejected' && p.review_note && (
                     <p className="mt-1 text-base text-amber-800 line-clamp-2">差し戻しの理由: {p.review_note}</p>

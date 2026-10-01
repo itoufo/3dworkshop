@@ -38,7 +38,12 @@ function priceOf(value: unknown): number | null {
  * ⚠ 画像・データは本人の置き場所（sellers/<ID>/）のものしか受け付けない。
  *   他人のファイルのパスを書いて、その人のデータを自分の作品として売るのを防ぐ。
  */
-export function parseProductInput(sellerId: string, body: Record<string, unknown>): { values: ProductValues } | { error: string } {
+export function parseProductInput(
+  sellerId: string,
+  body: Record<string, unknown>,
+  /** 保存済みの選択肢（編集のとき）。同じ組み合わせの id を引き継ぐ */
+  previous: { option_axes: string[]; print_variants: StoreVariant[] } = { option_axes: [], print_variants: [] },
+): { values: ProductValues } | { error: string } {
   const title = typeof body.title === 'string' ? body.title.trim() : ''
   if (!title || title.length > PRODUCT_TITLE_MAX) return { error: `作品名は1〜${PRODUCT_TITLE_MAX}文字で入れてください` }
 
@@ -66,7 +71,7 @@ export function parseProductInput(sellerId: string, body: Record<string, unknown
     return { error: `データの価格は ${PRICE_MIN}〜${PRICE_MAX.toLocaleString()} 円の整数で入れてください` }
   }
   // 完成品の選択肢。あれば価格は組み合わせごとに持ち、print_price はいちばん安いもの
-  const parsedVariants = sellPrint ? parseVariantsInput(body.option_axes, body.print_variants) : { axes: [], variants: [] }
+  const parsedVariants = sellPrint ? parseVariantsInput(body.option_axes, body.print_variants, previous.print_variants, previous.option_axes) : { axes: [], variants: [] }
   if ('error' in parsedVariants) return { error: parsedVariants.error }
   const withVariants = parsedVariants.axes.length > 0
   const printPrice = !sellPrint
