@@ -119,6 +119,7 @@ export interface Customer {
   age?: number
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say'
   stripe_customer_id?: string
+  acquisition_source?: 'website' | 'booking_site' | 'email' | 'phone' | 'referral' | 'other' | null
   created_at: string
   updated_at: string
 }
@@ -145,6 +146,10 @@ export interface Booking {
   companion_count?: number | null
   consent_agreed_at?: string | null
   consent_text_snapshot?: string | null
+  // 流入経路と他サイトの販売手数料（円）。手取り = total_amount - commission_amount
+  source?: 'website' | 'booking_site' | 'email' | 'phone' | 'referral' | 'other'
+  source_detail?: string | null
+  commission_amount?: number
   created_at: string
   updated_at: string
   workshop?: Workshop
