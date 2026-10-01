@@ -101,12 +101,16 @@ export default function WorkshopDetailView({ workshop }: { workshop: Workshop })
             <div className="lg:col-span-2">
               {/* Image */}
               {workshop.image_url ? (
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
+                // ⚠ 枠の比率を固定して object-cover で切り抜かない。画像は 3:2（1536×1024）と
+                //   16:9（1600×900）が混在していて、16:9 の枠だと 3:2 の画像は上下のタイトル文字が切れる。
+                //   画像そのものの比率で表示する（width/height は読み込み前の場所取り用の目安）
+                <div className="w-full rounded-2xl overflow-hidden mb-8 bg-gray-100">
                   <Image
                     src={optimizeImageUrl(workshop.image_url)}
                     alt={`${workshop.title} - 3Dプリンタワークショップ 東京・湯島 | 3DLab`}
-                    fill
-                    className="object-cover"
+                    width={1536}
+                    height={1024}
+                    className="w-full h-auto"
                     sizes="(max-width: 1024px) 100vw, 66vw"
                     priority
                     fetchPriority="high"
