@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { approvedSellerOrRedirect } from '@/lib/store/seller-guard'
 import SellNav from '@/components/store/SellNav'
 import ProductEditor from '@/components/store/ProductEditor'
+import { toEditableVariants, type StoreVariant } from '@/lib/store/variants'
 import type { ProductStatus } from '@/lib/store/product-rules'
 
 export const metadata: Metadata = { title: '作品を編集', robots: { index: false, follow: false } }
@@ -40,6 +41,9 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           sell_print: p.sell_print,
           print_price: p.print_price != null ? String(p.print_price) : '',
           print_spec: p.print_spec ?? '',
+          use_variants: (p.option_axes ?? []).length > 0,
+          option_axes: (p.option_axes ?? []).length > 0 ? p.option_axes : [''],
+          variants: toEditableVariants(p.option_axes ?? [], (p.print_variants ?? []) as StoreVariant[]),
         }}
       />
     </div>

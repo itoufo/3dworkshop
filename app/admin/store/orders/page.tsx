@@ -8,6 +8,7 @@ type OrderStatus = 'pending' | 'paid' | 'shipped' | 'cancelled' | 'refunded'
 type Order = {
   id: string
   kind: 'data' | 'print'
+  variant_label: string | null
   price: number
   platform_fee: number
   seller_amount: number
@@ -125,7 +126,10 @@ export default function AdminStoreOrdersPage() {
                   <span className={`px-2 py-0.5 rounded text-sm ${o.kind === 'print' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
                     {o.kind === 'print' ? '完成品' : 'データ'}
                   </span>
-                  <span className="font-bold text-lg">{o.product?.title ?? '（削除された作品）'}</span>
+                  <span className="font-bold text-lg">
+                    {o.product?.title ?? '（削除された作品）'}
+                    {o.variant_label && <span className="ml-2 text-base font-normal text-gray-700">{o.variant_label}</span>}
+                  </span>
                   <span className="text-gray-600 text-sm">出品者 {o.seller?.display_name}</span>
                 </div>
                 <div className="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-800">

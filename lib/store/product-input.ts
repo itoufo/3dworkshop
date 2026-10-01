@@ -9,6 +9,7 @@ import {
   PRODUCT_PRINT_SPEC_MAX,
   PRODUCT_TITLE_MAX,
 } from './product-rules'
+import { parseVariantsInput, type StoreVariant } from './variants'
 
 export type ProductValues = {
   title: string
@@ -21,6 +22,9 @@ export type ProductValues = {
   sell_print: boolean
   print_price: number | null
   print_spec: string | null
+  /** 完成品の選択肢（lib/store/variants.ts）。使わなければ空 */
+  option_axes: string[]
+  print_variants: StoreVariant[]
 }
 
 function priceOf(value: unknown): number | null {
@@ -34,7 +38,12 @@ function priceOf(value: unknown): number | null {
  * ⚠ 画像・データは本人の置き場所（sellers/<ID>/）のものしか受け付けない。
  *   他人のファイルのパスを書いて、その人のデータを自分の作品として売るのを防ぐ。
  */
-export function parseProductInput(sellerId: string, body: Record<string, unknown>): { values: ProductValues } | { error: string } {
+export function parseProductInput(
+  sellerId: string,
+  body: Record<string, unknown>,
+  /** 保存済みの選択肢（編集のとき）。同じ組み合わせの id を引き継ぐ */
+  previous: { option_axes: string[]; print_variants: StoreVariant[] } = { option_axes: [], print_variants: [] },
+): { values: ProductValues } | { error: string } {
   const title = typeof body.title === 'string' ? body.title.trim() : ''
   if (!title || title.length > PRODUCT_TITLE_MAX) return { error: `作品名は1〜${PRODUCT_TITLE_MAX}文字で入れてください` }
 
@@ -61,7 +70,15 @@ export function parseProductInput(sellerId: string, body: Record<string, unknown
   if (sellData && dataPrice === null) {
     return { error: `データの価格は ${PRICE_MIN}〜${PRICE_MAX.toLocaleString()} 円の整数で入れてください` }
   }
-  const printPrice = sellPrint ? priceOf(body.print_price) : null
+  // 完成品の選択肢。あれば価格は組み合わせごとに持ち、print_price はいちばん安いもの
+  const parsedVariants = sellPrint ? parseVariantsInput(body.option_axes, body.print_variants, previous.print_variants, previous.option_axes) : { axes: [], variants: [] }
+  if ('error' in parsedVariants) return { error: parsedVariants.error }
+  const withVariants = parsedVariants.axes.length > 0
+  const printPrice = !sellPrint
+    ? null
+    : withVariants
+      ? Math.min(...parsedVariants.variants.map((v) => v.price))
+      : priceOf(body.print_price)
   if (sellPrint && printPrice === null) {
     return { error: `完成品の価格は ${PRICE_MIN}〜${PRICE_MAX.toLocaleString()} 円の整数で入れてください` }
   }
@@ -78,6 +95,8 @@ export function parseProductInput(sellerId: string, body: Record<string, unknown
       sell_print: sellPrint,
       print_price: printPrice,
       print_spec: printSpec || null,
+      option_axes: parsedVariants.axes,
+      print_variants: parsedVariants.variants,
     },
   }
 }

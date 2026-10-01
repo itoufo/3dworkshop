@@ -458,7 +458,7 @@ export async function POST(request: NextRequest) {
             .eq('id', orderId)
             .eq('status', 'pending')
             .select(
-              'id, kind, price, seller_amount, buyer_name, buyer_email, product:store_products(id, title), seller:store_sellers(display_name, login_email)',
+              'id, kind, price, seller_amount, buyer_name, buyer_email, variant_label, product:store_products(id, title), seller:store_sellers(display_name, login_email)',
             )
 
           if (orderError) {
@@ -481,7 +481,8 @@ export async function POST(request: NextRequest) {
             price: order.price,
             sellerAmount: order.seller_amount,
             productId: product?.id ?? '',
-            productTitle: product?.title ?? '作品',
+            // 組み合わせ（サイズ・色など）があれば作品名に添える。メールの件名・本文・管理者宛てすべてに出る
+            productTitle: `${product?.title ?? '作品'}${order.variant_label ? `（${order.variant_label}）` : ''}`,
             buyerName: order.buyer_name || session.customer_details?.name || 'お客様',
             buyerEmail: order.buyer_email || session.customer_details?.email || '',
             downloadUrl: downloadToken ? `${STORE_URL}/download#${downloadToken}` : undefined,

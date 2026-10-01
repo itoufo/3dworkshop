@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   let query = supabaseAdmin!
     .from('store_orders')
     .select(`
-      id, kind, price, platform_fee, seller_amount, buyer_name, buyer_email, shipping, status,
+      id, kind, variant_label, price, platform_fee, seller_amount, buyer_name, buyer_email, shipping, status,
       stripe_payment_intent_id, download_count, download_expires_at, tracking_number,
       paid_at, shipped_at, refunded_at, created_at, updated_at,
       data_file_name, product:store_products(id, title, data_file_name),

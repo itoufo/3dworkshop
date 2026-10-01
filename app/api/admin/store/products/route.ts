@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     .from('store_products')
     .select(`
       id, title, description, image_urls, data_file_path, data_file_name,
-      sell_data, data_price, sell_print, print_price, print_spec,
+      sell_data, data_price, sell_print, print_price, print_spec, option_axes, print_variants,
       status, review_note, submitted_at, published_at, updated_at,
       seller:store_sellers(id, display_name, slug, status)
     `)

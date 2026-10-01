@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { adminFetch } from '@/lib/store/admin-fetch'
 import { PRODUCT_STATUS_LABEL, type ProductStatus } from '@/lib/store/product-rules'
 import { splitPrice } from '@/lib/store/pricing'
+import { variantName, type StoreVariant } from '@/lib/store/variants'
 
 type Product = {
   id: string
@@ -18,6 +19,8 @@ type Product = {
   sell_print: boolean
   print_price: number | null
   print_spec: string | null
+  option_axes: string[]
+  print_variants: StoreVariant[]
   status: ProductStatus
   review_note: string | null
   submitted_at: string | null
@@ -109,11 +112,26 @@ export default function AdminStoreProductsPage() {
                 {p.sell_data && p.data_price != null && (
                   <p>データ {yen(p.data_price)}（出品者 {yen(splitPrice('data', p.data_price).sellerAmount)}）</p>
                 )}
-                {p.sell_print && p.print_price != null && (
+                {p.sell_print && p.print_price != null && p.option_axes.length === 0 && (
                   <p>
                     完成品 {yen(p.print_price)}（出品者 {yen(splitPrice('print', p.print_price).sellerAmount)}）
                     {p.print_spec && <span className="text-gray-600"> 仕様: {p.print_spec}</span>}
                   </p>
+                )}
+                {p.sell_print && p.option_axes.length > 0 && (
+                  <div>
+                    <p>
+                      完成品（選ぶ項目: {p.option_axes.join('・')}）
+                      {p.print_spec && <span className="text-gray-600"> 仕様: {p.print_spec}</span>}
+                    </p>
+                    <ul className="ml-4 list-disc">
+                      {p.print_variants.map((v) => (
+                        <li key={v.id}>
+                          {variantName(v, p.option_axes)}: {yen(v.price)}（出品者 {yen(splitPrice('print', v.price).sellerAmount)}）
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 {p.data_file_path ? (
                   <a href={`/api/admin/store/products/${p.id}/file`} className="text-purple-700 underline">

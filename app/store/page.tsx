@@ -12,6 +12,8 @@ interface ListedProduct {
   data_price: number | null
   sell_print: boolean
   print_price: number | null
+  /** 完成品の選択肢。print_price は最安値なので、価格が分かれていれば「〜」を付ける */
+  print_variants: { price: number }[]
   store_sellers: { display_name: string; slug: string } | null
 }
 
@@ -20,7 +22,7 @@ async function publishedProducts(): Promise<ListedProduct[]> {
   const { data, error } = await supabaseAdmin
     .from('store_products')
     // ⚠ 出品者が承認済みのものだけ。停止・却下された出品者の作品を出さない
-    .select('id, title, image_urls, sell_data, data_price, sell_print, print_price, store_sellers!inner(display_name, slug)')
+    .select('id, title, image_urls, sell_data, data_price, sell_print, print_price, print_variants, store_sellers!inner(display_name, slug)')
     .eq('status', 'published')
     .eq('store_sellers.status', 'approved')
     .order('published_at', { ascending: false })
@@ -86,7 +88,12 @@ export default async function StoreTopPage() {
                   )}
                   <p className="mt-1 text-base text-gray-800">
                     {p.sell_data && p.data_price != null && <span className="mr-3">データ {yen(p.data_price)}</span>}
-                    {p.sell_print && p.print_price != null && <span>完成品 {yen(p.print_price)}</span>}
+                    {p.sell_print && p.print_price != null && (
+                      <span>
+                        完成品 {yen(p.print_price)}
+                        {p.print_variants.length > 1 && new Set(p.print_variants.map((v) => v.price)).size > 1 && '〜'}
+                      </span>
+                    )}
                   </p>
                 </Link>
               </li>

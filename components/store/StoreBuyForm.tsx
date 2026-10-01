@@ -1,15 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Download, Package, ShieldCheck } from 'lucide-react'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/download-limits'
+import { findItem, selectValue, selectionOf, type Selection } from '@/lib/product-variants'
+import { asVariantItems, type StoreVariant } from '@/lib/store/variants'
+import VariantPicker from './VariantPicker'
 
 interface Props {
   productId: string
   dataPrice: number | null
   printPrice: number | null
   printSpec: string | null
+  /** 完成品の選択肢。使わない作品は空 */
+  axes: string[]
+  variants: StoreVariant[]
   /** ログイン中なら最初から入れておく */
   defaultName: string
   defaultEmail: string
@@ -21,10 +27,15 @@ const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`
  * 作品ページの購入ボックス。データ（ダウンロード）か完成品（3DLab が印刷して発送）を選んで決済へ。
  * 価格はここでは表示だけ。決済の金額は API が DB から決める。
  */
-export default function StoreBuyForm({ productId, dataPrice, printPrice, printSpec, defaultName, defaultEmail }: Props) {
+export default function StoreBuyForm({ productId, dataPrice, printPrice, printSpec, axes, variants, defaultName, defaultEmail }: Props) {
+  const items = useMemo(() => asVariantItems(variants), [variants])
+  const withVariants = axes.length > 0 && items.length > 0
+  const [selection, setSelection] = useState<Selection>(() => (withVariants ? selectionOf(items[0], axes) : {}))
+  const variant = withVariants ? findItem(items, axes, selection) : null
+  const minVariantPrice = withVariants ? Math.min(...items.map((v) => v.price)) : null
   const options = [
     ...(dataPrice != null ? [{ kind: 'data' as const, price: dataPrice }] : []),
-    ...(printPrice != null ? [{ kind: 'print' as const, price: printPrice }] : []),
+    ...(printPrice != null ? [{ kind: 'print' as const, price: variant?.price ?? printPrice }] : []),
   ]
   const [kind, setKind] = useState<'data' | 'print'>(options[0]?.kind ?? 'data')
   const [name, setName] = useState(defaultName)
@@ -40,7 +51,7 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
       const res = await fetch(`/api/store/products/${productId}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, name, email }),
+        body: JSON.stringify({ kind, name, email, variantId: kind === 'print' ? variant?.id : undefined }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.url) {
@@ -85,7 +96,9 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
                   {o.kind === 'data' ? <Download className="w-4 h-4 mr-1.5" /> : <Package className="w-4 h-4 mr-1.5" />}
                   {o.kind === 'data' ? '3D データ' : '完成品（3DLab が印刷してお届け）'}
                 </span>
-                <span className="font-bold text-gray-900">{yen(o.price)}</span>
+                <span className="font-bold text-gray-900">
+                  {o.kind === 'print' && withVariants && kind !== 'print' && minVariantPrice != null ? `${yen(minVariantPrice)}〜` : yen(o.price)}
+                </span>
               </span>
               <span className="block text-sm text-gray-600 mt-0.5">
                 {o.kind === 'data'
@@ -96,6 +109,15 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
           </label>
         ))}
       </fieldset>
+
+      {kind === 'print' && withVariants && (
+        <VariantPicker
+          axes={axes}
+          variants={variants}
+          selection={selection}
+          onChoose={(axis, value) => setSelection(selectValue(items, axes, selection, axis, value))}
+        />
+      )}
 
       <label className="block text-sm font-medium text-gray-700">
         お名前 <span className="text-red-500">*</span>
@@ -121,7 +143,7 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || (kind === 'print' && withVariants && !variant)}
         className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors disabled:opacity-60"
       >
         {submitting ? '決済画面へ移動しています...' : `${yen(selected.price)} で購入する`}

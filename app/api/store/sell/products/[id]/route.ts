@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireApprovedSeller } from '@/lib/store/session'
 import { isSameOriginJson } from '@/lib/store/request'
 import { parseProductInput, submitProblem } from '@/lib/store/product-input'
+import type { StoreVariant } from '@/lib/store/variants'
 import { notifyAdminProductSubmitted } from '@/lib/store/notify'
 
 /**
@@ -31,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const sellerId = auth.user.seller.id
   const { data: current } = await supabaseAdmin
     .from('store_products')
-    .select('id, status')
+    .select('id, status, option_axes, print_variants')
     .eq('id', id)
     .eq('seller_id', sellerId)
     .maybeSingle()
@@ -55,7 +56,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'action が不正です' }, { status: 400 })
   }
 
-  const parsed = parseProductInput(sellerId, body)
+  const parsed = parseProductInput(sellerId, body, {
+    option_axes: current.option_axes ?? [],
+    print_variants: (current.print_variants ?? []) as StoreVariant[],
+  })
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
   let status: string = current.status

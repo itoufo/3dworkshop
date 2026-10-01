@@ -66,7 +66,12 @@ export default async function StoreSellerPage({ params }: Props) {
                   <p className="mt-3 text-base font-bold text-gray-900 line-clamp-2">{p.title}</p>
                   <p className="mt-1 text-base text-gray-800">
                     {p.sell_data && p.data_price != null && <span className="mr-3">データ {yen(p.data_price)}</span>}
-                    {p.sell_print && p.print_price != null && <span>完成品 {yen(p.print_price)}</span>}
+                    {p.sell_print && p.print_price != null && (
+                      <span>
+                        完成品 {yen(p.print_price)}
+                        {p.print_variants.length > 1 && new Set(p.print_variants.map((v) => v.price)).size > 1 && '〜'}
+                      </span>
+                    )}
                   </p>
                 </Link>
               </li>
