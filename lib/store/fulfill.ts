@@ -23,59 +23,66 @@ export async function fulfillStorePayment(
   const address = collected?.address
   const now = new Date()
 
-  let query = supabaseAdmin
-    .from('store_orders')
-    .update({
-      status: 'paid',
-      paid_at: now.toISOString(),
-      updated_at: now.toISOString(),
-      stripe_session_id: session.id,
-      stripe_payment_intent_id: (session.payment_intent as string) || null,
-    })
-    .eq('status', 'pending')
-  query = 'checkoutId' in match ? query.eq('checkout_id', match.checkoutId) : query.eq('id', match.orderId)
-  const { data: paid, error } = await query.select(
-    'id, kind, quantity, price, seller_amount, buyer_name, buyer_email, variant_label, created_at, product:store_products(title), seller:store_sellers(display_name, login_email)',
-  )
-  if (error) throw error
-  if (!paid || paid.length === 0) {
+  // ⚠ 1行ずつ「paid・合言葉・住所」を1回の更新で書く（pending のときだけ）。
+  //   paid だけ先に書いて合言葉・住所をあとで書くと、その間に失敗したとき再送が「処理済み」で抜け、
+  //   合言葉の無いデータ・住所の無い完成品が残る
+  const pendingQuery = supabaseAdmin.from('store_orders').select('id, kind').eq('status', 'pending')
+  const { data: pending, error: pendingError } = await ('checkoutId' in match
+    ? pendingQuery.eq('checkout_id', match.checkoutId)
+    : pendingQuery.eq('id', match.orderId))
+  if (pendingError) throw pendingError
+  if (!pending || pending.length === 0) {
     console.log('[store-fulfill] already processed or missing:', JSON.stringify(match))
     return
   }
-  paid.sort((a, b) => a.created_at.localeCompare(b.created_at))
 
-  // お届け先は完成品の行にだけ持たせる（データの行には要らない個人情報を置かない）
-  if (address && paid.some((o) => o.kind === 'print')) {
-    const { error: shipError } = await supabaseAdmin
+  const expiresAt = new Date(now.getTime() + STORE_DOWNLOAD_VALID_DAYS * 86400_000).toISOString()
+  const shipping = address
+    ? {
+        name: collected?.name || null,
+        phone: session.customer_details?.phone || null,
+        address: address as unknown as Record<string, unknown>,
+      }
+    : null
+  const tokens = new Map<string, string>()
+  const paidIds: string[] = []
+  for (const row of pending) {
+    const token = row.kind === 'data' ? createStoreDownloadToken() : null
+    const { data: updated, error } = await supabaseAdmin
       .from('store_orders')
       .update({
-        shipping: {
-          name: collected?.name || null,
-          phone: session.customer_details?.phone || null,
-          address: address as unknown as Record<string, unknown>,
-        },
+        status: 'paid',
+        paid_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        stripe_session_id: session.id,
+        stripe_payment_intent_id: (session.payment_intent as string) || null,
+        // お届け先は完成品の行にだけ（データの行には要らない個人情報を置かない）
+        ...(row.kind === 'print' ? { shipping } : {}),
+        ...(token ? { download_token: token, download_expires_at: expiresAt } : {}),
       })
-      .in('id', paid.filter((o) => o.kind === 'print').map((o) => o.id))
-    if (shipError) console.error('[store-fulfill] shipping save failed:', shipError)
+      .eq('id', row.id)
+      .eq('status', 'pending')
+      .select('id')
+    // 失敗したら投げて Stripe に再送させる。終わった行は paid なので、再送では残りの行だけを処理する
+    if (error) throw error
+    if (!updated || updated.length === 0) continue // 同時に届いた再送が先に処理した
+    paidIds.push(row.id)
+    if (token) tokens.set(row.id, token)
   }
+  if (paidIds.length === 0) return
 
-  // データの行ごとに合言葉を発行する（行ごとに回数と期限を数える）
-  const tokens = new Map<string, string>()
-  const expiresAt = new Date(now.getTime() + STORE_DOWNLOAD_VALID_DAYS * 86400_000).toISOString()
-  for (const o of paid.filter((o) => o.kind === 'data')) {
-    const token = createStoreDownloadToken()
-    const { error: tokenError } = await supabaseAdmin
-      .from('store_orders')
-      .update({ download_token: token, download_expires_at: expiresAt })
-      .eq('id', o.id)
-    if (tokenError) {
-      // ⚠ ここで投げると、paid にした行が再送で0行になり合言葉が永久に出ない。記録して続け、
-      //   管理画面の「ダウンロード用リンクを表示」が使えない行として人が気づけるようにする
-      console.error('[store-fulfill] token save failed:', o.id, tokenError)
-      continue
-    }
-    tokens.set(o.id, token)
+  const { data: paid, error: readError } = await supabaseAdmin
+    .from('store_orders')
+    .select(
+      'id, kind, quantity, price, seller_amount, buyer_name, buyer_email, variant_label, created_at, product:store_products(title), seller:store_sellers(display_name, login_email)',
+    )
+    .in('id', paidIds)
+  if (readError || !paid) {
+    // 支払いの記録は済んでいる。メールが出せないだけなので、管理画面で拾えるよう記録して終える
+    console.error('[store-fulfill] read for email failed:', readError)
+    return
   }
+  paid.sort((a, b) => a.created_at.localeCompare(b.created_at))
 
   const shippingLines = address
     ? [

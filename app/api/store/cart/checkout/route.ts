@@ -54,6 +54,42 @@ export async function POST(request: NextRequest) {
 
     const user = await currentStoreUser()
     const checkoutId = randomUUID()
+    const hasPrint = resolved.lines.some((l) => l.kind === 'print')
+
+    // ⚠ 決済画面を先に作り、注文の行はそのあとに入れる（行には必ず決済画面の ID が付く）。
+    //   行を先に入れると、決済画面を作る前に止まったとき、期限切れで消すこともできない決済待ちの行が残る
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: resolved.lines.map((l) => ({
+        price_data: {
+          currency: 'jpy' as const,
+          product_data: {
+            name: `${l.title}（${l.kind === 'data' ? '3D データ' : l.variantLabel ? `完成品・${l.variantLabel}` : '完成品'}）`,
+            description:
+              l.kind === 'data'
+                ? `3Dプリント用データ／ダウンロード期限 ${STORE_DOWNLOAD_VALID_DAYS}日`
+                : `${SHIPPING_LEAD_TIME_TEXT}・送料無料`,
+            ...(l.imageUrl ? { images: [l.imageUrl] } : {}),
+          },
+          unit_amount: l.unitPrice,
+        },
+        quantity: l.quantity,
+      })),
+      customer_email: email,
+      locale: 'ja',
+      expires_at: checkoutExpiresAt(),
+      ...(hasPrint
+        ? {
+            shipping_address_collection: { allowed_countries: ['JP' as const] },
+            phone_number_collection: { enabled: true },
+          }
+        : {}),
+      success_url: `${STORE_URL}/thanks?checkout=${checkoutId}`,
+      cancel_url: `${STORE_URL}/cart`,
+      metadata: { type: 'store_cart', checkout_id: checkoutId },
+    })
+
     // まとめて入れると created_at が全行同じになる。カートの順に並べられるよう1ミリ秒ずつずらす
     const insertedAt = Date.now()
     const rows = resolved.lines.map((l, index) => {
@@ -61,6 +97,7 @@ export async function POST(request: NextRequest) {
       const file = files.get(l.productId)!
       return {
         checkout_id: checkoutId,
+        stripe_session_id: session.id,
         product_id: l.productId,
         seller_id: l.sellerId,
         kind: l.kind,
@@ -83,50 +120,11 @@ export async function POST(request: NextRequest) {
     const { error: insertError } = await supabaseAdmin.from('store_orders').insert(rows)
     if (insertError) {
       console.error('[store-cart] insert failed:', insertError)
+      // 注文の無い決済画面で払えないよう、すぐ失効させる
+      await stripe.checkout.sessions.expire(session.id).catch((e) => console.error('[store-cart] expire failed:', e))
       return NextResponse.json({ message: '注文の作成に失敗しました' }, { status: 500 })
     }
 
-    const hasPrint = resolved.lines.some((l) => l.kind === 'print')
-    let session
-    try {
-      session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        mode: 'payment',
-        line_items: resolved.lines.map((l) => ({
-          price_data: {
-            currency: 'jpy' as const,
-            product_data: {
-              name: `${l.title}（${l.kind === 'data' ? '3D データ' : l.variantLabel ? `完成品・${l.variantLabel}` : '完成品'}）`,
-              description:
-                l.kind === 'data'
-                  ? `3Dプリント用データ／ダウンロード期限 ${STORE_DOWNLOAD_VALID_DAYS}日`
-                  : `${SHIPPING_LEAD_TIME_TEXT}・送料無料`,
-              ...(l.imageUrl ? { images: [l.imageUrl] } : {}),
-            },
-            unit_amount: l.unitPrice,
-          },
-          quantity: l.quantity,
-        })),
-        customer_email: email,
-        locale: 'ja',
-        expires_at: checkoutExpiresAt(),
-        ...(hasPrint
-          ? {
-              shipping_address_collection: { allowed_countries: ['JP' as const] },
-              phone_number_collection: { enabled: true },
-            }
-          : {}),
-        success_url: `${STORE_URL}/thanks?checkout=${checkoutId}`,
-        cancel_url: `${STORE_URL}/cart`,
-        metadata: { type: 'store_cart', checkout_id: checkoutId },
-      })
-    } catch (err) {
-      // 決済画面を作れなかった注文は残さない（決済待ちのまま一覧に溜まる）
-      await supabaseAdmin.from('store_orders').delete().eq('checkout_id', checkoutId).eq('status', 'pending')
-      throw err
-    }
-
-    await supabaseAdmin.from('store_orders').update({ stripe_session_id: session.id }).eq('checkout_id', checkoutId)
     return NextResponse.json({ url: session.url, checkoutId })
   } catch (err) {
     console.error('[store-cart] checkout failed:', err)

@@ -27,7 +27,7 @@ export default async function StoreThanksPage({ searchParams }: Props) {
   let kinds = new Set<string>()
   const UUID = /^[0-9a-f-]{36}$/i
   if (supabaseAdmin && ((checkoutId && UUID.test(checkoutId)) || (orderId && UUID.test(orderId)))) {
-    const query = supabaseAdmin.from('store_orders').select('kind')
+    const query = supabaseAdmin.from('store_orders').select('kind').in('status', ['pending', 'paid', 'shipped'])
     const { data } = await (checkoutId ? query.eq('checkout_id', checkoutId) : query.eq('id', orderId!))
     kinds = new Set((data ?? []).map((r) => r.kind as string))
   }
@@ -46,7 +46,7 @@ export default async function StoreThanksPage({ searchParams }: Props) {
           ? `ご注文を承りました。3DLab が印刷して、${SHIPPING_LEAD_TIME_TEXT}します。確認のメールをまもなくお送りします。`
           : kind === 'data'
             ? `ご入力のメールアドレスに、データのダウンロード用リンクをまもなくお送りします（${STORE_DOWNLOAD_VALID_DAYS}日間有効）。`
-            : 'ご入力のメールアドレスに、確認のメールをまもなくお送りします。'}
+            : 'このご注文は見つかりませんでした。お支払いが済んでいる場合は、3dlab@sunu25.com までお問い合わせください。'}
       </p>
       <p className="mt-3 text-base text-gray-600">
         数分たってもメールが届かない場合は、迷惑メールフォルダをご確認のうえ、3dlab@sunu25.com までお問い合わせください。
