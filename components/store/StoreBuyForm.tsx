@@ -1,33 +1,37 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Download, Package, ShieldCheck } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Check, Download, Package, ShieldCheck, ShoppingCart } from 'lucide-react'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/download-limits'
 import { findItem, selectValue, selectionOf, type Selection } from '@/lib/product-variants'
-import { asVariantItems, type StoreVariant } from '@/lib/store/variants'
+import { asVariantItems, variantName, type StoreVariant } from '@/lib/store/variants'
+import { addToStoreCart } from '@/lib/store/cart'
+import { STORE_CART_MAX_QUANTITY } from '@/lib/store/cart-limits'
 import VariantPicker from './VariantPicker'
 
 interface Props {
   productId: string
+  title: string
   dataPrice: number | null
   printPrice: number | null
   printSpec: string | null
   /** 完成品の選択肢。使わない作品は空 */
   axes: string[]
   variants: StoreVariant[]
-  /** ログイン中なら最初から入れておく */
-  defaultName: string
-  defaultEmail: string
 }
 
 const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`
 
 /**
- * 作品ページの購入ボックス。データ（ダウンロード）か完成品（3DLab が印刷して発送）を選んで決済へ。
- * 価格はここでは表示だけ。決済の金額は API が DB から決める。
+ * 作品ページの購入ボックス（本サイトの ProductBuyBox と同じ「カートに入れる / 今すぐ買う」）。
+ * 買い方（データ / 完成品）と、完成品なら組み合わせ・数量を選ぶ。お名前・メールはカートの画面で入れる。
+ * 価格はここでは表示だけ。決済の金額は API が作品の値から決める。
  */
-export default function StoreBuyForm({ productId, dataPrice, printPrice, printSpec, axes, variants, defaultName, defaultEmail }: Props) {
+export default function StoreBuyForm({ productId, title, dataPrice, printPrice, printSpec, axes, variants }: Props) {
+  const router = useRouter()
   const items = useMemo(() => asVariantItems(variants), [variants])
   const withVariants = axes.length > 0 && items.length > 0
   const [selection, setSelection] = useState<Selection>(() => (withVariants ? selectionOf(items[0], axes) : {}))
@@ -38,41 +42,40 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
     ...(printPrice != null ? [{ kind: 'print' as const, price: variant?.price ?? printPrice }] : []),
   ]
   const [kind, setKind] = useState<'data' | 'print'>(options[0]?.kind ?? 'data')
-  const [name, setName] = useState(defaultName)
-  const [email, setEmail] = useState(defaultEmail)
-  const [submitting, setSubmitting] = useState(false)
+  const [quantity, setQuantity] = useState(1)
+  const [added, setAdded] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-    try {
-      const res = await fetch(`/api/store/products/${productId}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, name, email, variantId: kind === 'print' ? variant?.id : undefined }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.url) {
-        setError(data.message || '決済の準備に失敗しました')
-        setSubmitting(false)
-        return
-      }
-      window.location.href = data.url
-    } catch {
-      setError('通信エラーが発生しました。時間をおいて再度お試しください。')
-      setSubmitting(false)
-    }
-  }
+  const [going, setGoing] = useState(false)
 
   if (options.length === 0) return null
   const selected = options.find((o) => o.kind === kind) ?? options[0]
-  const inputClass =
-    'mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900'
+  const ready = !(kind === 'print' && withVariants && !variant)
+
+  function add(): boolean {
+    if (!ready) return false
+    try {
+      const inCart = addToStoreCart(
+        { productId, kind, variantId: kind === 'print' ? (variant?.id ?? null) : null },
+        kind === 'print' ? quantity : 1,
+      )
+      const label = `${title}（${kind === 'data' ? '3D データ' : variant ? `完成品・${variantName(variant, axes)}` : '完成品'}）`
+      setAdded(kind === 'data' ? label : `${label}（カートに ${inCart.quantity} 個）`)
+      setError(
+        inCart.capped
+          ? kind === 'data'
+            ? '3D データはすでにカートに入っています（1つで十分です）'
+            : `1つの組み合わせは ${STORE_CART_MAX_QUANTITY} 個までのため、カートには ${inCart.quantity} 個まで入れています`
+          : null,
+      )
+      return true
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'カートに入れられませんでした')
+      return false
+    }
+  }
 
   return (
-    <form onSubmit={submit} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
       <fieldset className="space-y-2">
         <legend className="text-base font-medium text-gray-900 mb-1">買い方を選ぶ</legend>
         {options.map((o) => (
@@ -87,7 +90,10 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
               name="kind"
               value={o.kind}
               checked={kind === o.kind}
-              onChange={() => setKind(o.kind)}
+              onChange={() => {
+                setKind(o.kind)
+                setAdded(null)
+              }}
               className="mt-1"
             />
             <span className="flex-1">
@@ -115,44 +121,76 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
           axes={axes}
           variants={variants}
           selection={selection}
-          onChoose={(axis, value) => setSelection(selectValue(items, axes, selection, axis, value))}
+          onChoose={(axis, value) => {
+            setSelection(selectValue(items, axes, selection, axis, value))
+            setAdded(null)
+          }}
         />
       )}
 
-      <label className="block text-sm font-medium text-gray-700">
-        お名前 <span className="text-red-500">*</span>
-        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} autoComplete="name" />
-      </label>
-      <label className="block text-sm font-medium text-gray-700">
-        メールアドレス <span className="text-red-500">*</span>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
-          placeholder="you@example.com"
-          autoComplete="email"
-        />
-        <span className="block mt-1 text-sm font-normal text-gray-500">
-          {kind === 'data' ? 'ダウンロードのリンクをこのアドレスにお送りします。' : 'ご注文の確認をこのアドレスにお送りします。'}
-        </span>
-      </label>
+      {kind === 'print' && (
+        <label className="flex items-center gap-3 text-base text-gray-700">
+          数量
+          <select
+            value={quantity}
+            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+            className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+          >
+            {Array.from({ length: STORE_CART_MAX_QUANTITY }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
-      {error && <p className="text-base text-red-600">{error}</p>}
+      <p className="text-3xl font-bold text-gray-900">
+        {yen(selected.price * (kind === 'print' ? quantity : 1))}
+        <span className="ml-2 text-sm font-normal text-gray-600">税込・送料無料</span>
+      </p>
 
       <button
-        type="submit"
-        disabled={submitting || (kind === 'print' && withVariants && !variant)}
-        className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors disabled:opacity-60"
+        type="button"
+        disabled={!ready}
+        onClick={add}
+        className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors inline-flex items-center justify-center disabled:opacity-60"
       >
-        {submitting ? '決済画面へ移動しています...' : `${yen(selected.price)} で購入する`}
+        <ShoppingCart className="w-5 h-5 mr-2" />
+        カートに入れる
       </button>
+      <button
+        type="button"
+        disabled={!ready || going}
+        onClick={() => {
+          if (!add()) return
+          setGoing(true)
+          router.push('/cart')
+        }}
+        className="w-full py-3 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors disabled:opacity-60"
+      >
+        今すぐ買う
+      </button>
+
+      {added && (
+        <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-base text-green-800">
+          <p className="flex items-center font-medium">
+            <Check className="w-4 h-4 mr-1" />
+            カートに入れました
+          </p>
+          <p className="text-sm text-green-700 mt-0.5">{added}</p>
+          <Link href="/cart" className="inline-block mt-2 text-purple-700 font-medium underline underline-offset-2">
+            カートを見る →
+          </Link>
+        </div>
+      )}
+      {error && <p className="text-base text-red-600">{error}</p>}
+
       <p className="flex items-start text-sm text-gray-500">
         <ShieldCheck className="w-4 h-4 mr-1.5 mt-0.5 shrink-0 text-purple-600" />
         お支払いは Stripe の安全な決済画面で。カード情報は当社に保存されません。
         {kind === 'print' && ' お届け先も決済画面でご入力いただきます。'}
       </p>
-    </form>
+    </div>
   )
 }

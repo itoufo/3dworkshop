@@ -7,7 +7,9 @@ type OrderStatus = 'pending' | 'paid' | 'shipped' | 'cancelled' | 'refunded'
 
 type Order = {
   id: string
+  checkout_id: string | null
   kind: 'data' | 'print'
+  quantity: number
   variant_label: string | null
   price: number
   platform_fee: number
@@ -98,6 +100,7 @@ export default function AdminStoreOrdersPage() {
       <p className="mt-2 text-gray-600">
         完成品の注文は、データを取り出して印刷・発送したら「発送済みにする」を押してください。
         返金は Stripe の管理画面で行い、そのあと「返金済みにする」を押します（データのダウンロードもそこで止まります）。
+        カートでまとめて買われた注文（同じ注文番号の行）の一部だけを返金したときは、返金した行だけ「返金済みにする」を押してください（全額返金なら Stripe 側の返金で自動で返金済みになります）。
       </p>
       <div className="mt-4 flex gap-2 flex-wrap">
         {FILTERS.map((f) => (
@@ -133,9 +136,11 @@ export default function AdminStoreOrdersPage() {
                   <span className="text-gray-600 text-sm">出品者 {o.seller?.display_name}</span>
                 </div>
                 <div className="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-800">
-                  <p>注文番号 {o.id.slice(0, 8)} ／ 支払い {date(o.paid_at)}</p>
                   <p>
-                    {yen(o.price)}（手数料 {yen(o.platform_fee)} ／ 出品者 {yen(o.seller_amount)}）
+                    注文番号 {(o.checkout_id ?? o.id).slice(0, 8)} ／ 支払い {date(o.paid_at)}
+                  </p>
+                  <p>
+                    {yen(o.price)} × {o.quantity} = {yen(o.price * o.quantity)}（手数料 {yen(o.platform_fee)} ／ 出品者 {yen(o.seller_amount)}）
                   </p>
                   <p>
                     購入者 {o.buyer_name}（{o.buyer_email}）

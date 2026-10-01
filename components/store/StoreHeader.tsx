@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { currentStoreUser } from '@/lib/store/session'
 import { MAIN_SITE_URL } from '@/lib/store/urls'
 import StoreLogoutButton from './StoreLogoutButton'
+import StoreCartLink from './StoreCartLink'
 
 /** stores.3dlab.jp 共通のヘッダー。3dlab.jp のワークショップ・スクールへの入口も置く */
 export default async function StoreHeader() {
@@ -25,6 +26,7 @@ export default async function StoreHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-4 text-base">
+          <StoreCartLink />
           {user ? (
             <>
               <Link href="/sell" className="text-gray-700 hover:text-purple-600">
