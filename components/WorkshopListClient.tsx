@@ -32,6 +32,23 @@ function getUpcomingSessions(w: Workshop, today: string) {
   return (w.sessions ?? []).filter(s => s.status === 'scheduled' && s.event_date >= today)
 }
 
+/**
+ * 一覧の並び順。直近の開催日時が早い順に並べる（ピン留めより日程を優先）。
+ * onDate を渡したときは、その日の回の開始時刻で並べる。
+ * 日程のないもの（リクエスト受付のみ）は最後。
+ */
+function sortBySchedule(list: Workshop[], today: string, onDate?: string): Workshop[] {
+  const key = (w: Workshop): string => {
+    const sessions = getUpcomingSessions(w, today).filter(s => !onDate || s.event_date === onDate)
+    const keys = sessions.map(s => `${s.event_date} ${s.event_time ?? '99:99'}`).sort()
+    return keys[0] ?? '9999-12-31 99:99'
+  }
+  return list
+    .map(w => ({ w, k: key(w) }))
+    .sort((a, b) => a.k.localeCompare(b.k))
+    .map(({ w }) => w)
+}
+
 function formatDateShort(iso: string): string {
   // 'YYYY-MM-DD' -> 'M/D(曜)'
   const [, m, d] = iso.split('-').map(Number)
@@ -88,16 +105,23 @@ export default function WorkshopListClient({ workshops, categories }: WorkshopLi
   // - selectedDate='YYYY-MM-DD' : その日付に upcoming session があるもの
   const filteredByDate = useMemo(() => {
     if (selectedDate === null) {
-      return filteredByCategory.filter(w => {
-        const upcoming = getUpcomingSessions(w, todayIso)
-        return upcoming.length > 0 || (w.sessions ?? []).length === 0
-      })
+      return sortBySchedule(
+        filteredByCategory.filter(w => {
+          const upcoming = getUpcomingSessions(w, todayIso)
+          return upcoming.length > 0 || (w.sessions ?? []).length === 0
+        }),
+        todayIso
+      )
     }
     if (selectedDate === 'request') {
       return filteredByCategory.filter(w => getUpcomingSessions(w, todayIso).length === 0)
     }
-    return filteredByCategory.filter(w =>
-      getUpcomingSessions(w, todayIso).some(s => s.event_date === selectedDate)
+    return sortBySchedule(
+      filteredByCategory.filter(w =>
+        getUpcomingSessions(w, todayIso).some(s => s.event_date === selectedDate)
+      ),
+      todayIso,
+      selectedDate
     )
   }, [filteredByCategory, selectedDate, todayIso])
 
