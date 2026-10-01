@@ -10,9 +10,21 @@ import { firstImageUrl } from '@/lib/media'
 import type { Service } from '@/types'
 import type { Product } from '@/lib/products'
 
+/** シリーズ（サイズ・色などを1ページで選ぶ商品のまとまり）の一覧カード */
+export interface SeriesCard {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  image: string | null
+  lowestPrice: number
+  itemCount: number
+}
+
 interface ProductsListClientProps {
   products: Product[]
   services: Service[]
+  series?: SeriesCard[]
 }
 
 const categories = [
@@ -23,7 +35,7 @@ const categories = [
   { key: 'product', label: '商品' },
 ]
 
-export default function ProductsListClient({ products, services }: ProductsListClientProps) {
+export default function ProductsListClient({ products, services, series = [] }: ProductsListClientProps) {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [navigating, setNavigating] = useState<string | null>(null)
@@ -40,6 +52,12 @@ export default function ProductsListClient({ products, services }: ProductsListC
     }
   }
 
+  const handleSeriesClick = (slug: string) => {
+    if (navigating) return
+    setNavigating(`series-${slug}`)
+    router.push(`/products/series/${slug}`)
+  }
+
   const handleServiceClick = (serviceId: string) => {
     if (navigating) return
     setNavigating(`service-${serviceId}`)
@@ -52,6 +70,9 @@ export default function ProductsListClient({ products, services }: ProductsListC
         ? products
         : []
       : products.filter(product => product.category === selectedCategory)
+
+  // シリーズは物販なので「全て」「商品」のときに出す
+  const filteredSeries = selectedCategory === 'all' || selectedCategory === 'product' ? series : []
 
   const filteredServices =
     selectedCategory === 'all'
@@ -166,12 +187,57 @@ export default function ProductsListClient({ products, services }: ProductsListC
       )}
 
       {/* Products Grid */}
-      {filteredProducts.length === 0 && filteredServices.length === 0 ? (
+      {filteredProducts.length === 0 && filteredServices.length === 0 && filteredSeries.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-500 text-lg">まだ商品がありません</p>
         </div>
-      ) : filteredProducts.length === 0 ? null : (
+      ) : filteredProducts.length === 0 && filteredSeries.length === 0 ? null : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredSeries.map((card) => (
+            <div
+              key={`series-${card.id}`}
+              onClick={() => handleSeriesClick(card.slug)}
+              className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer ${
+                navigating === `series-${card.slug}` ? 'opacity-75 pointer-events-none' : ''
+              }`}
+            >
+              {card.image ? (
+                <div className="relative w-full aspect-video overflow-hidden">
+                  <Image
+                    src={optimizeImageUrl(card.image, 75)}
+                    alt={card.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
+              ) : (
+                <div className="w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                  <Package className="w-12 h-12 text-purple-300" />
+                </div>
+              )}
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    シリーズ
+                  </span>
+                  <span className="text-xs text-gray-500">全 {card.itemCount} 種類</span>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{card.name}</h3>
+                {card.description && <p className="text-gray-600 text-sm mb-4 line-clamp-3">{card.description}</p>}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">価格</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      ¥{card.lowestPrice.toLocaleString()}
+                      <span className="text-sm font-normal">〜</span>
+                    </p>
+                  </div>
+                  <div className="text-purple-600 group-hover:text-purple-700 transition-colors">選んで見る →</div>
+                </div>
+              </div>
+            </div>
+          ))}
           {filteredProducts.map((product) => (
             <div
               key={product.id}

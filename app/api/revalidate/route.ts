@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
     revalidatePath('/workshops/category/[slug]', 'page')
     revalidatePath('/services/[id]', 'page')
     revalidatePath('/blog/[slug]', 'page')
+    revalidatePath('/products/[id]', 'page')
+    revalidatePath('/products/series/[slug]', 'page')
 
     return NextResponse.json({ revalidated: true, results, at: new Date().toISOString() })
   } catch (err) {

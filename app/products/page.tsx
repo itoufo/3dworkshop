@@ -1,7 +1,8 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import ProductsListClient from '@/components/ProductsListClient'
-import { getAllProducts } from '@/lib/products'
+import ProductsListClient, { type SeriesCard } from '@/components/ProductsListClient'
+import { getAllProducts, getAllSeries } from '@/lib/products'
+import { lowestPrice } from '@/lib/product-variants'
 import { getAllServices } from '@/lib/services'
 import { firstImageUrl } from '@/lib/media'
 
@@ -11,10 +12,29 @@ export const revalidate = 3600
 const SITE_URL = 'https://3dlab.jp'
 
 export default async function ProductsPage() {
-  const [products, services] = await Promise.all([
+  const [allProducts, services, allSeries] = await Promise.all([
     getAllProducts(),
     getAllServices(),
+    getAllSeries(),
   ])
+
+  // シリーズの子商品は個別に並べず、シリーズを1枚のカードにまとめる
+  const products = allProducts.filter((p) => !p.series_id)
+  const seriesCards: SeriesCard[] = allSeries
+    .map((s) => {
+      const items = allProducts.filter((p) => p.series_id === s.id)
+      return {
+        id: s.id,
+        slug: s.slug,
+        name: s.name,
+        description: s.description,
+        image: firstImageUrl(s.media_urls) || firstImageUrl(items.flatMap((i) => i.media_urls ?? [])),
+        lowestPrice: lowestPrice(items) ?? 0,
+        itemCount: items.length,
+      }
+    })
+    // 公開中の子商品が無いシリーズは買えないので出さない
+    .filter((card) => card.itemCount > 0)
 
   const breadcrumbData = {
     '@context': 'https://schema.org',
@@ -50,9 +70,29 @@ export default async function ProductsPage() {
           },
         },
       })),
-      ...products.map((product, index) => ({
+      ...seriesCards.map((card, index) => ({
         '@type': 'ListItem',
         position: services.length + index + 1,
+        item: {
+          '@type': 'ProductGroup',
+          name: card.name,
+          description: card.description || card.name,
+          image: card.image || `${SITE_URL}/og-image.jpg`,
+          url: `${SITE_URL}/products/series/${card.slug}`,
+          brand: { '@type': 'Brand', name: '3DLab' },
+          offers: {
+            '@type': 'AggregateOffer',
+            lowPrice: card.lowestPrice,
+            offerCount: card.itemCount,
+            priceCurrency: 'JPY',
+            availability: 'https://schema.org/InStock',
+            url: `${SITE_URL}/products/series/${card.slug}`,
+          },
+        },
+      })),
+      ...products.map((product, index) => ({
+        '@type': 'ListItem',
+        position: services.length + seriesCards.length + index + 1,
         item: {
           '@type': 'Product',
           name: product.name,
@@ -114,7 +154,7 @@ export default async function ProductsPage() {
             </p>
           </div>
 
-          <ProductsListClient products={products} services={services} />
+          <ProductsListClient products={products} services={services} series={seriesCards} />
         </div>
       </main>
       <Footer />

@@ -12,6 +12,7 @@ export type AdminDeletableResource =
   | 'workshop-categories'
   | 'blog-posts'
   | 'products'
+  | 'product-series'
 
 /**
  * 1件削除する。成功なら null、失敗なら画面に出すメッセージを返す。
