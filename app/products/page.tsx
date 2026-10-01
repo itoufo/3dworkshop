@@ -24,7 +24,10 @@ export default async function ProductsPage() {
   const seriesCards: SeriesCard[] = allSeries
     .map((s) => {
       // シリーズのページに出せない（項目の値が欠けた）商品は、価格・件数に入れない
-      const items = allProducts.filter((p) => p.series_id === s.id && isCompleteVariant(p, s.option_axes ?? []))
+      // シリーズのページに出せる（物販で、項目の値がそろった）商品だけで価格・件数を出す
+      const items = allProducts.filter(
+        (p) => p.series_id === s.id && p.category === 'product' && isCompleteVariant(p, s.option_axes ?? [])
+      )
       return {
         id: s.id,
         slug: s.slug,

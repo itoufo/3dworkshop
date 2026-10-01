@@ -319,6 +319,7 @@ async function fetchProductSeries(): Promise<SeriesRow[]> {
       .from('products')
       .select('series_id')
       .eq('is_active', true)
+      .eq('category', 'product')
       .not('series_id', 'is', null)
     if (itemsError) {
       console.error('Error fetching product series items:', itemsError)

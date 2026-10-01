@@ -4,7 +4,7 @@ import Header from '@/components/Header'
 import { jsonLdString } from '@/lib/json-ld'
 import Footer from '@/components/Footer'
 import MediaCoverage from '@/components/MediaCoverage'
-import SeriesPurchaseClient from '@/components/SeriesPurchaseClient'
+import ProductDetailClient from '@/components/ProductDetailClient'
 import { getSeriesBySlug } from '@/lib/products'
 import { firstImageUrl, imageUrlsOnly } from '@/lib/media'
 import { lowestPrice, variantLabel } from '@/lib/product-variants'
@@ -108,11 +108,11 @@ export default async function ProductSeriesPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(productGroupJsonLd) }} />
       <Header />
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <SeriesPurchaseClient
-            seriesName={series.name}
-            seriesDescription={series.description}
-            seriesMedia={series.media_urls ?? []}
+        <div className="max-w-7xl mx-auto">
+          <ProductDetailClient
+            title={series.name}
+            description={series.description}
+            sharedMedia={series.media_urls ?? []}
             axes={series.option_axes}
             items={series.items.map((item) => ({
               id: item.id,
@@ -126,7 +126,9 @@ export default async function ProductSeriesPage({ params }: PageProps) {
             }))}
             shareUrl={url}
           />
-          <MediaCoverage />
+          <div className="max-w-4xl mx-auto">
+            <MediaCoverage />
+          </div>
         </div>
       </main>
       <Footer />

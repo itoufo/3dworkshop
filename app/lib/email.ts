@@ -796,6 +796,127 @@ export function generateProductOrderConfirmationEmail(input: {
   return { subject, html };
 }
 
+/**
+ * カート（/cart）でまとめて買ったときのご注文確認メール。商品ごとの明細を1通にまとめる。
+ */
+export function generateProductCartConfirmationEmail(input: {
+  customerName: string;
+  items: { productName: string; quantity: number; unitPrice: number }[];
+  shippingFee: number;
+  totalAmount: number;
+  notes?: string | null;
+  shippingLeadTimeText: string;
+  shippingName?: string | null;
+  shippingPhone?: string | null;
+  shippingAddressLines?: string[];
+  checkoutId: string;
+}) {
+  const esc = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+  const first = input.items[0]?.productName ?? '商品';
+  const subject =
+    input.items.length > 1
+      ? `【3DLab】ご注文ありがとうございます (${first} ほか${input.items.length - 1}種類)`
+      : `【3DLab】ご注文ありがとうございます (${first})`;
+
+  const addressHtml = (input.shippingAddressLines ?? []).filter(Boolean).map(esc).join('<br>');
+  const rowsHtml = input.items
+    .map(
+      (item) => `<tr>
+              <td class="value">${esc(item.productName)}</td>
+              <td class="value" style="text-align:right; white-space:nowrap;">¥${item.unitPrice.toLocaleString()} × ${item.quantity}</td>
+              <td class="value" style="text-align:right; white-space:nowrap;">¥${(item.unitPrice * item.quantity).toLocaleString()}</td>
+            </tr>`
+    )
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(to right, #9333ea, #ec4899); color: white; padding: 24px; text-align: center; border-radius: 10px; }
+        .info-box { background-color: #f9fafb; border-left: 4px solid #9333ea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .cost-box { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+        td.label { color: #6b7280; width: 120px; vertical-align: top; }
+        td.value { color: #111827; }
+        .total { font-size: 20px; font-weight: bold; color: #9333ea; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin:0;">ご注文ありがとうございます</h2>
+        </div>
+        <p>${esc(input.customerName)} 様</p>
+        <p>ご注文とお支払いを承りました。<strong>${esc(input.shippingLeadTimeText)}</strong>いたします。</p>
+
+        <div class="info-box">
+          <h3 style="margin-top:0;">ご注文内容</h3>
+          <p style="margin:0 0 8px; color:#6b7280;">注文番号: ${esc(input.checkoutId)}</p>
+          <table>
+            ${rowsHtml}
+            <tr>
+              <td class="value">送料</td>
+              <td></td>
+              <td class="value" style="text-align:right;">${input.shippingFee > 0 ? `¥${input.shippingFee.toLocaleString()}` : '無料'}</td>
+            </tr>
+          </table>
+          ${input.notes ? `<p style="margin-top:12px;"><strong>ご要望:</strong><br>${esc(input.notes).replace(/\n/g, '<br>')}</p>` : ''}
+        </div>
+
+        ${
+          addressHtml || input.shippingName
+            ? `<div class="info-box">
+          <h3 style="margin-top:0;">お届け先</h3>
+          <table>
+            ${input.shippingName ? `<tr><td class="label">お名前</td><td class="value">${esc(input.shippingName)}</td></tr>` : ''}
+            ${input.shippingPhone ? `<tr><td class="label">電話番号</td><td class="value">${esc(input.shippingPhone)}</td></tr>` : ''}
+            ${addressHtml ? `<tr><td class="label">住所</td><td class="value">${addressHtml}</td></tr>` : ''}
+          </table>
+        </div>`
+            : ''
+        }
+
+        <div class="cost-box">
+          <table>
+            <tr>
+              <td class="label">お支払い金額</td>
+              <td class="value total">¥${input.totalAmount.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p>発送時にあらためてご連絡いたします。お届け先の変更やご質問は、このメールへの返信または下記までお願いします。</p>
+
+        <div class="info-box" style="background-color:#e3f2fd; border-left-color:#2196F3;">
+          <h3 style="margin-top:0;">お問い合わせ先</h3>
+          <p><strong>メール:</strong> <a href="mailto:3dlab@sunu25.com">3dlab@sunu25.com</a></p>
+        </div>
+
+        <div class="footer">
+          <p>このメールは自動送信されています。</p>
+          <p>© 2024 3DLab. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, html };
+}
+
 export function generateCutterOrderEmail(input: {
   customerName: string;
   designTitle: string | null;

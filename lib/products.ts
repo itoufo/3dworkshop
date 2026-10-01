@@ -94,7 +94,8 @@ export async function getSeriesBySlug(slug: string): Promise<ProductSeriesWithIt
   const { data: series } = await seriesQuery.maybeSingle()
   if (!series) return null
 
-  let itemsQuery = client.from('products').select('*').eq('series_id', series.id)
+  // カートで買えるのは物販（category='product'）だけ。ほかの種類は選択肢に出さない
+  let itemsQuery = client.from('products').select('*').eq('series_id', series.id).eq('category', 'product')
   if (!PREVIEW_INACTIVE) itemsQuery = itemsQuery.eq('is_active', true)
   const { data: items } = await itemsQuery
     .order('series_sort', { ascending: true })
