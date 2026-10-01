@@ -3,7 +3,7 @@ import { jsonLdString } from '@/lib/json-ld'
 import Footer from '@/components/Footer'
 import ProductsListClient, { type SeriesCard } from '@/components/ProductsListClient'
 import { getAllProducts, getAllSeries } from '@/lib/products'
-import { lowestPrice } from '@/lib/product-variants'
+import { isCompleteVariant, lowestPrice } from '@/lib/product-variants'
 import { getAllServices } from '@/lib/services'
 import { firstImageUrl } from '@/lib/media'
 
@@ -23,7 +23,8 @@ export default async function ProductsPage() {
   const products = allProducts.filter((p) => !p.series_id)
   const seriesCards: SeriesCard[] = allSeries
     .map((s) => {
-      const items = allProducts.filter((p) => p.series_id === s.id)
+      // シリーズのページに出せない（項目の値が欠けた）商品は、価格・件数に入れない
+      const items = allProducts.filter((p) => p.series_id === s.id && isCompleteVariant(p, s.option_axes ?? []))
       return {
         id: s.id,
         slug: s.slug,

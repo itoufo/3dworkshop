@@ -46,6 +46,8 @@ export default function SeriesPurchaseClient({
   // ⚠ 選んでいる商品は id で持つ。組み合わせから逆引きすると、同じ組み合わせの商品が2つあるときや
   //   項目名を変えて値が古いままのときに、?v= で指した商品とは別の（値段も違う）商品を売ってしまう
   const [currentId, setCurrentId] = useState<string | null>(items[0]?.id ?? null)
+  // ?v= が今は選べない商品を指していた（非公開にした・項目の値が欠けた）
+  const [missingLink, setMissingLink] = useState(false)
   const current = items.find((i) => i.id === currentId) ?? null
   const selection: Selection = current ? selectionOf(current, axes) : {}
 
@@ -53,7 +55,14 @@ export default function SeriesPurchaseClient({
   // ⚠ searchParams をサーバーで読むとページが ISR にならないので、ここ（ブラウザ）で読む
   useEffect(() => {
     const v = new URLSearchParams(window.location.search).get('v')
-    if (v && items.some((i) => i.id === v)) setCurrentId(v)
+    if (!v) return
+    if (items.some((i) => i.id === v)) {
+      setCurrentId(v)
+    } else {
+      // ⚠ 先頭の商品を勝手に選ばない。注文メールのリンクなどから来た人が、値段の違う別商品を買ってしまう
+      setCurrentId(null)
+      setMissingLink(true)
+    }
   }, [items])
 
   const values = useMemo(() => axisValues(items, axes), [items, axes])
@@ -66,6 +75,7 @@ export default function SeriesPurchaseClient({
     const item = findItem(items, axes, next)
     if (item) {
       setCurrentId(item.id)
+      setMissingLink(false)
       // 選んだ状態を URL に残す（共有・戻るで同じものが開く）。ページは読み直さない
       const url = new URL(window.location.href)
       url.searchParams.set('v', item.id)
@@ -97,6 +107,12 @@ export default function SeriesPurchaseClient({
           </span>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{seriesName}</h1>
           {seriesDescription && <p className="text-gray-700 whitespace-pre-line mb-6">{seriesDescription}</p>}
+
+          {missingLink && (
+            <p className="mb-5 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-base text-amber-800">
+              お探しの商品は現在お選びいただけません。下の項目から選び直してください。
+            </p>
+          )}
 
           {axes.map((axis) => (
             <fieldset key={axis} className="mb-5">

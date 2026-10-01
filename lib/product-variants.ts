@@ -8,6 +8,14 @@ import type { Product } from '@/lib/products'
 
 export type Selection = Record<string, string>
 
+/**
+ * すべての項目に値が入っているか。欠けている商品はお客さまが選べないので、
+ * シリーズのページにも一覧の価格・件数にも入れない（項目名を変えた直後などに起きる）
+ */
+export function isCompleteVariant(item: Pick<Product, 'variant_options'>, axes: string[]): boolean {
+  return axes.every((axis) => Boolean(item.variant_options?.[axis]))
+}
+
 /** 「ねこ / 高さ約10cm」のような表示名 */
 export function variantLabel(item: Pick<Product, 'variant_options'>, axes: string[]): string {
   return axes

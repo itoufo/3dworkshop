@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isCompleteVariant } from '@/lib/product-variants'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -101,7 +102,7 @@ export async function getSeriesBySlug(slug: string): Promise<ProductSeriesWithIt
 
   // 項目のどれかに値が無い商品は選びようがないので出さない（項目名を変えた直後など）
   const axes = (series as ProductSeries).option_axes ?? []
-  const complete = ((items as Product[]) || []).filter((item) => axes.every((axis) => item.variant_options?.[axis]))
+  const complete = ((items as Product[]) || []).filter((item) => isCompleteVariant(item, axes))
   return { ...(series as ProductSeries), items: complete }
 }
 
