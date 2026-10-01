@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
   const { data: workshop } = await supabaseAdmin
     .from('workshops')
-    .select('id, event_date, event_time')
+    .select('id, event_date, event_time, max_participants, manual_participants')
     .eq('id', workshopId)
     .maybeSingle()
   if (!workshop) return NextResponse.json({ error: 'ワークショップが見つかりません' }, { status: 400 })
@@ -101,20 +101,61 @@ export async function POST(request: NextRequest) {
   // 開催日は回（workshop_sessions）のものを写す。売上は開催日で月に振り分けるので、ここが空だと集計に乗らない
   let bookingDate: string | null = typeof workshop.event_date === 'string' ? workshop.event_date : null
   let bookingTime: string | null = typeof workshop.event_time === 'string' ? workshop.event_time : null
+  let maxParticipants: number | null = workshop.max_participants ?? null
+  let manualParticipants: number = workshop.manual_participants ?? 0
+
+  // 日程のあるワークショップは日程を必須にする。session_id なしで入ると、回ごとの空席計算
+  // （check-availability は session_id で数える）から漏れて、その回を売りすぎる
+  const { count: sessionCount } = await supabaseAdmin
+    .from('workshop_sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('workshop_id', workshopId)
+  if ((sessionCount ?? 0) > 0 && !sessionId) {
+    return NextResponse.json({ error: '開催日程を選んでください' }, { status: 400 })
+  }
   if (sessionId) {
     const { data: session } = await supabaseAdmin
       .from('workshop_sessions')
-      .select('id, workshop_id, event_date, event_time')
+      .select('id, workshop_id, event_date, event_time, status, max_participants, manual_participants')
       .eq('id', sessionId)
       .maybeSingle()
     if (!session || session.workshop_id !== workshopId) {
       return NextResponse.json({ error: '開催日程がこのワークショップのものではありません' }, { status: 400 })
     }
+    if (session.status === 'cancelled') {
+      return NextResponse.json({ error: '中止になった日程には登録できません' }, { status: 400 })
+    }
     bookingDate = session.event_date
     bookingTime = session.event_time
+    maxParticipants = session.max_participants ?? maxParticipants
+    // 空席表示（check-availability）と同じく、回の分＋ワークショップ全体の分を足す
+    manualParticipants = (session.manual_participants ?? 0) + manualParticipants
   }
   if (!bookingDate) {
     return NextResponse.json({ error: '開催日程を選んでください' }, { status: 400 })
+  }
+
+  // 定員を超えるときは、管理者が承知の上で登録する（allow_over_capacity）場合だけ通す。
+  // 他サイトですでに受けてしまった予約を記録する用途もあるので、拒否はしない
+  if (maxParticipants != null && body.allow_over_capacity !== true) {
+    let takenQuery = supabaseAdmin
+      .from('bookings')
+      .select('participants')
+      .neq('status', 'cancelled')
+      .in('payment_status', ['pending', 'paid'])
+    takenQuery = sessionId ? takenQuery.eq('session_id', sessionId) : takenQuery.eq('workshop_id', workshopId)
+    const { data: taken } = await takenQuery
+    const takenCount = (taken || []).reduce((sum, b) => sum + (b.participants || 0), 0) + manualParticipants
+    const remaining = maxParticipants - takenCount
+    if (participants > remaining) {
+      return NextResponse.json(
+        {
+          error: `定員を超えます（定員${maxParticipants}名・残り${Math.max(remaining, 0)}名に${participants}名）`,
+          code: 'over_capacity',
+        },
+        { status: 409 },
+      )
+    }
   }
 
   const { data: booking, error } = await supabaseAdmin

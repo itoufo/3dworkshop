@@ -32,6 +32,8 @@ export default function NewCustomerPage() {
   const [creating, setCreating] = useState(false)
   const [navigating, setNavigating] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  /** 予約登録から来て、メールがすでに登録済みだったときの既存顧客。そのまま予約登録へ進めるようにする */
+  const [existingCustomerId, setExistingCustomerId] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,6 +54,8 @@ export default function NewCustomerPage() {
       }
       if (!response.ok) {
         setErrorMessage(data.error || '顧客の登録に失敗しました')
+        const fromBooking = new URLSearchParams(window.location.search).get('next') === 'booking'
+        setExistingCustomerId(response.status === 409 && fromBooking ? data.customer?.id ?? null : null)
         return
       }
 
@@ -244,6 +248,18 @@ export default function NewCustomerPage() {
                 <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
                   <span>{errorMessage}</span>
+                  {existingCustomerId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNavigating(true)
+                        router.push(`/admin/bookings/new?customer_id=${encodeURIComponent(existingCustomerId)}`)
+                      }}
+                      className="ml-auto whitespace-nowrap font-medium text-purple-700 underline"
+                    >
+                      この顧客で予約を登録する
+                    </button>
+                  )}
                 </div>
               )}
 

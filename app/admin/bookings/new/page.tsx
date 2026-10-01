@@ -88,7 +88,8 @@ export default function NewBookingPage() {
   const selectedCustomer = customers.find((c) => c.id === form.customer_id) || null
   const selectedWorkshop = workshops.find((w) => w.id === form.workshop_id) || null
   const workshopSessions = useMemo(
-    () => sessions.filter((s) => s.workshop_id === form.workshop_id),
+    // 中止の回は選ばせない（API 側でも弾いている）
+    () => sessions.filter((s) => s.workshop_id === form.workshop_id && s.status !== 'cancelled'),
     [sessions, form.workshop_id],
   )
 
@@ -118,12 +119,20 @@ export default function NewBookingPage() {
     setSaving(true)
     setErrorMessage(null)
     try {
-      const response = await fetch('/api/admin/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      const data = await response.json().catch(() => ({}))
+      const post = (allowOverCapacity: boolean) =>
+        fetch('/api/admin/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...form, allow_over_capacity: allowOverCapacity }),
+        })
+      let response = await post(false)
+      let data = await response.json().catch(() => ({}))
+      // 定員超過は確認してから登録する（他サイトで受けてしまった予約の記録もあるので拒否はしない）
+      if (response.status === 409 && data.code === 'over_capacity') {
+        if (!window.confirm(`${data.error}\nこのまま登録しますか？`)) return
+        response = await post(true)
+        data = await response.json().catch(() => ({}))
+      }
       if (response.status === 401) {
         setErrorMessage('管理画面のログインが古くなっています。一度ログアウトして、入り直してください。')
         return

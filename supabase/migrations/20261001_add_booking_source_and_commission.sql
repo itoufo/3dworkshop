@@ -12,15 +12,15 @@ ALTER TABLE customers ADD COLUMN IF NOT EXISTS acquisition_source TEXT;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_source_check') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_source_check' AND conrelid = 'public.bookings'::regclass) THEN
     ALTER TABLE bookings ADD CONSTRAINT bookings_source_check
       CHECK (source IN ('website', 'booking_site', 'email', 'phone', 'referral', 'other'));
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_commission_amount_check') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_commission_amount_check' AND conrelid = 'public.bookings'::regclass) THEN
     ALTER TABLE bookings ADD CONSTRAINT bookings_commission_amount_check
       CHECK (commission_amount >= 0);
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'customers_acquisition_source_check') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'customers_acquisition_source_check' AND conrelid = 'public.customers'::regclass) THEN
     ALTER TABLE customers ADD CONSTRAINT customers_acquisition_source_check
       CHECK (acquisition_source IS NULL OR acquisition_source IN ('website', 'booking_site', 'email', 'phone', 'referral', 'other'));
   END IF;
