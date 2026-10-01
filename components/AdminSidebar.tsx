@@ -22,6 +22,7 @@ import {
   Tag,
   Users,
   X,
+  Layers,
 } from 'lucide-react'
 
 /**
@@ -75,6 +76,7 @@ const groups: NavGroup[] = [
     title: '売るもの',
     items: [
       { href: '/admin/products', label: '商品管理', icon: Package },
+      { href: '/admin/product-series', label: 'シリーズ', icon: Layers },
       { href: '/admin/cookie-cutter', label: 'クッキー型の注文', icon: Cookie },
       { href: '/admin?tab=coupons', label: 'クーポン', icon: Tag, tab: 'coupons', match: '/admin/coupons' },
       // stores.3dlab.jp（出品マーケット）の審査。出品者用の画面はストア側（/sell）にある

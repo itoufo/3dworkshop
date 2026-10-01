@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getConsentTextFor } from '@/lib/consent-default'
+import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
+import { toLocale } from '@/lib/i18n'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { workshop_id, booking_id, customer_email, participants, coupon_id, discount_amount } = body
+    // 英語ページ（/en）からの予約は、決済後・キャンセル時も英語ページへ戻す。値は 'ja' | 'en' に丸める
+    const localePrefix = toLocale(body.locale) === 'en' ? '/en' : ''
 
     // リクエストから現在のホストを取得
     const host = request.headers.get('host')
@@ -26,6 +31,39 @@ export async function POST(request: NextRequest) {
     if (!workshop) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
     }
+
+    // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める。
+    // ⚠ booking_id なしで呼ばれると締切を確かめられないので受け付けない
+    if (!booking_id) {
+      return NextResponse.json({ error: 'booking_id is required' }, { status: 400 })
+    }
+    const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
+    if (deadline.closed) {
+      return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
+    }
+    // 参加同意書への同意がない予約は決済に進めない。
+    // ⚠ 同意の日時と本文はここ（サーバー）で書く。予約行はブラウザが anon キーで作るので、
+    //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうる
+    const { data: bookingRow } = await supabaseAdmin
+      .from('bookings')
+      .select('id, status, workshop_id')
+      .eq('id', booking_id)
+      .single()
+
+    if (!bookingRow || bookingRow.workshop_id !== workshop.id) {
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+    if (body.consent !== true) {
+      // デプロイ前に開いたままのタブ（同意欄のない古い画面）から来た場合。仮予約を残すと早割の枠を食うので取り消す
+      if (bookingRow.status === 'pending') {
+        await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
+      }
+      return NextResponse.json({ error: 'ページの表示が古いため、参加同意書への同意を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。' }, { status: 400 })
+    }
+    await supabaseAdmin
+      .from('bookings')
+      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)) })
+      .eq('id', booking_id)
 
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
     const qty = participants || 1
@@ -53,12 +91,16 @@ export async function POST(request: NextRequest) {
     // クーポン割引はクライアント値を上限クランプして使用（既存挙動の踏襲）
     const couponDiscount = Math.max(0, Math.min(discount_amount || 0, base))
     const totalDiscount = couponDiscount + earlyBirdDiscount
-    // Stripeの最低決済金額(¥50)を下回らないようにクランプ
-    const unitAmount = Math.max(50, base - totalDiscount)
+    // 全額割引（100%クーポン等）は ¥0 で通す。¥50 に切り上げると無料のはずの予約に請求が立つ。
+    // 1〜49円だけは Stripe の最低決済金額(¥50)に切り上げる
+    const remaining = base - totalDiscount
+    const unitAmount = remaining <= 0 ? 0 : Math.max(50, remaining)
 
     // Stripe Checkout セッションを作成
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
+      // 決済画面の表示言語。英語ページからは英語、それ以外は Stripe の自動判定（従来どおり）
+      ...(localePrefix ? { locale: 'en' as const } : {}),
       line_items: [
         {
           price_data: {
@@ -77,8 +119,8 @@ export async function POST(request: NextRequest) {
       // 30分で失効させ、未決済のまま席が押さえられ続けるのを防ぐ。
       // 失効時は checkout.session.expired Webhook で予約をキャンセルする。
       expires_at: checkoutExpiresAt(),
-      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/workshops/${workshop_id}`,
+      success_url: `${baseUrl}${localePrefix}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}${localePrefix}/workshops/${workshop_id}`,
       metadata: {
         booking_id: booking_id,
         workshop_id: workshop_id,
@@ -94,7 +136,8 @@ export async function POST(request: NextRequest) {
       .update({
         stripe_session_id: session.id,
         coupon_id: coupon_id || null,
-        discount_amount: totalDiscount
+        // 実際に請求した額と一致させる（¥50 への切り上げ・満額超えの割引を反映）
+        discount_amount: base - unitAmount
       })
       .eq('id', booking_id)
 

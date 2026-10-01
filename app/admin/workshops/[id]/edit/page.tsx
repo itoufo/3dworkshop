@@ -8,8 +8,15 @@ import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { FolderOpen, Calendar, Lock, Copy, Users, Ticket } from 'lucide-react'
+import { FolderOpen, Calendar, Lock, Copy, Users, Ticket, FileText } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
+import { DEFAULT_CONSENT_TEXT, DEFAULT_CONSENT_TEXT_EN } from '@/lib/consent-default'
+import ZeroBookingCutoffField, {
+  DEFAULT_ZERO_BOOKING_CUTOFF,
+  zeroBookingCutoffFromWorkshop,
+  zeroBookingCutoffToColumns,
+  zeroBookingCutoffError,
+} from '@/components/admin/ZeroBookingCutoffField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -21,6 +28,8 @@ export default function EditWorkshop() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
+  // 予約0人のときの締切（formData とは別に持つ）
+  const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -39,9 +48,14 @@ export default function EditWorkshop() {
     is_private: false,
     preview_password: '',
     collect_demographics: false,
+    show_on_english_site: false,
+    title_en: '',
+    description_en: '',
+    consent_text_en: '',
     early_bird_enabled: false,
     early_bird_discount: '',
-    early_bird_slots: ''
+    early_bird_slots: '',
+    consent_text: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -87,10 +101,16 @@ export default function EditWorkshop() {
           is_private: workshopData.is_private === true,
           preview_password: workshopData.preview_password || '',
           collect_demographics: workshopData.collect_demographics === true,
+          show_on_english_site: workshopData.show_on_english_site === true,
+        title_en: workshopData.title_en || '',
+        description_en: workshopData.description_en || '',
+        consent_text_en: workshopData.consent_text_en || '',
           early_bird_enabled: workshopData.early_bird_enabled === true,
           early_bird_discount: workshopData.early_bird_discount?.toString() || '',
-          early_bird_slots: workshopData.early_bird_slots?.toString() || ''
+          early_bird_slots: workshopData.early_bird_slots?.toString() || '',
+          consent_text: workshopData.consent_text || ''
         })
+        setZeroCutoff(zeroBookingCutoffFromWorkshop(workshopData))
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
         }
@@ -115,6 +135,12 @@ export default function EditWorkshop() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 予約0人の締切が ON なのに値が不正なら保存しない（黙って OFF で保存しない）
+    const cutoffError = zeroBookingCutoffError(zeroCutoff)
+    if (cutoffError) {
+      alert(cutoffError)
+      return
+    }
     
     // 価格のバリデーション
     if (parseInt(formData.price) < 50) {
@@ -177,9 +203,15 @@ export default function EditWorkshop() {
           is_private: formData.is_private,
           preview_password: formData.preview_password.trim() || null,
           collect_demographics: formData.collect_demographics,
+          show_on_english_site: formData.show_on_english_site,
+          title_en: formData.title_en.trim() || null,
+          description_en: formData.description_en.trim() || null,
+          consent_text_en: formData.consent_text_en.trim() || null,
           early_bird_enabled: formData.early_bird_enabled,
           early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
+          consent_text: formData.consent_text.trim() || null,
+          ...zeroBookingCutoffToColumns(zeroCutoff),
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -395,6 +427,57 @@ export default function EditWorkshop() {
               </div>
             </div>
 
+            {/* 英語ページ（/en）に載せる */}
+            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-md">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.show_on_english_site}
+                  onChange={(e) => setFormData({ ...formData, show_on_english_site: e.target.checked })}
+                  className="mt-1 w-5 h-5 text-indigo-600 rounded"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-700">英語ページ（/en）に載せる</span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    英語で案内できるワークショップだけオンにします。英語ページには下の英語欄の文言を出します（空欄の欄は日本語のまま出ます）。日本語ページの文言は変わりません
+                  </span>
+                </span>
+              </label>
+              {formData.show_on_english_site && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語タイトル</label>
+                    <input
+                      type="text"
+                      value={formData.title_en}
+                      onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      placeholder="Create Your Own 3D Figure with AI"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の説明</label>
+                    <textarea
+                      rows={4}
+                      value={formData.description_en}
+                      onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の参加同意書（空欄なら既定の英語の同意書）</label>
+                    <textarea
+                      rows={6}
+                      value={formData.consent_text_en}
+                      onChange={(e) => setFormData({ ...formData, consent_text_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      placeholder={DEFAULT_CONSENT_TEXT_EN}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* 早割チケット設定 */}
             <div className="p-4 bg-pink-50 border border-pink-200 rounded-md space-y-3">
               <div className="flex items-center justify-between">
@@ -453,6 +536,25 @@ export default function EditWorkshop() {
                 </div>
               )}
             </div>
+
+            {/* 参加同意書 */}
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <FileText className="w-4 h-4 mr-1 text-gray-600" />
+                参加同意書（空欄なら既定の同意書）
+              </label>
+              <p className="text-xs text-gray-500">
+                予約フォームに表示し、同意チェックを必須にします。空欄のままなら下に薄く表示している既定の同意書を使います
+              </p>
+              <textarea
+                rows={8}
+                value={formData.consent_text}
+                onChange={(e) => setFormData({ ...formData, consent_text: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder={DEFAULT_CONSENT_TEXT}
+              />
+            </div>
+            <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

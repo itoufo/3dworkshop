@@ -38,6 +38,17 @@ export interface Workshop {
   early_bird_enabled?: boolean
   early_bird_discount?: number | null
   early_bird_slots?: number | null
+  // 参加同意書の本文。null なら lib/consent-default.ts の既定本文
+  consent_text?: string | null
+  // 英語ページ（/en）に載せるか
+  show_on_english_site?: boolean
+  // 英語ページ（/en）専用の文言。空なら日本語の列を使う。⚠ 日本語の列に英語を入れない（日本語ページまで英語になる）
+  title_en?: string | null
+  description_en?: string | null
+  consent_text_en?: string | null
+  // 予約0人のときの締切: (開催日 − days_before 日) の time（JST）。null なら開始時刻でのみ締切
+  zero_booking_cutoff_days_before?: number | null
+  zero_booking_cutoff_time?: string | null
   sessions?: WorkshopSession[]
   created_at: string
   updated_at: string
@@ -114,6 +125,7 @@ export interface Customer {
   age?: number
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say'
   stripe_customer_id?: string
+  acquisition_source?: 'website' | 'booking_site' | 'email' | 'phone' | 'referral' | 'other' | null
   created_at: string
   updated_at: string
 }
@@ -138,6 +150,12 @@ export interface Booking {
   minor_grades?: string | null
   // 同伴者（付き添いの保護者）: 親子向け日程で1名まで無料・定員にカウントしない
   companion_count?: number | null
+  consent_agreed_at?: string | null
+  consent_text_snapshot?: string | null
+  // 流入経路と他サイトの販売手数料（円）。手取り = total_amount - commission_amount
+  source?: 'website' | 'booking_site' | 'email' | 'phone' | 'referral' | 'other'
+  source_detail?: string | null
+  commission_amount?: number
   created_at: string
   updated_at: string
   workshop?: Workshop

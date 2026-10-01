@@ -7,7 +7,10 @@ export const metadata: Metadata = {
   title: 'よくある質問（FAQ） | 3DLab',
   description:
     '3Dプリンタ体験ワークショップ・スクール・オーダーメイド制作についてよくいただくご質問をまとめました。初心者・お子さま連れ・PCなしでの参加、使用する3Dプリンター、制作物の品質や塗装について。',
-  alternates: { canonical: 'https://3dlab.jp/faq' },
+  alternates: {
+    canonical: 'https://3dlab.jp/faq',
+    languages: { ja: '/faq', en: '/en/faq', 'x-default': '/faq' },
+  },
 }
 
 type QA = { q: string; a: string; link?: { href: string; label: string } }
@@ -39,7 +42,7 @@ const categories: Category[] = [
       },
       {
         q: '使用する3Dプリンターはどこのメーカーのものですか？',
-        a: '通常はBambu Lab社のA1・A1 miniを使って実演いたします。そのほか国内メーカーのプリンターもご用意しておりますので、機種を比較してみたい方にもおすすめです。時期によっては、光造形（レジン）方式のワークショップもご提供しています。',
+        a: '通常はBambu Lab社のA1・A1 miniを使って実演いたします。そのほか国内メーカーのプリンターもご用意しておりますので、機種を比較してみたい方にもおすすめです。現在、レジン（光造形）のワークショップは開催していません。光造形はスクールでのみ体験可能です。',
       },
     ],
   },

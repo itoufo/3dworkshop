@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getConsentTextFor } from '@/lib/consent-default'
+import { toLocale } from '@/lib/i18n'
+import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
+import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
 
 /**
@@ -13,7 +17,8 @@ import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { booking_id } = await request.json()
+    const body = await request.json()
+    const { booking_id } = body
 
     if (!booking_id) {
       return NextResponse.json({ error: 'Booking ID is required' }, { status: 400 })
@@ -48,32 +53,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This workshop requires payment' }, { status: 400 })
     }
 
+    // 参加同意書への同意がない予約は確定しない。
+    // ⚠ 同意の日時と本文はサーバーで書く（予約行はブラウザが作るので、そこにある値は信用しない）
+    if (body.consent !== true) {
+      // デプロイ前に開いたままのタブ（同意欄のない古い画面）から来た場合。仮予約は取り消す
+      if (booking.status === 'pending') {
+        await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
+      }
+      return NextResponse.json({ error: 'ページの表示が古いため、参加同意書への同意を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。' }, { status: 400 })
+    }
+    const consentAgreedAt = booking.consent_agreed_at || new Date().toISOString()
+
     // 二重確定を防ぐ（リトライ・二重送信時は既存の予約をそのまま返す）
     if (booking.status === 'confirmed') {
       return NextResponse.json({ success: true, booking })
     }
 
+    // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める
+    const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
+    if (deadline.closed) {
+      return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
+    }
+
     // 空席の再確認。無料回は席だけ押さえられる事故が起きやすいので、
     // 確定の直前にサーバー側でも定員を超えていないか数える。
+    // 数え方は空席表示（/api/check-availability）と同じ関数を使う。
     const sessionId: string | null = booking.session_id ?? null
     const maxParticipants: number =
       (sessionId ? booking.workshop_session?.max_participants : null) ?? workshop.max_participants
-    const manualParticipants: number =
-      (sessionId ? booking.workshop_session?.manual_participants : null) ?? workshop.manual_participants ?? 0
-
-    let takenQuery = supabaseAdmin
-      .from('bookings')
-      .select('participants')
-      .neq('status', 'cancelled')
-      .in('payment_status', ['pending', 'paid'])
-      .neq('id', booking_id)
-    takenQuery = sessionId
-      ? takenQuery.eq('session_id', sessionId)
-      : takenQuery.eq('workshop_id', workshop.id)
-
-    const { data: taken } = await takenQuery
     const alreadyBooked =
-      (taken?.reduce((sum, b) => sum + (b.participants || 0), 0) || 0) + manualParticipants
+      (await sumBookedParticipants(supabaseAdmin, {
+        workshopId: workshop.id,
+        sessionId,
+        excludeBookingId: booking_id,
+      })) + manualParticipantsFor(sessionId ? booking.workshop_session : null, workshop)
 
     if (alreadyBooked + booking.participants > maxParticipants) {
       // 席が埋まっていたら、押さえてしまった仮予約を取り消してから返す
@@ -94,6 +107,9 @@ export async function POST(request: NextRequest) {
         payment_status: 'paid',
         total_amount: 0,
         discount_amount: 0,
+        consent_agreed_at: consentAgreedAt,
+        // 予約フォームで見せた言語の本文を記録する（/en は英語の同意書）
+        consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)),
       })
       .eq('id', booking_id)
       .select(`
@@ -131,7 +147,8 @@ export async function POST(request: NextRequest) {
         booking.minor_count,
         booking.minor_grades,
         workshop.workshop_categories?.email_production_notes,
-        booking.companion_count
+        booking.companion_count,
+        consentAgreedAt
       )
 
       const emailResult = await sendEmail({

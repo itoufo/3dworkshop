@@ -1,20 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { optimizeImageUrl } from '@/lib/image-optimization'
+import MediaListEditor from '@/components/admin/MediaListEditor'
+import { adminJson, refreshPublicPages } from '@/lib/admin-api-client'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
-import {
-  ACCEPTED_MEDIA_TYPES,
-  MAX_MEDIA_FILE_SIZE,
-  imageUrlsOnly,
-  isVideoUrl,
-} from '@/lib/media'
-import { ArrowLeft, Save, Type, ImagePlus, Star, Trash2, Plus, Video } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import { imageUrlsOnly } from '@/lib/media'
+import { ArrowLeft, Save, Type, Trash2, Plus, Layers } from 'lucide-react'
+import type { Product, ProductSeries } from '@/lib/products'
 
 interface SpecRow {
   key: string
@@ -31,13 +26,18 @@ export default function ProductForm({ product }: Props) {
   const isEdit = Boolean(product)
 
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
   const [navigating, setNavigating] = useState(false)
   // 写真と動画を表示順のまま1本の配列で持つ。先頭がメイン
   const [media, setMedia] = useState<string[]>(
     product?.media_urls?.length ? product.media_urls : (product?.image_urls ?? [])
   )
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
+  // シリーズの子商品にするか。非公開のシリーズも選べるように管理 API から読む
+  const [seriesList, setSeriesList] = useState<ProductSeries[]>([])
+  const [seriesError, setSeriesError] = useState<string | null>(null)
+  const [seriesLoaded, setSeriesLoaded] = useState(false)
+  const [seriesId, setSeriesId] = useState<string>(product?.series_id ?? '')
+  const [variantOptions, setVariantOptions] = useState<Record<string, string>>(product?.variant_options ?? {})
+  const [seriesSort, setSeriesSort] = useState<string>(String(product?.series_sort ?? 0))
   const [specs, setSpecs] = useState<SpecRow[]>(
     Object.entries(product?.specifications ?? {}).map(([key, value]) => ({ key, value: String(value) }))
   )
@@ -50,68 +50,15 @@ export default function ProductForm({ product }: Props) {
     is_active: product?.is_active ?? true,
   })
 
-  async function handleMediaSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    if (files.length === 0) return
+  useEffect(() => {
+    adminJson<{ series: ProductSeries[] }>('/api/admin/product-series').then((res) => {
+      if (res.ok) setSeriesList(res.data.series)
+      else setSeriesError(res.message)
+      setSeriesLoaded(true)
+    })
+  }, [])
 
-    setUploading(true)
-    try {
-      const uploaded: string[] = []
-      for (const [index, file] of files.entries()) {
-        setUploadProgress(`${index + 1} / ${files.length} 件目「${file.name}」を送信中...`)
-
-        if (file.size > MAX_MEDIA_FILE_SIZE) {
-          throw new Error(
-            `「${file.name}」は ${(file.size / 1024 / 1024).toFixed(1)}MB あります。1ファイル ${MAX_MEDIA_FILE_SIZE / 1024 / 1024}MB までです。`
-          )
-        }
-        if (!(ACCEPTED_MEDIA_TYPES as readonly string[]).includes(file.type)) {
-          throw new Error(`「${file.name}」は登録できない形式です（${file.type || '不明'}）。`)
-        }
-
-        // 動画は大きいので、API を経由せずブラウザから Supabase Storage へ直接送る。
-        // その許可証（署名付きURL）だけを管理APIから受け取る
-        const signRes = await fetch('/api/admin/product-media/upload-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contentType: file.type, size: file.size }),
-        })
-        const signed = await signRes.json()
-        if (!signRes.ok) {
-          throw new Error(signed.message || 'アップロードURLの発行に失敗しました')
-        }
-
-        const { error: uploadError } = await supabase.storage
-          .from(signed.bucket)
-          .uploadToSignedUrl(signed.path, signed.token, file, {
-            contentType: file.type,
-            // ファイル名は毎回ユニークなので長期キャッシュで安全
-            cacheControl: '31536000, immutable',
-          })
-        if (uploadError) {
-          throw new Error(`「${file.name}」のアップロードに失敗しました: ${uploadError.message}`)
-        }
-
-        uploaded.push(signed.publicUrl)
-      }
-      setMedia((prev) => [...prev, ...uploaded])
-    } catch (error) {
-      console.error('Error uploading media:', error)
-      alert(error instanceof Error ? error.message : 'アップロードに失敗しました')
-    } finally {
-      setUploading(false)
-      setUploadProgress(null)
-      e.target.value = ''
-    }
-  }
-
-  function removeMedia(url: string) {
-    setMedia((prev) => prev.filter((u) => u !== url))
-  }
-
-  function makeMainMedia(url: string) {
-    setMedia((prev) => [url, ...prev.filter((u) => u !== url)])
-  }
+  const selectedSeries = seriesList.find((s) => s.id === seriesId) ?? null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -127,6 +74,45 @@ export default function ProductForm({ product }: Props) {
       return acc
     }, {})
 
+    // ⚠ シリーズ一覧が読めていないまま保存すると、項目の値（variant_options）を空で上書きしてしまう
+    if (seriesId && !selectedSeries) {
+      alert(
+        seriesLoaded
+          ? 'シリーズの情報を読み込めませんでした。ページを開き直してから保存してください。'
+          : 'シリーズの情報を読み込んでいます。少し待ってから保存してください。'
+      )
+      return
+    }
+
+    // シリーズの子商品なら、軸ごとの値がそろっていないと選択肢に出せない
+    const axes = selectedSeries?.option_axes ?? []
+    const variant: Record<string, string> = {}
+    for (const axis of axes) {
+      const value = (variantOptions[axis] ?? '').trim()
+      if (!value) {
+        alert(`シリーズの「${axis}」を入力してください`)
+        return
+      }
+      variant[axis] = value
+    }
+
+    // 同じシリーズに同じ組み合わせがあると、お客さまはどちらか一方しか選べなくなる
+    if (seriesId) {
+      const { data: siblings } = await supabase
+        .from('products')
+        .select('id, name, variant_options')
+        .eq('series_id', seriesId)
+      const twin = (siblings ?? []).find(
+        (s) =>
+          s.id !== product?.id &&
+          axes.every((axis) => (s.variant_options as Record<string, string> | null)?.[axis] === variant[axis])
+      )
+      if (twin) {
+        alert(`同じシリーズに同じ組み合わせ（${axes.map((a) => variant[a]).join(' / ')}）の商品「${twin.name}」があります。値を変えてください。`)
+        return
+      }
+    }
+
     const payload = {
       name: formData.name,
       description: formData.description || null,
@@ -138,6 +124,9 @@ export default function ProductForm({ product }: Props) {
       specifications,
       is_active: formData.is_active,
       stock_quantity: formData.stock_quantity.trim() === '' ? null : parseInt(formData.stock_quantity) || 0,
+      series_id: seriesId || null,
+      variant_options: variant,
+      series_sort: parseInt(seriesSort) || 0,
     }
 
     setSaving(true)
@@ -147,6 +136,8 @@ export default function ProductForm({ product }: Props) {
         : await supabase.from('products').insert(payload)
 
       if (error) throw error
+      // 価格・公開状態の変更を、商品ページとシリーズのページにすぐ出す
+      await refreshPublicPages()
 
       alert(isEdit ? '商品を更新しました' : '商品を作成しました')
       setNavigating(true)
@@ -164,7 +155,6 @@ export default function ProductForm({ product }: Props) {
     <>
       {navigating && <LoadingOverlay message="商品管理へ戻っています..." />}
       {saving && <LoadingOverlay message="保存しています..." />}
-      {uploading && <LoadingOverlay message={uploadProgress ?? 'アップロードしています...'} />}
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
@@ -255,90 +245,60 @@ export default function ProductForm({ product }: Props) {
                 </label>
               </div>
 
-              <div className="bg-pink-50 rounded-xl p-6 space-y-4">
+              <div className="bg-indigo-50 rounded-xl p-6 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-2">
-                  <ImagePlus className="w-5 h-5 mr-2 text-pink-600" />
-                  商品写真・動画（複数可）
+                  <Layers className="w-5 h-5 mr-2 text-indigo-600" />
+                  シリーズ（任意）
                 </h3>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>写真 JPEG / PNG / WebP、動画 MP4 / WebM / MOV。1ファイル {MAX_MEDIA_FILE_SIZE / 1024 / 1024}MB まで。</p>
-                  <p>並び順のとおりに商品ページへ表示されます。先頭がメインです。</p>
-                  <p>
-                    一覧のサムネイルと SNS シェア時の画像には<strong>最初の写真</strong>が使われます（動画は使えません）。
-                    {media.length > 0 && imageUrlsOnly(media).length === 0 && (
-                      <span className="text-red-600">写真が1枚もありません。写真を1枚は登録してください。</span>
-                    )}
-                  </p>
-                </div>
+                <p className="text-sm text-gray-600">
+                  シリーズに入れると、この商品は単独のページを持たず、シリーズのページで「
+                  {selectedSeries ? selectedSeries.option_axes.join('・') : 'サイズ・色など'}」を選んで買う選択肢の1つになります。
+                </p>
+                {seriesError && <p className="text-sm text-red-600">シリーズを読み込めませんでした: {seriesError}</p>}
+                <select
+                  value={seriesId}
+                  disabled={!seriesLoaded}
+                  onChange={(e) => setSeriesId(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                >
+                  <option value="">シリーズに入れない（単品で販売）</option>
+                  {seriesList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                      {s.is_active ? '' : '（非公開）'}
+                    </option>
+                  ))}
+                </select>
 
-                <input
-                  type="file"
-                  accept={ACCEPTED_MEDIA_TYPES.join(',')}
-                  multiple
-                  onChange={handleMediaSelect}
-                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
-                />
-
-                {media.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {media.map((url, index) => (
-                      <div key={url} className="relative group">
-                        <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-white shadow bg-black">
-                          {isVideoUrl(url) ? (
-                            <video
-                              src={url}
-                              className="w-full h-full object-cover"
-                              muted
-                              playsInline
-                              preload="metadata"
-                              controls
-                            />
-                          ) : (
-                            <Image
-                              src={optimizeImageUrl(url, 60)}
-                              alt={`商品写真 ${index + 1}`}
-                              fill
-                              className="object-cover"
-                              sizes="25vw"
-                            />
-                          )}
-                        </div>
-                        <div className="absolute top-2 left-2 flex gap-1">
-                          {index === 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-purple-600 text-white text-xs">メイン</span>
-                          )}
-                          {isVideoUrl(url) && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-900/80 text-white text-xs">
-                              <Video className="w-3 h-3 mr-1" />
-                              動画
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex justify-center space-x-2 mt-2">
-                          {index !== 0 && (
-                            <button
-                              type="button"
-                              onClick={() => makeMainMedia(url)}
-                              className="inline-flex items-center px-2 py-1 text-xs rounded-full border border-gray-300 text-gray-700 hover:border-purple-500"
-                            >
-                              <Star className="w-3 h-3 mr-1" />
-                              メインに
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeMedia(url)}
-                            className="inline-flex items-center px-2 py-1 text-xs rounded-full border border-red-200 text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            削除
-                          </button>
-                        </div>
+                {selectedSeries && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedSeries.option_axes.map((axis) => (
+                      <div key={axis}>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{axis} *</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+                          value={variantOptions[axis] ?? ''}
+                          onChange={(e) => setVariantOptions({ ...variantOptions, [axis]: e.target.value })}
+                          placeholder={axis === 'サイズ' ? '高さ約10cm' : ''}
+                        />
                       </div>
                     ))}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">シリーズ内の並び順</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+                        value={seriesSort}
+                        onChange={(e) => setSeriesSort(e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">小さいほど選択肢の前に並びます。</p>
+                    </div>
                   </div>
                 )}
               </div>
+
+              <MediaListEditor media={media} onChange={setMedia} title="商品写真・動画（複数可）" />
 
               <div className="bg-gray-50 rounded-xl p-6 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">商品仕様（任意）</h3>
@@ -392,7 +352,7 @@ export default function ProductForm({ product }: Props) {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={saving || uploading}
+                  disabled={saving || (Boolean(seriesId) && !seriesLoaded)}
                   className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:shadow-lg transition-all duration-300 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4 mr-2" />

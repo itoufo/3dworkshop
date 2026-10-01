@@ -8,7 +8,14 @@ import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy } from 'lucide-react'
+import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy, FileText } from 'lucide-react'
+import { DEFAULT_CONSENT_TEXT, DEFAULT_CONSENT_TEXT_EN } from '@/lib/consent-default'
+import ZeroBookingCutoffField, {
+  DEFAULT_ZERO_BOOKING_CUTOFF,
+  zeroBookingCutoffFromWorkshop,
+  zeroBookingCutoffToColumns,
+  zeroBookingCutoffError,
+} from '@/components/admin/ZeroBookingCutoffField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -51,9 +58,14 @@ export default function NewWorkshopPage() {
     is_private: false,
     preview_password: '',
     collect_demographics: false,
+    show_on_english_site: false,
+    title_en: '',
+    description_en: '',
+    consent_text_en: '',
     early_bird_enabled: false,
     early_bird_discount: '',
-    early_bird_slots: ''
+    early_bird_slots: '',
+    consent_text: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -63,6 +75,8 @@ export default function NewWorkshopPage() {
   const [copying, setCopying] = useState(false)
   const [sourceWorkshops, setSourceWorkshops] = useState<SourceWorkshop[]>([])
   const [sourceId, setSourceId] = useState('')
+  // 予約0人のときの締切（既定は前日 24:00。コピー元があればその設定を引き継ぐ）
+  const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
 
   // 選択したイベントの内容をフォームに流し込む（日時は既に入力済みのものを保持）
   async function applySource(id: string) {
@@ -95,10 +109,16 @@ export default function NewWorkshopPage() {
         is_private: src.is_private === true,
         preview_password: src.preview_password || '',
         collect_demographics: src.collect_demographics === true,
+        show_on_english_site: src.show_on_english_site === true,
+        title_en: src.title_en || '',
+        description_en: src.description_en || '',
+        consent_text_en: src.consent_text_en || '',
         early_bird_enabled: src.early_bird_enabled === true,
         early_bird_discount: src.early_bird_discount?.toString() || '',
-        early_bird_slots: src.early_bird_slots?.toString() || ''
+        early_bird_slots: src.early_bird_slots?.toString() || '',
+        consent_text: src.consent_text || ''
       }))
+      setZeroCutoff(zeroBookingCutoffFromWorkshop(src))
       setImageFile(null)
       setImagePreview(src.image_url || null)
     } finally {
@@ -154,6 +174,12 @@ export default function NewWorkshopPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 予約0人の締切が ON なのに値が不正なら保存しない（黙って OFF で保存しない）
+    const cutoffError = zeroBookingCutoffError(zeroCutoff)
+    if (cutoffError) {
+      alert(cutoffError)
+      return
+    }
 
     if (parseInt(workshop.price) < 50) {
       alert('価格は50円以上で設定してください')
@@ -210,9 +236,15 @@ export default function NewWorkshopPage() {
           is_private: workshop.is_private,
           preview_password: workshop.preview_password.trim() || null,
           collect_demographics: workshop.collect_demographics,
+          show_on_english_site: workshop.show_on_english_site,
+          title_en: workshop.title_en.trim() || null,
+          description_en: workshop.description_en.trim() || null,
+          consent_text_en: workshop.consent_text_en.trim() || null,
           early_bird_enabled: workshop.early_bird_enabled,
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
-          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null
+          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
+          consent_text: workshop.consent_text.trim() || null,
+          ...zeroBookingCutoffToColumns(zeroCutoff)
         })
         .select()
         .single()
@@ -456,6 +488,57 @@ export default function NewWorkshopPage() {
               </div>
             </div>
 
+            {/* 英語ページ（/en）に載せる */}
+            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={workshop.show_on_english_site}
+                  onChange={(e) => setWorkshop({ ...workshop, show_on_english_site: e.target.checked })}
+                  className="mt-1 w-5 h-5 text-indigo-600 rounded"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-700">英語ページ（/en）に載せる</span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    英語で案内できるワークショップだけオンにします。英語ページには下の英語欄の文言を出します（空欄の欄は日本語のまま出ます）。日本語ページの文言は変わりません
+                  </span>
+                </span>
+              </label>
+              {workshop.show_on_english_site && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語タイトル</label>
+                    <input
+                      type="text"
+                      value={workshop.title_en}
+                      onChange={(e) => setWorkshop({ ...workshop, title_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+                      placeholder="Create Your Own 3D Figure with AI"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の説明</label>
+                    <textarea
+                      rows={4}
+                      value={workshop.description_en}
+                      onChange={(e) => setWorkshop({ ...workshop, description_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の参加同意書（空欄なら既定の英語の同意書）</label>
+                    <textarea
+                      rows={6}
+                      value={workshop.consent_text_en}
+                      onChange={(e) => setWorkshop({ ...workshop, consent_text_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+                      placeholder={DEFAULT_CONSENT_TEXT_EN}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* 早割チケット設定 */}
             <div className="p-4 bg-pink-50 border border-pink-200 rounded-xl space-y-3">
               <div className="flex items-center justify-between">
@@ -514,6 +597,25 @@ export default function NewWorkshopPage() {
                 </div>
               )}
             </div>
+
+            {/* 参加同意書 */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <FileText className="w-4 h-4 mr-1 text-gray-600" />
+                参加同意書（空欄なら既定の同意書）
+              </label>
+              <p className="text-xs text-gray-500">
+                予約フォームに表示し、同意チェックを必須にします。空欄のままなら下に薄く表示している既定の同意書を使います
+              </p>
+              <textarea
+                rows={8}
+                value={workshop.consent_text}
+                onChange={(e) => setWorkshop({ ...workshop, consent_text: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                placeholder={DEFAULT_CONSENT_TEXT}
+              />
+            </div>
+            <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
 
             {/* 基本情報 */}
             <div className="bg-purple-50 rounded-xl p-6 space-y-4">

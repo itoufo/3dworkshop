@@ -43,6 +43,11 @@ export async function generateMetadata(
       keywords: `3Dプリンタ ワークショップ,${workshop.title},湯島,東京,3D教室,体験,3Dモデリング`,
       alternates: {
         canonical: canonicalPath,
+        // 英語ページに載せているワークショップだけ、英語版との対応を出す。
+        // ⚠ hreflang は canonical 同士でしか結ばない。カテゴリページが canonical のときは出さない
+        ...(workshop.show_on_english_site && canonicalPath === `/workshops/${id}`
+          ? { languages: { ja: `/workshops/${id}`, en: `/en/workshops/${id}`, 'x-default': `/workshops/${id}` } }
+          : {}),
       },
       openGraph: {
         title,

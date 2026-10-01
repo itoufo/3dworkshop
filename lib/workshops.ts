@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import type { Workshop, WorkshopCategory, WorkshopSession } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
+import { jstToday, sessionStartJst } from '@/lib/booking-deadline'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -19,8 +20,24 @@ const SELECT_FOR_LISTING =
   'category:workshop_categories(id, name, slug), ' +
   'sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)'
 
+// 英語ページ用の一覧 select。日本語の title / description に加えて英語の列も取る
+const SELECT_FOR_ENGLISH_LISTING = SELECT_FOR_LISTING + ', title_en, description_en'
+
+/**
+ * 英語ページ（/en）で表示する文言に差し替える。title_en / description_en が空なら日本語の列を使う。
+ * ⚠ 英語は専用の列に持つ。共有の title / description に英語を入れると日本語ページまで英語になる
+ */
+export function toEnglishWorkshop<T extends Workshop>(w: T): T {
+  return {
+    ...w,
+    title: w.title_en?.trim() || w.title,
+    description: w.description_en?.trim() || w.description,
+  }
+}
+
+// JST の今日。Vercel の関数は UTC で動くので toISOString() を素で使うと 0〜9時に前日になる
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0]
+  return jstToday()
 }
 
 function normalizeSessions(w: Workshop): Workshop {
@@ -66,6 +83,32 @@ export const getAllWorkshops = cache(async (): Promise<Workshop[]> => {
     .order('event_time', { ascending: true })
   // supabase-js は列挙型 select 文字列の型推論に失敗するため unknown 経由でキャスト
   return ((data as unknown as Workshop[]) || []).map(normalizeSessions)
+})
+
+// 英語ページ（/en）用。管理画面で「英語ページに載せる」をオンにした公開ワークショップだけ。
+// getAllWorkshops と同じ軽量 select（show_on_english_site で絞るだけ）
+export const getEnglishWorkshops = cache(async (): Promise<Workshop[]> => {
+  const { data, error } = await supabase
+    .from('workshops')
+    .select(SELECT_FOR_ENGLISH_LISTING)
+    .eq('is_service', false)
+    .eq('is_private', false)
+    .eq('show_on_english_site', true)
+    .order('event_date', { ascending: true })
+  // ⚠ 列が無い（マイグレーション未適用）と黙って0件になるので、ログには残す
+  if (error) console.error('getEnglishWorkshops failed:', error)
+  return ((data as unknown as Workshop[]) || []).map(normalizeSessions).map(toEnglishWorkshop)
+})
+
+// 英語版のあるワークショップの id（日本語ページのヘッダーから /en へ切り替える先を決める）
+export const getEnglishWorkshopIds = cache(async (): Promise<string[]> => {
+  const { data } = await supabase
+    .from('workshops')
+    .select('id')
+    .eq('is_service', false)
+    .eq('is_private', false)
+    .eq('show_on_english_site', true)
+  return (data ?? []).map((r) => r.id as string)
 })
 
 // 「特別ワークショップ」バナー用。ピン留め(is_pinned)されていて、かつ今後の開催
@@ -160,10 +203,16 @@ export async function getRelatedWorkshops(workshopId: string, categoryId: string
 
 // ============ Session ヘルパー ============
 
+// 予約を受け付けうる回。日付を渡さなければ、開始時刻（JST）を過ぎた当日の回も除く。
+// 予約0人の締切は参加者数が要るのでここでは見ない（/api/check-availability が判定する）
 export function getUpcomingSessions(workshop: Workshop, todayDate?: string): WorkshopSession[] {
   const today = todayDate || todayIso()
+  const now = Date.now()
   return (workshop.sessions ?? []).filter(
-    s => s.status === 'scheduled' && s.event_date >= today
+    s =>
+      s.status === 'scheduled' &&
+      s.event_date >= today &&
+      (todayDate !== undefined || sessionStartJst(s).getTime() > now)
   )
 }
 

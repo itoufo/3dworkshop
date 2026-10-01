@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
@@ -6,10 +7,19 @@ import MediaCoverage from '@/components/MediaCoverage'
 import SpecialWorkshopBanner from '@/components/SpecialWorkshopBanner'
 import WorkshopActivitySection from '@/components/WorkshopActivitySection'
 import TopSurveyBanner from '@/components/TopSurveyBanner'
+import WeeklyWorkshopCalendar from '@/components/WeeklyWorkshopCalendar'
 import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCircle } from 'lucide-react'
 
 // 特別WSバナーの掲載元(ピン留めWS)を反映するため ISR（1時間）
 export const revalidate = 3600
+
+// 英語版（/en）との対応。⚠ ルートレイアウトの alternates を上書きするので canonical もここに書く
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+    languages: { ja: '/', en: '/en', 'x-default': '/' },
+  },
+}
 
 export default function HomePage() {
   return (
@@ -183,6 +193,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 1週間の開催スケジュール（日ごと・時刻順） */}
+      <WeeklyWorkshopCalendar />
 
       {/* ワークショップ開催中（開催実績・直近の日程・カテゴリピラーへの導線） */}
       <WorkshopActivitySection />

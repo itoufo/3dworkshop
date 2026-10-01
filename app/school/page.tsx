@@ -225,7 +225,7 @@ export default function SchoolPage() {
                 <div>
                   <p className="font-semibold text-gray-900">所在地</p>
                   <p className="text-gray-600">文京区湯島3-14-8 5F</p>
-                  <p className="text-sm text-gray-500">湯島駅から徒歩3分</p>
+                  <p className="text-sm text-gray-500">湯島駅から徒歩約1分</p>
                 </div>
               </div>
               
@@ -233,8 +233,8 @@ export default function SchoolPage() {
                 <Clock className="w-5 h-5 text-purple-600 mt-1 mr-3" />
                 <div>
                   <p className="font-semibold text-gray-900">営業時間</p>
-                  <p className="text-gray-600">10:00 - 19:00</p>
-                  <p className="text-sm text-gray-500">定休日：火曜日</p>
+                  <p className="text-gray-600">10:00 - 17:00</p>
+                  <p className="text-sm text-gray-500">定休日：不定休</p>
                 </div>
               </div>
             </div>

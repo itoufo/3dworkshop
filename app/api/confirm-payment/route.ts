@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
     })
 
     // 支払いが完了していることを確認
-    if (session.payment_status !== 'paid') {
+    // ¥0 の決済（100%クーポン）は Stripe が no_payment_required を返すことがある
+    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
       return NextResponse.json(
         { error: 'Payment not completed' },
         { status: 400 }
