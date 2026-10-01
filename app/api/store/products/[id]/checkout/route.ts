@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     // ⚠ データが無いと、払ってもらってから渡せない・印刷できない。決済の前に確かめる
     const { data: files } = await supabaseAdmin
       .from('store_products')
-      .select('data_file_path')
+      .select('data_file_path, data_file_name')
       .eq('id', product.id)
       .maybeSingle()
     if (!files?.data_file_path) {
@@ -81,6 +81,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         buyer_customer_id: user?.customerId ?? null,
         buyer_email: email,
         buyer_name: name,
+        // 買った時点のデータ。あとで出品者が差し替えても、この注文はこのファイルを使う
+        data_file_path: files.data_file_path,
+        data_file_name: files.data_file_name,
         status: 'pending',
       })
       .select('id')

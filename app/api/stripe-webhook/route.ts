@@ -394,7 +394,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ received: true })
         }
 
-        // クッキー型の購入の処理。
         // stores.3dlab.jp（出品マーケット）の購入
         if (type === 'store_order') {
           const orderId = session.metadata?.order_id
@@ -487,6 +486,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ received: true })
         }
 
+        // クッキー型の購入の処理。
         // データ購入 (download) も発送 (print) も、ここで初めて STL を作る。
         // ⚠ 作るのは決済が終わったこの時点。ブラウザで作ると開発者ツールから無料で取れる。
         if (type === 'cutter_order') {

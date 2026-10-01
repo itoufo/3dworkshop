@@ -71,10 +71,17 @@ export async function getPublicSeller(slug: string): Promise<{ seller: PublicSel
 /** いいねの数（作品ごと） */
 export async function likeCounts(productIds: string[]): Promise<Record<string, number>> {
   if (!supabaseAdmin || productIds.length === 0) return {}
-  const { data } = await supabaseAdmin.from('store_product_likes').select('product_id').in('product_id', productIds)
-  const counts: Record<string, number> = {}
-  for (const row of data ?? []) counts[row.product_id] = (counts[row.product_id] ?? 0) + 1
-  return counts
+  // ⚠ 行を取って数えない。PostgREST は1000行で打ち切るので、それを超えると数が黙って狂う
+  const entries = await Promise.all(
+    productIds.map(async (id) => {
+      const { count } = await supabaseAdmin!
+        .from('store_product_likes')
+        .select('product_id', { count: 'exact', head: true })
+        .eq('product_id', id)
+      return [id, count ?? 0] as const
+    }),
+  )
+  return Object.fromEntries(entries)
 }
 
 /** この人がいいねしているか */

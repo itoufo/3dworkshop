@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { STORE_URL } from '@/lib/store/urls'
 
 /**
  * ストアの注文の状態を進める。requireAdmin() 必須。
  *   ship   … 印刷の注文を発送済みにする（paid → shipped、追跡番号は任意）
+ *   link   … データ購入のダウンロード用リンクをもう一度見る（メールが届かなかった人に渡す。状態は変えない）
  *   refund … 返金済みにする（paid / shipped → refunded）。データのダウンロードもここで止まる。
  *            ⚠ お金の返金そのものは Stripe の管理画面で行う。ここは記録だけ
  * ⚠ 今の状態を条件にして更新する。二重押しや別タブでの操作で状態が飛ばないように。
@@ -20,6 +22,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id } = await params
   const body = (await request.json().catch(() => ({}))) as { action?: unknown; tracking_number?: unknown }
   const now = new Date().toISOString()
+
+  if (body.action === 'link') {
+    const { data: order } = await supabaseAdmin!
+      .from('store_orders')
+      .select('kind, status, download_token')
+      .eq('id', id)
+      .maybeSingle()
+    if (!order || order.kind !== 'data' || order.status !== 'paid' || !order.download_token) {
+      return NextResponse.json({ error: '支払い済みのデータ購入ではありません' }, { status: 409 })
+    }
+    return NextResponse.json({ url: `${STORE_URL}/api/store/download/${order.download_token}` })
+  }
 
   let update: Record<string, unknown>
   let from: string[]

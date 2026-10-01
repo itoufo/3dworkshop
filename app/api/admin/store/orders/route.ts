@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       id, kind, price, platform_fee, seller_amount, buyer_name, buyer_email, shipping, status,
       stripe_payment_intent_id, download_count, download_expires_at, tracking_number,
       paid_at, shipped_at, refunded_at, created_at, updated_at,
-      product:store_products(id, title, data_file_name),
+      data_file_name, product:store_products(id, title, data_file_name),
       seller:store_sellers(id, display_name)
     `)
     .order('created_at', { ascending: false })

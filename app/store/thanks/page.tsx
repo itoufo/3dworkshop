@@ -33,10 +33,10 @@ export default async function StoreThanksPage({ searchParams }: Props) {
       <h1 className="mt-6 text-3xl md:text-4xl font-bold text-gray-900">ご購入ありがとうございます</h1>
       <p className="mt-5 text-base text-gray-700">
         {kind === 'print'
-          ? `ご注文を承りました。3DLab が印刷して、${SHIPPING_LEAD_TIME_TEXT}します。確認のメールをお送りしました。`
+          ? `ご注文を承りました。3DLab が印刷して、${SHIPPING_LEAD_TIME_TEXT}します。確認のメールをまもなくお送りします。`
           : kind === 'data'
-            ? `ご入力のメールアドレスに、データのダウンロード用リンクをお送りしました（${STORE_DOWNLOAD_VALID_DAYS}日間有効）。`
-            : 'ご入力のメールアドレスに、確認のメールをお送りしました。'}
+            ? `ご入力のメールアドレスに、データのダウンロード用リンクをまもなくお送りします（${STORE_DOWNLOAD_VALID_DAYS}日間有効）。`
+            : 'ご入力のメールアドレスに、確認のメールをまもなくお送りします。'}
       </p>
       <p className="mt-3 text-base text-gray-600">
         数分たってもメールが届かない場合は、迷惑メールフォルダをご確認のうえ、3dlab@sunu25.com までお問い合わせください。

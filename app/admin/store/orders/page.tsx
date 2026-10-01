@@ -23,6 +23,7 @@ type Order = {
   download_count: number
   download_expires_at: string | null
   tracking_number: string | null
+  data_file_name: string | null
   paid_at: string | null
   shipped_at: string | null
   created_at: string
@@ -45,6 +46,7 @@ export default function AdminStoreOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [filter, setFilter] = useState<OrderStatus | 'all'>('paid')
   const [tracking, setTracking] = useState<Record<string, string>>({})
+  const [links, setLinks] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -74,6 +76,19 @@ export default function AdminStoreOrdersPage() {
     }
     setError(null)
     await load()
+  }
+
+  async function showLink(o: Order) {
+    const { ok, body } = await adminFetch<{ url: string }>(`/api/admin/store/orders/${o.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'link' }),
+    })
+    if (!ok || !body.url) {
+      setError(body.error || 'リンクを取得できませんでした')
+      return
+    }
+    setError(null)
+    setLinks((prev) => ({ ...prev, [o.id]: body.url as string }))
   }
 
   return (
@@ -158,11 +173,9 @@ export default function AdminStoreOrdersPage() {
                     ) : (
                       <p className="text-red-700">住所が記録されていません</p>
                     )}
-                    {o.product && (
-                      <a href={`/api/admin/store/products/${o.product.id}/file`} className="mt-2 inline-block text-purple-700 underline">
-                        印刷用のデータを取り出す（{o.product.data_file_name || 'ファイル'}）
-                      </a>
-                    )}
+                    <a href={`/api/admin/store/orders/${o.id}/file`} className="mt-2 inline-block text-purple-700 underline">
+                      印刷用のデータを取り出す（{o.data_file_name || o.product?.data_file_name || 'ファイル'}）
+                    </a>
                     {o.status === 'shipped' && (
                       <p className="mt-2">
                         発送 {date(o.shipped_at)}
@@ -170,6 +183,11 @@ export default function AdminStoreOrdersPage() {
                       </p>
                     )}
                   </div>
+                )}
+                {links[o.id] && (
+                  <p className="mt-3 text-sm break-all rounded bg-blue-50 p-2">
+                    メールが届かない購入者に渡すリンク: <span className="select-all">{links[o.id]}</span>
+                  </p>
                 )}
                 {(o.status === 'paid' || o.status === 'shipped') && (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -188,6 +206,11 @@ export default function AdminStoreOrdersPage() {
                           発送済みにする
                         </button>
                       </>
+                    )}
+                    {o.kind === 'data' && o.status === 'paid' && (
+                      <button onClick={() => showLink(o)} className="px-4 py-2 rounded border border-gray-300 text-sm">
+                        ダウンロード用リンクを表示
+                      </button>
                     )}
                     <button onClick={() => act(o, 'refund')} className="px-4 py-2 rounded bg-gray-600 text-white text-sm">
                       返金済みにする

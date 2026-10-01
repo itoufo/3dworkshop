@@ -27,7 +27,9 @@ function layout(title: string, body: string): string {
 
 async function safeSend(to: string, subject: string, html: string, cc?: string[]) {
   try {
-    await sendEmail({ to, subject, html, cc })
+    // ⚠ sendEmail は失敗しても例外を投げず { success: false } を返す。見ないと失敗が跡形も残らない
+    const result = await sendEmail({ to, subject, html, cc })
+    if (!result.success) console.error('[store-notify] send failed:', subject, result.error)
   } catch (err) {
     console.error('[store-notify] send failed:', subject, err)
   }
