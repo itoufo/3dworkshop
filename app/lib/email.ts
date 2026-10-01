@@ -205,7 +205,8 @@ export function generateBookingConfirmationEmail(
   minorCount?: number | null,
   minorGrades?: string | null,
   productionNotes?: string | null,
-  companionCount?: number | null
+  companionCount?: number | null,
+  consentAgreedAt?: string | null
 ) {
   const subject = `予約確認: ${workshopTitle}`;
 
@@ -250,6 +251,7 @@ export function generateBookingConfirmationEmail(
             ${participants ? `<p><strong>人数:</strong> ${participants}名</p>` : ''}
             ${minorCount ? `<p><strong>高校生以下:</strong> ${minorCount}名${minorGrades ? `（${minorGrades}）` : ''}</p>` : ''}
             ${companionCount ? `<p><strong>同伴者（付き添い）:</strong> ${companionCount}名（無料）</p>` : ''}
+            ${consentAgreedAt ? `<p><strong>参加同意書:</strong> 同意済み</p>` : ''}
           </div>
           ${hasElementary ? `
           <div class="info-box" style="background-color: #fff8e1; border-left-color: #FFC107;">

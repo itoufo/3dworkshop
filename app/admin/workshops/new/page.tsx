@@ -8,7 +8,8 @@ import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy } from 'lucide-react'
+import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy, FileText } from 'lucide-react'
+import { DEFAULT_CONSENT_TEXT } from '@/lib/consent-default'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -53,7 +54,8 @@ export default function NewWorkshopPage() {
     collect_demographics: false,
     early_bird_enabled: false,
     early_bird_discount: '',
-    early_bird_slots: ''
+    early_bird_slots: '',
+    consent_text: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -97,7 +99,8 @@ export default function NewWorkshopPage() {
         collect_demographics: src.collect_demographics === true,
         early_bird_enabled: src.early_bird_enabled === true,
         early_bird_discount: src.early_bird_discount?.toString() || '',
-        early_bird_slots: src.early_bird_slots?.toString() || ''
+        early_bird_slots: src.early_bird_slots?.toString() || '',
+        consent_text: src.consent_text || ''
       }))
       setImageFile(null)
       setImagePreview(src.image_url || null)
@@ -212,7 +215,8 @@ export default function NewWorkshopPage() {
           collect_demographics: workshop.collect_demographics,
           early_bird_enabled: workshop.early_bird_enabled,
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
-          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null
+          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
+          consent_text: workshop.consent_text.trim() || null
         })
         .select()
         .single()
@@ -513,6 +517,24 @@ export default function NewWorkshopPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* 参加同意書 */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <FileText className="w-4 h-4 mr-1 text-gray-600" />
+                参加同意書（空欄なら既定の同意書）
+              </label>
+              <p className="text-xs text-gray-500">
+                予約フォームに表示し、同意チェックを必須にします。空欄のままなら下に薄く表示している既定の同意書を使います
+              </p>
+              <textarea
+                rows={8}
+                value={workshop.consent_text}
+                onChange={(e) => setWorkshop({ ...workshop, consent_text: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                placeholder={DEFAULT_CONSENT_TEXT}
+              />
             </div>
 
             {/* 基本情報 */}

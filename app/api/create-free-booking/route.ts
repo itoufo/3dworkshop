@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getConsentText } from '@/lib/consent-default'
 import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
 
 /**
@@ -13,7 +14,8 @@ import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { booking_id } = await request.json()
+    const body = await request.json()
+    const { booking_id } = body
 
     if (!booking_id) {
       return NextResponse.json({ error: 'Booking ID is required' }, { status: 400 })
@@ -47,6 +49,17 @@ export async function POST(request: NextRequest) {
     if ((workshop.price ?? 0) > 0) {
       return NextResponse.json({ error: 'This workshop requires payment' }, { status: 400 })
     }
+
+    // 参加同意書への同意がない予約は確定しない。
+    // ⚠ 同意の日時と本文はサーバーで書く（予約行はブラウザが作るので、そこにある値は信用しない）
+    if (body.consent !== true) {
+      // デプロイ前に開いたままのタブ（同意欄のない古い画面）から来た場合。仮予約は取り消す
+      if (booking.status === 'pending') {
+        await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
+      }
+      return NextResponse.json({ error: 'ページの表示が古いため、参加同意書への同意を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。' }, { status: 400 })
+    }
+    const consentAgreedAt = booking.consent_agreed_at || new Date().toISOString()
 
     // 二重確定を防ぐ（リトライ・二重送信時は既存の予約をそのまま返す）
     if (booking.status === 'confirmed') {
@@ -94,6 +107,8 @@ export async function POST(request: NextRequest) {
         payment_status: 'paid',
         total_amount: 0,
         discount_amount: 0,
+        consent_agreed_at: consentAgreedAt,
+        consent_text_snapshot: getConsentText(workshop),
       })
       .eq('id', booking_id)
       .select(`
@@ -131,7 +146,8 @@ export async function POST(request: NextRequest) {
         booking.minor_count,
         booking.minor_grades,
         workshop.workshop_categories?.email_production_notes,
-        booking.companion_count
+        booking.companion_count,
+        consentAgreedAt
       )
 
       const emailResult = await sendEmail({

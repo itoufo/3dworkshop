@@ -8,8 +8,9 @@ import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { FolderOpen, Calendar, Lock, Copy, Users, Ticket } from 'lucide-react'
+import { FolderOpen, Calendar, Lock, Copy, Users, Ticket, FileText } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
+import { DEFAULT_CONSENT_TEXT } from '@/lib/consent-default'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -41,7 +42,8 @@ export default function EditWorkshop() {
     collect_demographics: false,
     early_bird_enabled: false,
     early_bird_discount: '',
-    early_bird_slots: ''
+    early_bird_slots: '',
+    consent_text: ''
   })
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -89,7 +91,8 @@ export default function EditWorkshop() {
           collect_demographics: workshopData.collect_demographics === true,
           early_bird_enabled: workshopData.early_bird_enabled === true,
           early_bird_discount: workshopData.early_bird_discount?.toString() || '',
-          early_bird_slots: workshopData.early_bird_slots?.toString() || ''
+          early_bird_slots: workshopData.early_bird_slots?.toString() || '',
+          consent_text: workshopData.consent_text || ''
         })
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
@@ -180,6 +183,7 @@ export default function EditWorkshop() {
           early_bird_enabled: formData.early_bird_enabled,
           early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
+          consent_text: formData.consent_text.trim() || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -452,6 +456,24 @@ export default function EditWorkshop() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* 参加同意書 */}
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <FileText className="w-4 h-4 mr-1 text-gray-600" />
+                参加同意書（空欄なら既定の同意書）
+              </label>
+              <p className="text-xs text-gray-500">
+                予約フォームに表示し、同意チェックを必須にします。空欄のままなら下に薄く表示している既定の同意書を使います
+              </p>
+              <textarea
+                rows={8}
+                value={formData.consent_text}
+                onChange={(e) => setFormData({ ...formData, consent_text: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder={DEFAULT_CONSENT_TEXT}
+              />
             </div>
 
             <div>

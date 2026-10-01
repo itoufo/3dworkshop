@@ -11,6 +11,7 @@ import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
 import { formatPrice, isFreePrice } from '@/lib/price'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
+import { getConsentText } from '@/lib/consent-default'
 
 function todayIso(): string {
   const d = new Date()
@@ -91,6 +92,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const [appliedCoupon, setAppliedCoupon] = useState<{id: string; code: string; description?: string; discount_type: 'percentage' | 'fixed_amount'; discount_value: number} | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [agreedToConsent, setAgreedToConsent] = useState(false)
+  const consentText = useMemo(() => getConsentText(workshop), [workshop])
   // GA4: モーダル離脱計測用。開いた(add_to_cart)のに決済(begin_checkout)へ進まず閉じたら離脱。
   const checkoutStartedRef = useRef(false)
   // GA4: フォームに一度でも触れたか。「開いただけ」と「入力したが送信手前で離脱」を分離する。
@@ -310,7 +313,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (submitting) return
+    if (submitting || !agreedToConsent) return
 
     persist({
       name: booking.name,
@@ -357,7 +360,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           minor_count: booking.hasMinors ? booking.minorCount : null,
           minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null,
           // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
-          companion_count: isFamilySession ? booking.companionCount : 0
+          companion_count: isFamilySession ? booking.companionCount : 0,
         })
         .select()
         .single()
@@ -369,7 +372,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         const freeRes = await fetch('/api/create-free-booking', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ booking_id: bookingData.id }),
+          // 同意の日時と本文はサーバー側で記録する
+          body: JSON.stringify({ booking_id: bookingData.id, consent: agreedToConsent }),
         })
         const freeData = await freeRes.json()
 
@@ -405,7 +409,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           amount: workshop.price * booking.participants,
           participants: booking.participants,
           coupon_id: appliedCoupon?.id,
-          discount_amount: couponValidation.discount_amount || 0
+          discount_amount: couponValidation.discount_amount || 0,
+          consent: agreedToConsent,
         }),
       })
 
@@ -1113,13 +1118,38 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               </p>
             </div>
 
+            {/* 参加同意書 */}
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-gray-800 mb-2">参加同意書</p>
+              <div className="max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                {consentText}
+              </div>
+              <label className="mt-3 flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  required
+                  checked={agreedToConsent}
+                  onChange={(e) => setAgreedToConsent(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 text-purple-600 border-2 border-gray-400 rounded focus:ring-2 focus:ring-purple-500 cursor-pointer flex-shrink-0"
+                />
+                <span className="text-sm text-gray-700">
+                  参加同意書の内容を確認し、同意します <span className="text-red-500 font-bold">*</span>
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !agreedToConsent}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? '処理中...' : isFree ? '予約を確定する' : '決済画面へ進む'}
             </button>
+            {!agreedToConsent && !submitting && (
+              <p className="mt-2 text-center text-sm text-gray-600">
+                参加同意書の「同意します」にチェックすると進めます
+              </p>
+            )}
 
             <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
               <Shield className="w-4 h-4 mr-1" />
