@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getConsentText } from '@/lib/consent-default'
+import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +29,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
     }
 
+    // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める。
+    // ⚠ booking_id なしで呼ばれると締切を確かめられないので受け付けない
+    if (!booking_id) {
+      return NextResponse.json({ error: 'booking_id is required' }, { status: 400 })
+    }
+    const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
+    if (deadline.closed) {
+      return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
+    }
     // 参加同意書への同意がない予約は決済に進めない。
     // ⚠ 同意の日時と本文はここ（サーバー）で書く。予約行はブラウザが anon キーで作るので、
     //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうる

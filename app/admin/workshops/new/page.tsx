@@ -10,6 +10,12 @@ import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy, FileText } from 'lucide-react'
 import { DEFAULT_CONSENT_TEXT } from '@/lib/consent-default'
+import ZeroBookingCutoffField, {
+  DEFAULT_ZERO_BOOKING_CUTOFF,
+  zeroBookingCutoffFromWorkshop,
+  zeroBookingCutoffToColumns,
+  zeroBookingCutoffError,
+} from '@/components/admin/ZeroBookingCutoffField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -65,6 +71,8 @@ export default function NewWorkshopPage() {
   const [copying, setCopying] = useState(false)
   const [sourceWorkshops, setSourceWorkshops] = useState<SourceWorkshop[]>([])
   const [sourceId, setSourceId] = useState('')
+  // 予約0人のときの締切（既定は前日 24:00。コピー元があればその設定を引き継ぐ）
+  const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
 
   // 選択したイベントの内容をフォームに流し込む（日時は既に入力済みのものを保持）
   async function applySource(id: string) {
@@ -102,6 +110,7 @@ export default function NewWorkshopPage() {
         early_bird_slots: src.early_bird_slots?.toString() || '',
         consent_text: src.consent_text || ''
       }))
+      setZeroCutoff(zeroBookingCutoffFromWorkshop(src))
       setImageFile(null)
       setImagePreview(src.image_url || null)
     } finally {
@@ -157,6 +166,12 @@ export default function NewWorkshopPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 予約0人の締切が ON なのに値が不正なら保存しない（黙って OFF で保存しない）
+    const cutoffError = zeroBookingCutoffError(zeroCutoff)
+    if (cutoffError) {
+      alert(cutoffError)
+      return
+    }
 
     if (parseInt(workshop.price) < 50) {
       alert('価格は50円以上で設定してください')
@@ -216,7 +231,8 @@ export default function NewWorkshopPage() {
           early_bird_enabled: workshop.early_bird_enabled,
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
           early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
-          consent_text: workshop.consent_text.trim() || null
+          consent_text: workshop.consent_text.trim() || null,
+          ...zeroBookingCutoffToColumns(zeroCutoff)
         })
         .select()
         .single()
@@ -536,6 +552,7 @@ export default function NewWorkshopPage() {
                 placeholder={DEFAULT_CONSENT_TEXT}
               />
             </div>
+            <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
 
             {/* 基本情報 */}
             <div className="bg-purple-50 rounded-xl p-6 space-y-4">
