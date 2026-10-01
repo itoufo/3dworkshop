@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { adminJson } from '@/lib/admin-api-client'
+import { adminJson, refreshPublicPages } from '@/lib/admin-api-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { firstImageUrl } from '@/lib/media'
@@ -44,6 +44,7 @@ export default function AdminProductSeriesPage() {
       alert(res.message)
       return
     }
+    await refreshPublicPages()
     load()
   }
 

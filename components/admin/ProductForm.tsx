@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaListEditor from '@/components/admin/MediaListEditor'
-import { adminJson } from '@/lib/admin-api-client'
+import { adminJson, refreshPublicPages } from '@/lib/admin-api-client'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { imageUrlsOnly } from '@/lib/media'
 import { ArrowLeft, Save, Type, Trash2, Plus, Layers } from 'lucide-react'
@@ -136,6 +136,8 @@ export default function ProductForm({ product }: Props) {
         : await supabase.from('products').insert(payload)
 
       if (error) throw error
+      // 価格・公開状態の変更を、商品ページとシリーズのページにすぐ出す
+      await refreshPublicPages()
 
       alert(isEdit ? '商品を更新しました' : '商品を作成しました')
       setNavigating(true)

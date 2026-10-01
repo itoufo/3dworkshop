@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaListEditor from '@/components/admin/MediaListEditor'
-import { adminJson } from '@/lib/admin-api-client'
+import { adminJson, refreshPublicPages } from '@/lib/admin-api-client'
 import { SLUG_PATTERN } from '@/lib/product-series-input'
 import { ArrowLeft, Save, Layers, Plus, Trash2 } from 'lucide-react'
 import type { ProductSeries } from '@/lib/products'
@@ -68,6 +68,7 @@ export default function SeriesForm({ series }: Props) {
       alert(res.message)
       return
     }
+    await refreshPublicPages()
     const incomplete = res.data.incomplete_items ?? 0
     alert(
       (isEdit ? 'シリーズを更新しました' : 'シリーズを作成しました') +

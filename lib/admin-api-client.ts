@@ -34,3 +34,20 @@ export async function adminJson<T>(
   if (!res.ok) return { ok: false, message: body.message || `エラーが起きました（${res.status}）` }
   return { ok: true, data: body as T }
 }
+
+/**
+ * 公開ページのキャッシュ（ISR、最大1時間）をすぐ作り直す。商品・シリーズを保存した後に呼ぶ。
+ * 失敗しても保存自体は済んでいるので、画面は止めない（1時間以内には反映される）。
+ */
+export async function refreshPublicPages(): Promise<void> {
+  try {
+    const res = await fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    if (!res.ok) console.error('[admin] revalidate', res.status)
+  } catch (e) {
+    console.error('[admin] revalidate', e)
+  }
+}

@@ -35,6 +35,11 @@ export default function ProductPurchaseForm({ productId, unitPrice, stockQuantit
   const maxQuantity = stockQuantity === null ? 20 : Math.min(20, stockQuantity)
   const soldOut = stockQuantity !== null && stockQuantity <= 0
 
+  // 別の商品に切り替わったら、前の商品で出た決済エラーは消す
+  useEffect(() => {
+    setErrorMsg(null)
+  }, [productId])
+
   // シリーズのページでは、入力を保ったまま別の商品に切り替わる。数量だけ新しい上限に収める
   useEffect(() => {
     setForm((f) => (f.quantity > Math.max(1, maxQuantity) ? { ...f, quantity: Math.max(1, maxQuantity) } : f))

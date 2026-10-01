@@ -60,6 +60,8 @@ export default function SeriesPurchaseClient({
   const minPrice = lowestPrice(items)
 
   function choose(axis: string, value: string) {
+    // 選んでいる値をもう一度押しても何もしない（同じ組み合わせの別商品に移らないように）
+    if (selection[axis] === value) return
     const next = selectValue(items, axes, selection, axis, value)
     const item = findItem(items, axes, next)
     if (item) {

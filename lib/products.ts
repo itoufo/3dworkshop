@@ -99,7 +99,10 @@ export async function getSeriesBySlug(slug: string): Promise<ProductSeriesWithIt
     .order('series_sort', { ascending: true })
     .order('created_at', { ascending: true })
 
-  return { ...(series as ProductSeries), items: (items as Product[]) || [] }
+  // 項目のどれかに値が無い商品は選びようがないので出さない（項目名を変えた直後など）
+  const axes = (series as ProductSeries).option_axes ?? []
+  const complete = ((items as Product[]) || []).filter((item) => axes.every((axis) => item.variant_options?.[axis]))
+  return { ...(series as ProductSeries), items: complete }
 }
 
 /** 子商品から親シリーズの slug を引く（公開中のシリーズだけ） */
