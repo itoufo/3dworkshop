@@ -11,8 +11,8 @@ export const DEFAULT_CONSENT_TEXT = `主催：3DLab(株式会社ウォーカー�
 本イベントでは、AIを活用してオリジナルキャラクターをデザインし、3Dプリンターでフィギュアを制作する体験を行います。
 参加者および保護者の皆様には、安全で円滑なイベント運営のため、スタッフの指示に従っていただきますようお願いいたします。
 2．データ作成について
-AIは創作を支援するツールであり、生成される内容が必ずしも正確・適切であるとは限りません。また、AIの判断により、入力された内容であっても生成できない場合があります。 本イベントで制作したキャラクターデザインおよびフィギュアは、参加者個人でお楽しみいただくためのものです。
-本イベントで生成したデータ（キャラクターデザイン、3Dデータ等）は、参加者と3DLabの共同資産となります。
+AIは創作を支援するツールであり、生成される内容が必ずしも正確・適切であるとは限りません。また、AIの判断により、入力された内容であっても生成できない場合があります。
+本イベントで生成したデータ（キャラクターデザイン、3Dデータ等）は、参加者と3DLabのそれぞれが、商用利用を含めて利用できるものとします。どちらも、利用にあたって相手方の同意や対価の支払いは不要です。
 
 3．3Dプリンターについて
 イベントでは実際に3Dプリンターが稼働します。
@@ -47,9 +47,9 @@ AIは創作を支援するツールであり、生成される内容が必ずし
 ご提供いただいた個人情報は、本イベントの運営、参加者へのご連絡、お問い合わせへの対応を目的として利用し、法令に基づく場合を除き、ご本人の同意なく第三者へ提供することはありません。
 
 8．免責事項
-・イベント中は安全管理に十分配慮いたしますが、参加者ご自身または保護者の監督下における事故、けが、盗難、紛失等については、主催者に故意または重大な過失がある場合を除き、責任を負いかねます。
-・天災、災害、交通機関の遅延、機材トラブル、講師の急病、その他やむを得ない事情により、イベント内容の変更または中止となる場合があります。
-・イベント中に主催者の故意または重大な過失によらない損害が発生した場合、主催者はその責任を負いかねます。
+・イベント中は安全管理に十分配慮いたします。主催者の責めに帰すべき事由により参加者に損害が生じた場合は、主催者が賠償いたします。ただし、主催者の過失が軽過失にとどまる場合の賠償額は、お支払いいただいた参加費を上限とします。
+・参加者ご自身または保護者の監督下で生じた事故、けが、盗難、紛失等のうち、主催者の責めに帰すべき事由によらないものについては、責任を負いかねます。
+・天災、災害、交通機関の遅延、機材トラブル、講師の急病、その他やむを得ない事情により、イベント内容の変更または中止となる場合があります。主催者の判断でイベントを中止した場合は、お支払いいただいた参加費を全額返金いたします。
 
 同意について
 予約フォームで「参加同意書の内容を確認し、同意します」にチェックしてお申し込みいただくことで、本同意書の内容に同意したものとします。グループでご参加の場合、予約者（代表者）の同意をもって参加者全員が内容を確認し、同意したものとします。`
@@ -73,8 +73,8 @@ In this event, you design an original character with the help of AI and make it 
 For a safe and smooth event, we ask all participants and parents or guardians to follow the staff's instructions.
 
 2. About creating the data
-AI is a tool that supports creative work, and what it generates is not always accurate or appropriate. The AI may also be unable to generate certain content, even if you enter it. The character designs and figures made at this event are for the participants' personal enjoyment.
-The data generated at this event (character designs, 3D data, etc.) is jointly owned by the participant and 3DLab.
+AI is a tool that supports creative work, and what it generates is not always accurate or appropriate. The AI may also be unable to generate certain content, even if you enter it.
+The participant and 3DLab may each use the data generated at this event (character designs, 3D data, etc.), including for commercial purposes. Neither needs the other's consent or has to pay the other to do so.
 
 3. About the 3D printers
 3D printers will be running during the event.
@@ -109,9 +109,9 @@ If you do not want to appear in photos or videos, please tell the staff at recep
 We use the personal information you provide to run this event, to contact participants, and to respond to inquiries. Except where required by law, we will not provide it to third parties without your consent.
 
 8. Disclaimer
-・We take great care with safety during the event. However, except in cases of intent or gross negligence on the part of the organizer, the organizer is not responsible for accidents, injuries, theft, loss, or similar incidents involving participants or occurring under a parent's or guardian's supervision.
-・The event may be changed or canceled because of natural disasters, emergencies, transport delays, equipment problems, sudden illness of the instructor, or other unavoidable circumstances.
-・The organizer is not responsible for damage that occurs during the event and is not caused by the organizer's intent or gross negligence.
+・We take great care with safety during the event. If a participant suffers damage for which the organizer is responsible, the organizer will compensate for it. However, where the organizer's negligence is only slight (not gross), compensation is limited to the participation fee paid.
+・The organizer is not responsible for accidents, injuries, theft, loss, or similar incidents involving participants or occurring under a parent's or guardian's supervision that are not caused by the organizer.
+・The event may be changed or canceled because of natural disasters, emergencies, transport delays, equipment problems, sudden illness of the instructor, or other unavoidable circumstances. If the organizer decides to cancel the event, we will refund the full participation fee paid.
 
 About your agreement
 By checking "I have read and agree to the participation agreement" on the booking form and completing your booking, you agree to the contents of this agreement. For group bookings, the agreement of the person making the booking (the representative) means that all participants have read and agreed to its contents.`
