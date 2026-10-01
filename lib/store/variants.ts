@@ -32,6 +32,9 @@ export function newVariantId(): string {
 /** 項目名に使えない名前（オブジェクトの仕組みの名前と重なり、値が消える） */
 const RESERVED_AXIS_NAMES = new Set(['__proto__', 'constructor', 'prototype'])
 
+/** 改行・タブなどは名前に入れない（メールの件名・Stripe の品名にそのまま出る） */
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+
 function combinationKey(options: Record<string, string>, axes: string[]): string {
   return JSON.stringify(axes.map((a) => options[a]))
 }
@@ -94,6 +97,7 @@ export function parseVariantsInput(
     const name = typeof a === 'string' ? a.trim() : ''
     if (!name) continue
     if (RESERVED_AXIS_NAMES.has(name)) return { error: `「${name}」は項目の名前に使えません` }
+    if (CONTROL_CHARS.test(name)) return { error: '項目の名前に改行は入れられません' }
     if (name.length > VARIANT_AXIS_NAME_MAX) return { error: `選ぶ項目の名前は${VARIANT_AXIS_NAME_MAX}文字までです` }
     if (axes.includes(name)) return { error: `選ぶ項目「${name}」が重なっています` }
     axes.push(name)
@@ -103,11 +107,12 @@ export function parseVariantsInput(
   if (axes.length === 0 && axesIn.length > 0) return { error: '選ぶ項目の名前（例: サイズ）を入れてください' }
   if (axes.length === 0) return { axes: [], variants: [] }
 
-  // 保存済みの組み合わせ → id。項目の並びが同じときだけ引き継ぐ（項目を足し引きしたら別の品物）
+  // 保存済みの組み合わせ → id。値の並び（項目の順）で突き合わせるので、項目名を書き換えただけなら id は変わらない。
+  // 項目の数が変わったら別の品物として振り直す。値を書き換えた組み合わせも新しい id（カートの行は「選び直して」になる）
   const previousIds = new Map<string, string>()
-  if (JSON.stringify(previousAxes) === JSON.stringify(axes)) {
+  if (previousAxes.length === axes.length) {
     for (const v of previous) {
-      if (v && typeof v.id === 'string' && v.options) previousIds.set(combinationKey(v.options, axes), v.id)
+      if (v && typeof v.id === 'string' && v.options) previousIds.set(combinationKey(v.options, previousAxes), v.id)
     }
   }
 
@@ -126,6 +131,7 @@ export function parseVariantsInput(
       const value = typeof optsIn[axis] === 'string' ? (optsIn[axis] as string).trim() : ''
       if (!value) return { error: `組み合わせの「${axis}」が空です` }
       if (value.length > VARIANT_VALUE_MAX) return { error: `「${axis}」の値は${VARIANT_VALUE_MAX}文字までです` }
+      if (CONTROL_CHARS.test(value)) return { error: `「${axis}」の値に改行は入れられません` }
       options[axis] = value
     }
     const key = combinationKey(options, axes)

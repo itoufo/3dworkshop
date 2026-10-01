@@ -167,6 +167,11 @@ export default function ProductEditor({ initial }: { initial: EditableProduct })
 
   async function save(action: 'save' | 'submit' | 'withdraw') {
     if (inFlight.current) return
+    // 名前の無い項目の列に値を入れても保存されない。黙って捨てずに知らせる
+    if (action !== 'withdraw' && p.sell_print && p.use_variants && p.option_axes.some((a) => !a.trim())) {
+      setError('名前が空の項目があります。項目の名前を入れるか、その項目を外してください')
+      return
+    }
     inFlight.current = true
     setBusy(true)
     setError(null)
