@@ -2,7 +2,7 @@ import 'server-only'
 import type Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
-import { notifyStoreCheckoutPaid } from './notify'
+import { notifyAdminOrphanPayment, notifyStoreCheckoutPaid } from './notify'
 import { createStoreDownloadToken, STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from './orders'
 import { STORE_URL } from './urls'
 
@@ -32,8 +32,18 @@ export async function fulfillStorePayment(
     : pendingQuery.eq('id', match.orderId))
   if (pendingError) throw pendingError
   if (!pending || pending.length === 0) {
-    console.log('[store-fulfill] already processed or missing:', JSON.stringify(match))
-    return
+    // 払われたのに注文の行が1つも無いなら、決済画面を作ったあと行を入れる前に止まった。人が気づけるよう知らせる
+    const { count } = await (
+      'checkoutId' in match
+        ? supabaseAdmin.from('store_orders').select('id', { count: 'exact', head: true }).eq('checkout_id', match.checkoutId)
+        : supabaseAdmin.from('store_orders').select('id', { count: 'exact', head: true }).eq('id', match.orderId)
+    )
+    if (count === 0) {
+      console.error('[store-fulfill] paid session has no order rows:', session.id)
+      await notifyAdminOrphanPayment(session.id, session.customer_details?.email ?? null)
+      return
+    }
+    // 行は全部処理済み。メールがまだなら（前回が送る前に止まった）下で送る
   }
 
   const expiresAt = new Date(now.getTime() + STORE_DOWNLOAD_VALID_DAYS * 86400_000).toISOString()
@@ -44,9 +54,7 @@ export async function fulfillStorePayment(
         address: address as unknown as Record<string, unknown>,
       }
     : null
-  const tokens = new Map<string, string>()
-  const paidIds: string[] = []
-  for (const row of pending) {
+  for (const row of pending ?? []) {
     const token = row.kind === 'data' ? createStoreDownloadToken() : null
     const { data: updated, error } = await supabaseAdmin
       .from('store_orders')
@@ -66,18 +74,35 @@ export async function fulfillStorePayment(
     // 失敗したら投げて Stripe に再送させる。終わった行は paid なので、再送では残りの行だけを処理する
     if (error) throw error
     if (!updated || updated.length === 0) continue // 同時に届いた再送が先に処理した
-    paidIds.push(row.id)
-    if (token) tokens.set(row.id, token)
   }
-  if (paidIds.length === 0) return
+
+  // メールは決済の全行が paid になってから、1回だけ。まだ pending が残っていれば、残りを処理する再送に任せる
+  const [scopeColumn, scopeValue] = 'checkoutId' in match ? ['checkout_id', match.checkoutId] : ['id', match.orderId]
+  const { count: stillPending } = await supabaseAdmin
+    .from('store_orders')
+    .select('id', { count: 'exact', head: true })
+    .eq(scopeColumn, scopeValue)
+    .eq('status', 'pending')
+  if (stillPending) return
+
+  // 送る役を1つに決める（notified_at を条件つきで埋めた側だけが送る。同時に届いた再送は0行になる）
+  const { data: claimed, error: claimError } = await supabaseAdmin
+    .from('store_orders')
+    .update({ notified_at: now.toISOString() })
+    .eq(scopeColumn, scopeValue)
+    .is('notified_at', null)
+    .select('id')
+  if (claimError) throw claimError
+  if (!claimed || claimed.length === 0) return
 
   const { data: paid, error: readError } = await supabaseAdmin
     .from('store_orders')
     .select(
-      'id, kind, quantity, price, seller_amount, buyer_name, buyer_email, variant_label, created_at, product:store_products(title), seller:store_sellers(display_name, login_email)',
+      'id, kind, status, quantity, price, seller_amount, buyer_name, buyer_email, variant_label, download_token, created_at, product:store_products(title), seller:store_sellers(display_name, login_email)',
     )
-    .in('id', paidIds)
-  if (readError || !paid) {
+    .eq(scopeColumn, scopeValue)
+    .in('status', ['paid', 'shipped'])
+  if (readError || !paid || paid.length === 0) {
     // 支払いの記録は済んでいる。メールが出せないだけなので、管理画面で拾えるよう記録して終える
     console.error('[store-fulfill] read for email failed:', readError)
     return
@@ -104,7 +129,7 @@ export async function fulfillStorePayment(
       const seller = one(
         o.seller as { display_name: string; login_email: string | null } | { display_name: string; login_email: string | null }[] | null,
       )
-      const token = tokens.get(o.id)
+      const token = o.download_token
       return {
         kind: o.kind as 'data' | 'print',
         title: product?.title ?? '作品',

@@ -11,3 +11,8 @@ ALTER TABLE public.store_orders DROP CONSTRAINT IF EXISTS store_orders_stripe_se
 CREATE INDEX IF NOT EXISTS idx_store_orders_stripe_session ON public.store_orders(stripe_session_id);
 CREATE INDEX IF NOT EXISTS idx_store_orders_checkout ON public.store_orders(checkout_id);
 CREATE INDEX IF NOT EXISTS idx_store_orders_payment_intent ON public.store_orders(stripe_payment_intent_id);
+
+-- 支払い済みのメールを送った時刻。メールは「決済の全行が paid になったあと、1回だけ」送る。
+-- ⚠ 行ごとに paid にするので、途中で失敗した再送や、同じイベントの同時到着で、
+--   残りの行だけのメールが出ないよう、送る前にこの列を条件つきで埋めて「送る役」を1つに決める
+ALTER TABLE public.store_orders ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;

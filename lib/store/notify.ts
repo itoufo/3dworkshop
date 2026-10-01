@@ -182,3 +182,12 @@ export async function notifyStoreCheckoutPaid(c: PaidStoreCheckout) {
     await safeSend(email, `作品が売れました: ${lineName(lines[0])}${lines.length > 1 ? ` ほか${lines.length - 1}点` : ''}`, html)
   }
 }
+
+/** 払われたのに注文の行が無い決済（決済画面を作ったあと、行を入れる前に止まった）。返金か手入力が要る */
+export async function notifyAdminOrphanPayment(sessionId: string, buyerEmail: string | null) {
+  const subject = '【ストア】注文の無い支払いがありました（要確認）'
+  const html = layout('注文の無い支払いがありました', `
+  <p>Stripe で支払いが完了しましたが、ストアの注文の記録がありません。Stripe の管理画面で内容を確かめ、返金するか注文を手で記録してください。</p>
+  <p>Stripe の決済画面 ID: ${esc(sessionId)}<br>購入者のメール: ${esc(buyerEmail ?? '不明')}</p>`)
+  await safeSend(STORE_ADMIN_NOTIFY, subject, html, STORE_ADMIN_CC)
+}

@@ -55,10 +55,8 @@ export async function getPublicProducts(ids: string[]): Promise<PublicProduct[]>
     .in('id', valid)
     .eq('status', 'published')
     .eq('seller.status', 'approved')
-  if (error) {
-    console.error('[store] products', error.message)
-    return []
-  }
+  // ⚠ 読めなかったのを「販売していない」と見せない（カートで全部の行が「外してください」になる）
+  if (error) throw new Error(`[store] products: ${error.message}`)
   return (data ?? []) as unknown as PublicProduct[]
 }
 

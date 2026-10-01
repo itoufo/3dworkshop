@@ -44,11 +44,18 @@ function read(): StoreCartLine[] {
         (l) =>
           l &&
           typeof l.productId === 'string' &&
+          /^[0-9a-f-]{36}$/i.test(l.productId) &&
           (l.kind === 'data' || l.kind === 'print') &&
           (l.variantId === null || typeof l.variantId === 'string') &&
           Number.isFinite(l.quantity),
       )
-      .map((l) => ({ productId: l.productId, kind: l.kind, variantId: l.variantId, quantity: clamp(l.kind, l.quantity) }))
+      // データは組み合わせを持たない（サーバー側の明細の鍵と合わせる）
+      .map((l) => ({
+        productId: l.productId,
+        kind: l.kind,
+        variantId: l.kind === 'data' ? null : l.variantId,
+        quantity: clamp(l.kind, l.quantity),
+      }))
       .slice(0, STORE_CART_MAX_LINES)
   } catch {
     return []
@@ -67,6 +74,7 @@ function write(lines: StoreCartLine[]) {
 /** @returns 実際にカートに入っている数量と、上限で減らしたか */
 export function addToStoreCart(line: Omit<StoreCartLine, 'quantity'>, quantity: number): { quantity: number; capped: boolean } {
   const lines = read()
+  if (line.kind === 'data') line = { ...line, variantId: null }
   const existing = lines.find((l) => lineKey(l) === lineKey(line))
   const wanted = (existing?.quantity ?? 0) + quantity
   const result = clamp(line.kind, wanted)

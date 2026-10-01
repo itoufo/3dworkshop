@@ -86,11 +86,12 @@ export async function resolveCart(
 export async function publishedDataFiles(productIds: string[]): Promise<Map<string, { path: string; name: string | null }>> {
   const map = new Map<string, { path: string; name: string | null }>()
   if (!supabaseAdmin || productIds.length === 0) return map
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('store_products')
     .select('id, data_file_path, data_file_name')
     .in('id', productIds)
     .eq('status', 'published')
+  if (error) throw new Error(`[store] data files: ${error.message}`)
   for (const row of data ?? []) {
     if (row.data_file_path) map.set(row.id, { path: row.data_file_path, name: row.data_file_name })
   }
