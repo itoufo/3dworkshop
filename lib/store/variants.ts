@@ -35,8 +35,9 @@ const RESERVED_AXIS_NAMES = new Set(['__proto__', 'constructor', 'prototype'])
 /** 改行・タブなどは名前に入れない（メールの件名・Stripe の品名にそのまま出る） */
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
 
+/** 組み合わせの鍵。項目名と値の組（名前の順）で作るので、項目の並び替え・入れ替えで別の品物と取り違えない */
 function combinationKey(options: Record<string, string>, axes: string[]): string {
-  return JSON.stringify(axes.map((a) => options[a]))
+  return JSON.stringify([...axes].sort().map((a) => [a, options[a]]))
 }
 
 /** 出品者の編集画面で持つ組み合わせ。値は項目の並び順で持つ（項目名を書き換えても値がずれないように） */
@@ -107,13 +108,12 @@ export function parseVariantsInput(
   if (axes.length === 0 && axesIn.length > 0) return { error: '選ぶ項目の名前（例: サイズ）を入れてください' }
   if (axes.length === 0) return { axes: [], variants: [] }
 
-  // 保存済みの組み合わせ → id。値の並び（項目の順）で突き合わせるので、項目名を書き換えただけなら id は変わらない。
-  // 項目の数が変わったら別の品物として振り直す。値を書き換えた組み合わせも新しい id（カートの行は「選び直して」になる）
+  // 保存済みの組み合わせ → id。項目名と値が両方同じものだけ引き継ぐ。
+  // 項目名を書き換えた・値を書き換えた・項目を足し引きしたものは新しい id（カートの行は「選び直して」になる）。
+  // ⚠ 値の並び（位置）だけで突き合わせない。項目を消して足し直すと、別の組み合わせの id を引き継いでしまう
   const previousIds = new Map<string, string>()
-  if (previousAxes.length === axes.length) {
-    for (const v of previous) {
-      if (v && typeof v.id === 'string' && v.options) previousIds.set(combinationKey(v.options, previousAxes), v.id)
-    }
+  for (const v of previous) {
+    if (v && typeof v.id === 'string' && v.options) previousIds.set(combinationKey(v.options, previousAxes), v.id)
   }
 
   const variantsIn = Array.isArray(rawVariants) ? rawVariants : []
@@ -168,7 +168,11 @@ export function resolveOffer(
   kind: 'data' | 'print',
   variantId: unknown,
 ): { price: number; variantId: string | null; variantLabel: string | null } | { error: string } {
+  // ⚠ 組み合わせを指して来たのに、その作品が今は組み合わせを持たない（出品者が選択肢をやめた等）なら止める。
+  //   黙って別の値段の品物として売らない
+  const pointsAtVariant = typeof variantId === 'string' && variantId !== ''
   if (kind === 'data') {
+    if (pointsAtVariant) return { error: '選んだ組み合わせが見つかりません。ページを読み込み直してください' }
     if (!product.sell_data || product.data_price == null) return { error: 'この作品はデータでは販売していません' }
     return { price: product.data_price, variantId: null, variantLabel: null }
   }
@@ -178,6 +182,7 @@ export function resolveOffer(
     if (!variant) return { error: '選んだ組み合わせが見つかりません。ページを読み込み直してください' }
     return { price: variant.price, variantId: variant.id, variantLabel: variantName(variant, product.option_axes) }
   }
+  if (pointsAtVariant) return { error: '選んだ組み合わせが見つかりません。ページを読み込み直してください' }
   if (product.print_price == null) return { error: 'この作品は完成品では販売していません' }
   return { price: product.print_price, variantId: null, variantLabel: null }
 }
