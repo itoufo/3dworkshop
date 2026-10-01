@@ -7,7 +7,10 @@ export const metadata: Metadata = {
   title: 'よくある質問（FAQ） | 3DLab',
   description:
     '3Dプリンタ体験ワークショップ・スクール・オーダーメイド制作についてよくいただくご質問をまとめました。初心者・お子さま連れ・PCなしでの参加、使用する3Dプリンター、制作物の品質や塗装について。',
-  alternates: { canonical: 'https://3dlab.jp/faq' },
+  alternates: {
+    canonical: 'https://3dlab.jp/faq',
+    languages: { ja: '/faq', en: '/en/faq', 'x-default': '/faq' },
+  },
 }
 
 type QA = { q: string; a: string; link?: { href: string; label: string } }

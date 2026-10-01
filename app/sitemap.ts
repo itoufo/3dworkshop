@@ -17,6 +17,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1.0,
     },
+    // 英語ページ（/en）。英語版のある日本語ページと対で載せる
+    {
+      url: `${baseUrl}/en`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/en/workshops`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/en/faq`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
     {
       url: `${baseUrl}/workshops`,
       lastModified: new Date(),
@@ -117,12 +136,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ワークショップページを動的に追加
   try {
-    const { data: workshops } = await supabase
-      .from('workshops')
-      .select('id, updated_at, event_date')
-      .eq('is_service', false)
-      .eq('is_private', false)
-      .order('event_date', { ascending: false })
+    type SitemapWorkshopRow = { id: string; updated_at: string | null; event_date: string | null; show_on_english_site?: boolean }
+    const fetchWorkshops = async (columns: string) => {
+      const res = await supabase
+        .from('workshops')
+        .select(columns)
+        .eq('is_service', false)
+        .eq('is_private', false)
+        .order('event_date', { ascending: false })
+      return { data: res.data as unknown as SitemapWorkshopRow[] | null, error: res.error }
+    }
+    // ⚠ show_on_english_site の列が無い（マイグレーション未適用）とクエリごと失敗し、
+    //   catch に落ちてワークショップ・カテゴリ・ブログの URL が全部サイトマップから消える。英語の列なしで取り直す
+    const first = await fetchWorkshops('id, updated_at, event_date, show_on_english_site')
+    let workshops = first.data
+    if (first.error) {
+      console.error('sitemap: workshops with show_on_english_site failed, retrying without it:', first.error)
+      workshops = (await fetchWorkshops('id, updated_at, event_date')).data
+    }
 
     const workshopPages: MetadataRoute.Sitemap = (workshops || []).map((workshop) => ({
       url: `${baseUrl}/workshops/${workshop.id}`,
@@ -130,6 +161,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     }))
+
+    // 英語ページに載せているワークショップの英語版
+    const englishWorkshopPages: MetadataRoute.Sitemap = (workshops || [])
+      .filter((workshop) => workshop.show_on_english_site)
+      .map((workshop) => ({
+        url: `${baseUrl}/en/workshops/${workshop.id}`,
+        lastModified: workshop.updated_at ? new Date(workshop.updated_at) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
 
     // カテゴリピラーページを動的に追加
     const { data: categories } = await supabase
@@ -178,7 +219,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }))
 
-    return [...staticPages, ...workshopPages, ...categoryPages, ...blogPages, ...surveyPages]
+    return [...staticPages, ...workshopPages, ...englishWorkshopPages, ...categoryPages, ...blogPages, ...surveyPages]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return staticPages

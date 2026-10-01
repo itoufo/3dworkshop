@@ -9,7 +9,7 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy, FileText } from 'lucide-react'
-import { DEFAULT_CONSENT_TEXT } from '@/lib/consent-default'
+import { DEFAULT_CONSENT_TEXT, DEFAULT_CONSENT_TEXT_EN } from '@/lib/consent-default'
 import ZeroBookingCutoffField, {
   DEFAULT_ZERO_BOOKING_CUTOFF,
   zeroBookingCutoffFromWorkshop,
@@ -58,6 +58,10 @@ export default function NewWorkshopPage() {
     is_private: false,
     preview_password: '',
     collect_demographics: false,
+    show_on_english_site: false,
+    title_en: '',
+    description_en: '',
+    consent_text_en: '',
     early_bird_enabled: false,
     early_bird_discount: '',
     early_bird_slots: '',
@@ -105,6 +109,10 @@ export default function NewWorkshopPage() {
         is_private: src.is_private === true,
         preview_password: src.preview_password || '',
         collect_demographics: src.collect_demographics === true,
+        show_on_english_site: src.show_on_english_site === true,
+        title_en: src.title_en || '',
+        description_en: src.description_en || '',
+        consent_text_en: src.consent_text_en || '',
         early_bird_enabled: src.early_bird_enabled === true,
         early_bird_discount: src.early_bird_discount?.toString() || '',
         early_bird_slots: src.early_bird_slots?.toString() || '',
@@ -228,6 +236,10 @@ export default function NewWorkshopPage() {
           is_private: workshop.is_private,
           preview_password: workshop.preview_password.trim() || null,
           collect_demographics: workshop.collect_demographics,
+          show_on_english_site: workshop.show_on_english_site,
+          title_en: workshop.title_en.trim() || null,
+          description_en: workshop.description_en.trim() || null,
+          consent_text_en: workshop.consent_text_en.trim() || null,
           early_bird_enabled: workshop.early_bird_enabled,
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
           early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
@@ -474,6 +486,57 @@ export default function NewWorkshopPage() {
                   />
                 </button>
               </div>
+            </div>
+
+            {/* 英語ページ（/en）に載せる */}
+            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={workshop.show_on_english_site}
+                  onChange={(e) => setWorkshop({ ...workshop, show_on_english_site: e.target.checked })}
+                  className="mt-1 w-5 h-5 text-indigo-600 rounded"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-700">英語ページ（/en）に載せる</span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    英語で案内できるワークショップだけオンにします。英語ページには下の英語欄の文言を出します（空欄の欄は日本語のまま出ます）。日本語ページの文言は変わりません
+                  </span>
+                </span>
+              </label>
+              {workshop.show_on_english_site && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語タイトル</label>
+                    <input
+                      type="text"
+                      value={workshop.title_en}
+                      onChange={(e) => setWorkshop({ ...workshop, title_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+                      placeholder="Create Your Own 3D Figure with AI"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の説明</label>
+                    <textarea
+                      rows={4}
+                      value={workshop.description_en}
+                      onChange={(e) => setWorkshop({ ...workshop, description_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">英語の参加同意書（空欄なら既定の英語の同意書）</label>
+                    <textarea
+                      rows={6}
+                      value={workshop.consent_text_en}
+                      onChange={(e) => setWorkshop({ ...workshop, consent_text_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+                      placeholder={DEFAULT_CONSENT_TEXT_EN}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 早割チケット設定 */}

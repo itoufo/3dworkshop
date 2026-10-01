@@ -16,6 +16,8 @@ export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'ワークショップカテゴリ一覧 | 3DLab 東京・湯島',
   description: '3DLabで開催中のワークショップをカテゴリ別に一覧表示。親子向け、フィギュア制作、経営者向けNFC、オンラインなど、目的に合ったワークショップを見つけられます。',
+  // ⚠ 自分で指定しないと app/workshops/layout.tsx の alternates（canonical: /workshops と英語版 /en/workshops）を引き継ぐ
+  alternates: { canonical: '/workshops/categories' },
   openGraph: {
     title: 'ワークショップカテゴリ一覧 | 3DLab',
     description: '3DLabのワークショップをカテゴリ別に探せます。',

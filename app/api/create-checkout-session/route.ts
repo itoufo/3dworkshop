@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getConsentText } from '@/lib/consent-default'
+import { getConsentTextFor } from '@/lib/consent-default'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
+import { toLocale } from '@/lib/i18n'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { workshop_id, booking_id, customer_email, participants, coupon_id, discount_amount } = body
+    // 英語ページ（/en）からの予約は、決済後・キャンセル時も英語ページへ戻す。値は 'ja' | 'en' に丸める
+    const localePrefix = toLocale(body.locale) === 'en' ? '/en' : ''
 
     // リクエストから現在のホストを取得
     const host = request.headers.get('host')
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
     await supabaseAdmin
       .from('bookings')
-      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentText(workshop) })
+      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)) })
       .eq('id', booking_id)
 
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
@@ -94,6 +97,8 @@ export async function POST(request: NextRequest) {
     // Stripe Checkout セッションを作成
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
+      // 決済画面の表示言語。英語ページからは英語、それ以外は Stripe の自動判定（従来どおり）
+      ...(localePrefix ? { locale: 'en' as const } : {}),
       line_items: [
         {
           price_data: {
@@ -112,8 +117,8 @@ export async function POST(request: NextRequest) {
       // 30分で失効させ、未決済のまま席が押さえられ続けるのを防ぐ。
       // 失効時は checkout.session.expired Webhook で予約をキャンセルする。
       expires_at: checkoutExpiresAt(),
-      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/workshops/${workshop_id}`,
+      success_url: `${baseUrl}${localePrefix}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}${localePrefix}/workshops/${workshop_id}`,
       metadata: {
         booking_id: booking_id,
         workshop_id: workshop_id,

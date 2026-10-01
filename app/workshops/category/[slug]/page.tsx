@@ -69,6 +69,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${category.name} | 3DLab 東京・湯島`,
     description: category.description || `${category.name}のワークショップ。東京・湯島の3Dプリンタ教室3DLabで開催。初心者歓迎。`,
+    // ⚠ 自分で指定しないと app/workshops/layout.tsx の alternates（canonical: /workshops と英語版 /en/workshops）を引き継ぐ。
+    //   ワークショップ詳細はこのページを canonical にしているので、ここは自分自身を canonical にする
+    alternates: { canonical: `/workshops/category/${slug}` },
     openGraph: {
       title: `${category.name} | 3DLab`,
       description: category.description || `${category.name}のワークショップ`,

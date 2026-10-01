@@ -115,6 +115,18 @@ export function formatCutoffJst(d: Date): string {
   return `${jst.getUTCMonth() + 1}月${jst.getUTCDate()}日 ${h}:${String(m).padStart(2, '0')}`
 }
 
+/** 英語ページ用の締切表記（例: 'Oct 9, 23:59'）。0:00 は前日の 23:59 と書く（"24:00" は英語では伝わりにくい） */
+export function formatCutoffJstEn(d: Date): string {
+  const jst = new Date(d.getTime() + JST_OFFSET_MS - (isMidnight(d) ? 60 * 1000 : 0))
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return `${months[jst.getUTCMonth()]} ${jst.getUTCDate()}, ${jst.getUTCHours()}:${String(jst.getUTCMinutes()).padStart(2, '0')}`
+}
+
+function isMidnight(d: Date): boolean {
+  const jst = new Date(d.getTime() + JST_OFFSET_MS)
+  return jst.getUTCHours() === 0 && jst.getUTCMinutes() === 0
+}
+
 export const CLOSE_REASON_LABEL: Record<CloseReason, string> = {
   started: '開始時刻を過ぎたため受付を終了しました',
   zero_booking_cutoff: '受付期間が終了しました',

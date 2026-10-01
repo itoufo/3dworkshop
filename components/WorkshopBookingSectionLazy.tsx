@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import type { Workshop } from '@/types'
+import type { Locale } from '@/lib/i18n'
 
 const WorkshopBookingSection = dynamic(() => import('./WorkshopBookingSection'), {
   ssr: false,
@@ -12,6 +13,7 @@ interface Props {
   workshop: Workshop
   relatedWorkshops: Workshop[]
   isPastWorkshop: boolean
+  locale?: Locale
 }
 
 export default function WorkshopBookingSectionLazy(props: Props) {

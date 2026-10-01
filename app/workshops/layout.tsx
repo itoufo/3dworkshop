@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   keywords: "3Dプリンタ ワークショップ,3Dプリンティング 体験,湯島,東京,3D教室,体験会,3Dモデリング,初心者,子ども向け",
   alternates: {
     canonical: '/workshops',
+    languages: { ja: '/workshops', en: '/en/workshops', 'x-default': '/workshops' },
   },
   openGraph: {
     title: "ワークショップ一覧 | 3Dプリンタ体験 東京・湯島 | 3DLab",

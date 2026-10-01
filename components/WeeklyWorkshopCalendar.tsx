@@ -1,5 +1,6 @@
 import { CalendarDays } from 'lucide-react'
-import { getAllWorkshops } from '@/lib/workshops'
+import { getAllWorkshops, getEnglishWorkshops } from '@/lib/workshops'
+import type { Locale } from '@/lib/i18n'
 import { jstToday } from '@/lib/booking-deadline'
 import WeeklyCalendarClient, { type CalendarEntry } from '@/components/WeeklyCalendarClient'
 
@@ -13,8 +14,15 @@ const MAX_WEEKS = 8
  * ⚠ ページは1時間キャッシュされるので、サーバーで決めた「今日」は最大1時間古い。
  *   日付をまたいだ直後に昨日の回が残らないよう、表示側でもう一度今日を取り直す
  */
-export default async function WeeklyWorkshopCalendar({ headingLevel = 'h2' }: { headingLevel?: 'h2' | 'h3' }) {
-  const workshops = await getAllWorkshops()
+export default async function WeeklyWorkshopCalendar({
+  headingLevel = 'h2',
+  locale = 'ja',
+}: {
+  headingLevel?: 'h2' | 'h3'
+  /** 'en' のときは英語ページ用（英語ページに載せるワークショップだけ・英語表記・/en へのリンク） */
+  locale?: Locale
+}) {
+  const workshops = locale === 'en' ? await getEnglishWorkshops() : await getAllWorkshops()
   const today = jstToday()
 
   const entries: CalendarEntry[] = workshops
@@ -42,10 +50,10 @@ export default async function WeeklyWorkshopCalendar({ headingLevel = 'h2' }: { 
         <div className="flex items-center gap-3 mb-6">
           <CalendarDays className="w-7 h-7 text-purple-600" aria-hidden />
           <Heading id="weekly-calendar-heading" className="text-3xl md:text-4xl font-bold text-gray-900">
-            1週間の開催スケジュール
+            {locale === 'en' ? 'Schedule for the week' : '1週間の開催スケジュール'}
           </Heading>
         </div>
-        <WeeklyCalendarClient entries={entries} serverToday={today} maxWeeks={MAX_WEEKS} />
+        <WeeklyCalendarClient entries={entries} serverToday={today} maxWeeks={MAX_WEEKS} locale={locale} />
       </div>
     </section>
   )

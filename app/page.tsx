@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
@@ -11,6 +12,14 @@ import { Sparkles, Box, Printer, Users, ArrowRight, Rocket, Package, MessageCirc
 
 // 特別WSバナーの掲載元(ピン留めWS)を反映するため ISR（1時間）
 export const revalidate = 3600
+
+// 英語版（/en）との対応。⚠ ルートレイアウトの alternates を上書きするので canonical もここに書く
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+    languages: { ja: '/', en: '/en', 'x-default': '/' },
+  },
+}
 
 export default function HomePage() {
   return (
