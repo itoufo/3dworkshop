@@ -4,6 +4,7 @@ import Footer from '@/components/Footer'
 import { Sparkles } from 'lucide-react'
 import { getAllWorkshops, getWorkshopCategories } from '@/lib/workshops'
 import WorkshopListClient from '@/components/WorkshopListClient'
+import WeeklyWorkshopCalendar from '@/components/WeeklyWorkshopCalendar'
 
 // ISR: cache for 1 hour
 export const revalidate = 3600
@@ -77,6 +78,9 @@ export default async function WorkshopsPage() {
           </div>
         </div>
       </section>
+
+      {/* 1週間の開催スケジュール（日ごと・時刻順） */}
+      <WeeklyWorkshopCalendar />
 
       {/* Workshop List (Client Component for filtering/pagination) */}
       <WorkshopListClient workshops={workshops} categories={categories} />
