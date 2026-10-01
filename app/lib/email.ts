@@ -821,7 +821,7 @@ export function generateProductCartConfirmationEmail(input: {
   const first = input.items[0]?.productName ?? '商品';
   const subject =
     input.items.length > 1
-      ? `【3DLab】ご注文ありがとうございます (${first} ほか${input.items.length - 1}点)`
+      ? `【3DLab】ご注文ありがとうございます (${first} ほか${input.items.length - 1}種類)`
       : `【3DLab】ご注文ありがとうございます (${first})`;
 
   const addressHtml = (input.shippingAddressLines ?? []).filter(Boolean).map(esc).join('<br>');

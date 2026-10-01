@@ -50,16 +50,30 @@ function clampQuantity(q: number): number {
   return Math.max(1, Math.min(MAX_LINE_QUANTITY, Math.floor(q) || 1))
 }
 
-export function addToCart(productId: string, quantity: number) {
+/**
+ * @param maxQuantity その商品をカートに入れておける上限（在庫数）。受注製作なら省略
+ * @returns 実際にカートに入っている数量と、上限で減らしたか
+ */
+export function addToCart(
+  productId: string,
+  quantity: number,
+  maxQuantity?: number,
+): { quantity: number; capped: boolean } {
   const lines = read()
+  const cap = (q: number) => Math.min(clampQuantity(q), maxQuantity ?? MAX_LINE_QUANTITY)
   const existing = lines.find((l) => l.productId === productId)
+  const wanted = (existing?.quantity ?? 0) + quantity
+  let result: number
   if (existing) {
-    existing.quantity = clampQuantity(existing.quantity + quantity)
+    existing.quantity = cap(wanted)
+    result = existing.quantity
   } else {
     if (lines.length >= MAX_LINES) throw new Error(`カートに入れられるのは ${MAX_LINES} 種類までです`)
-    lines.push({ productId, quantity: clampQuantity(quantity) })
+    result = cap(wanted)
+    lines.push({ productId, quantity: result })
   }
   write(lines)
+  return { quantity: result, capped: result < wanted }
 }
 
 export function setCartQuantity(productId: string, quantity: number) {
@@ -70,8 +84,37 @@ export function removeFromCart(productId: string) {
   write(read().filter((l) => l.productId !== productId))
 }
 
-export function clearCart() {
-  write([])
+const PENDING_KEY = '3dlab-cart-checkout'
+
+/** 決済に進む直前に、送った商品と数量を覚えておく（決済完了でその分だけ引くため） */
+export function rememberCheckout(lines: CartLine[]) {
+  try {
+    window.localStorage.setItem(PENDING_KEY, JSON.stringify(lines))
+  } catch {
+    // 覚えられなければ、決済完了でカートには触らない
+  }
+}
+
+/**
+ * 決済が終わったら、決済に送った分だけをカートから引く。
+ * ⚠ カートを丸ごと空にしない。決済画面にいる間に別のタブで入れた商品まで消えてしまう
+ */
+export function settleCheckout() {
+  let paid: CartLine[] = []
+  try {
+    paid = JSON.parse(window.localStorage.getItem(PENDING_KEY) || '[]')
+    window.localStorage.removeItem(PENDING_KEY)
+  } catch {
+    return
+  }
+  if (!Array.isArray(paid) || paid.length === 0) return
+  const next = read()
+    .map((l) => {
+      const p = paid.find((x) => x.productId === l.productId)
+      return p ? { ...l, quantity: l.quantity - p.quantity } : l
+    })
+    .filter((l) => l.quantity > 0)
+  write(next)
 }
 
 /** カートの中身。変わると再描画される（同じタブ・別タブとも） */

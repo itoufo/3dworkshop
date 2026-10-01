@@ -234,7 +234,6 @@ export async function POST(request: NextRequest) {
               product:products(*),
               customer:customers(*)
             `)
-            .order('created_at', { ascending: true })
 
           if (ordersError) {
             console.error('Error updating product cart orders:', ordersError)
@@ -244,6 +243,8 @@ export async function POST(request: NextRequest) {
             // 再送（もう処理済み）か、行が見つからない
             return NextResponse.json({ received: true })
           }
+          // カートに入れた順（作った順）に並べる。更新の結果の並びは保証されないのでここで並べる
+          orders.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
 
           // 在庫管理をしている商品 (stock_quantity が null でない) だけ数量を引く
           for (const order of orders) {

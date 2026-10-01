@@ -168,19 +168,26 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      customer_email: email,
-      locale: 'ja',
-      // 物販なのでお届け先を Stripe 側で受け取る（日本国内のみ）
-      shipping_address_collection: { allowed_countries: ['JP'] },
-      phone_number_collection: { enabled: true },
-      success_url: `${baseUrl}/products/success?checkout_id=${checkoutId}`,
-      cancel_url: `${baseUrl}/cart`,
-      metadata: { type: 'product_cart', checkout_id: checkoutId },
-    })
+    let session
+    try {
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        customer_email: email,
+        locale: 'ja',
+        // 物販なのでお届け先を Stripe 側で受け取る（日本国内のみ）
+        shipping_address_collection: { allowed_countries: ['JP'] },
+        phone_number_collection: { enabled: true },
+        success_url: `${baseUrl}/products/success?checkout_id=${checkoutId}`,
+        cancel_url: `${baseUrl}/cart`,
+        metadata: { type: 'product_cart', checkout_id: checkoutId },
+      })
+    } catch (stripeErr) {
+      // 決済画面を作れなかった注文は、支払い待ちのまま残さない
+      await supabaseAdmin.from('product_orders').delete().eq('checkout_id', checkoutId).eq('payment_status', 'pending')
+      throw stripeErr
+    }
 
     await supabaseAdmin.from('product_orders').update({ stripe_session_id: session.id }).eq('checkout_id', checkoutId)
 

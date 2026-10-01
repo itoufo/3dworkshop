@@ -128,6 +128,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               },
             ]}
             shareUrl={`${SITE_URL}/products/${product.id}`}
+            purchasable={product.category === 'product'}
           />
           <div className="max-w-4xl mx-auto">
             <MediaCoverage />

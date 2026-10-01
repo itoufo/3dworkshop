@@ -31,28 +31,45 @@ interface Props {
   /** 買える商品。単品なら1件 */
   items: DetailItem[]
   shareUrl: string
+  /** カートで買える商品か（物販 category='product' だけ。ほかの種類はお問い合わせ） */
+  purchasable?: boolean
 }
 
-/** 説明文を「段落・箇条書き（・）・注記（※）」に分ける */
-function splitDescription(text: string | null) {
-  const paragraphs: string[] = []
-  const bullets: string[] = []
-  const notes: string[] = []
+type Block = { kind: 'p' | 'note'; text: string } | { kind: 'ul'; items: string[] }
+
+/**
+ * 説明文を、書かれた順のまま「段落・箇条書き（連続する ・ の行）・注記（※）」の塊に分ける。
+ * ⚠ 種類ごとに集め直さない。段落と箇条書きが交互に並ぶ説明の順番が変わってしまう
+ */
+function splitDescription(text: string | null): Block[] {
+  const blocks: Block[] = []
   for (const raw of (text ?? '').split('\n')) {
     const line = raw.trim()
     if (!line) continue
-    if (line.startsWith('・')) bullets.push(line.slice(1).trim())
-    else if (line.startsWith('※')) notes.push(line)
-    else paragraphs.push(line)
+    if (line.startsWith('・')) {
+      const last = blocks[blocks.length - 1]
+      if (last && last.kind === 'ul') last.items.push(line.slice(1).trim())
+      else blocks.push({ kind: 'ul', items: [line.slice(1).trim()] })
+    } else {
+      blocks.push({ kind: line.startsWith('※') ? 'note' : 'p', text: line })
+    }
   }
-  return { paragraphs, bullets, notes }
+  return blocks
 }
 
 /**
  * 商品ページの本体（Amazon 型の3列: 写真 / 商品情報 / 購入ボックス）。単品とシリーズで共通。
  * シリーズでは項目（動物・サイズなど）を選ぶと子商品が決まり、価格・写真・仕様・購入ボックスが切り替わる。
  */
-export default function ProductDetailClient({ title, description, sharedMedia, axes, items, shareUrl }: Props) {
+export default function ProductDetailClient({
+  title,
+  description,
+  sharedMedia,
+  axes,
+  items,
+  shareUrl,
+  purchasable = true,
+}: Props) {
   // ⚠ 選んでいる商品は id で持つ。組み合わせから逆引きすると、同じ組み合わせの商品が2つあるときや
   //   項目名を変えて値が古いままのときに、?v= で指した商品とは別の（値段も違う）商品を売ってしまう
   const [currentId, setCurrentId] = useState<string | null>(items[0]?.id ?? null)
@@ -78,7 +95,7 @@ export default function ProductDetailClient({ title, description, sharedMedia, a
 
   const values = useMemo(() => axisValues(items, axes), [items, axes])
   const minPrice = lowestPrice(items)
-  const { paragraphs, bullets, notes } = useMemo(() => splitDescription(description), [description])
+  const blocks = useMemo(() => splitDescription(description), [description])
 
   function choose(axis: string, value: string) {
     // 選んでいる値をもう一度押しても何もしない（同じ組み合わせの別商品に移らないように）
@@ -106,13 +123,20 @@ export default function ProductDetailClient({ title, description, sharedMedia, a
       ? `¥${minPrice.toLocaleString()}〜`
       : '—'
 
-  const buyBox = (
+  const buyBox = purchasable ? (
     <ProductBuyBox
       productId={current?.id ?? null}
       productName={current?.name ?? null}
       price={current?.base_price ?? null}
       stockQuantity={current?.stock_quantity ?? null}
     />
+  ) : (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-base text-gray-700">
+      この商品はオンラインではご購入いただけません。
+      <a href="mailto:3dlab@sunu25.com" className="block mt-2 text-purple-700 font-medium underline underline-offset-2">
+        3dlab@sunu25.com へお問い合わせください
+      </a>
+    </div>
   )
 
   return (
@@ -182,26 +206,22 @@ export default function ProductDetailClient({ title, description, sharedMedia, a
         {/* スマホでは選んだすぐ下に購入ボックス（PC は右の列） */}
         <div className="mt-5 lg:hidden">{buyBox}</div>
 
-        {(paragraphs.length > 0 || bullets.length > 0) && (
+        {blocks.length > 0 && (
           <div className="mt-6">
             <h2 className="text-lg font-bold text-gray-900 mb-2">この商品について</h2>
-            {paragraphs.map((p, i) => (
-              <p key={i} className="text-base text-gray-700 mb-2">
-                {p}
-              </p>
-            ))}
-            {bullets.length > 0 && (
-              <ul className="list-disc pl-5 space-y-1 text-base text-gray-700">
-                {bullets.map((b, i) => (
-                  <li key={i}>{b}</li>
-                ))}
-              </ul>
+            {blocks.map((block, i) =>
+              block.kind === 'ul' ? (
+                <ul key={i} className="list-disc pl-5 space-y-1 text-base text-gray-700 mb-2">
+                  {block.items.map((item, j) => (
+                    <li key={j}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={i} className={block.kind === 'note' ? 'mt-2 text-sm text-gray-500' : 'text-base text-gray-700 mb-2'}>
+                  {block.text}
+                </p>
+              )
             )}
-            {notes.map((n, i) => (
-              <p key={i} className="mt-2 text-sm text-gray-500">
-                {n}
-              </p>
-            ))}
           </div>
         )}
 

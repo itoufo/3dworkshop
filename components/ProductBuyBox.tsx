@@ -39,8 +39,10 @@ export default function ProductBuyBox({ productId, productName, price, stockQuan
   function add(): boolean {
     if (!productId) return false
     try {
-      addToCart(productId, quantity)
-      setError(null)
+      const inCart = addToCart(productId, quantity, stockQuantity === null ? undefined : maxQuantity)
+      setError(
+        inCart.capped ? `在庫が残り ${maxQuantity} 点のため、カートには ${inCart.quantity} 点まで入れています` : null
+      )
       return true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'カートに入れられませんでした')

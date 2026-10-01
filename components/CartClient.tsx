@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { useCart, setCartQuantity, removeFromCart, MAX_LINE_QUANTITY } from '@/lib/cart'
+import { useCart, setCartQuantity, removeFromCart, rememberCheckout, MAX_LINE_QUANTITY } from '@/lib/cart'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { optimizeImageUrl } from '@/lib/image-optimization'
@@ -30,6 +30,9 @@ export default function CartClient() {
   const { lines, ready } = useCart()
   const [products, setProducts] = useState<Record<string, CartProduct>>({})
   const [loaded, setLoaded] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  /** どの商品の組み合わせまで読み込み済みか。カートに入れたばかりの商品を「販売していません」と見せないため */
+  const [fetchedIds, setFetchedIds] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [problemId, setProblemId] = useState<string | null>(null)
@@ -55,20 +58,40 @@ export default function CartClient() {
       .from('products')
       .select('id, name, base_price, media_urls, stock_quantity, is_active, category')
       .in('id', ids.split(','))
-      .then(({ data }) => {
-        setProducts(Object.fromEntries(((data as CartProduct[]) ?? []).map((p) => [p.id, p])))
+      .then(({ data, error }) => {
+        if (error) {
+          // 読めなかったのを「販売していません」と見せない
+          setLoadError('商品情報を読み込めませんでした。ページを開き直してください。')
+        } else {
+          setLoadError(null)
+          setProducts(Object.fromEntries(((data as CartProduct[]) ?? []).map((p) => [p.id, p])))
+        }
+        setFetchedIds(ids)
         setLoaded(true)
       })
   }, [ids, ready])
 
+  // 在庫を超えて入っている数量は在庫の数に合わせる（数量の欄では同じ値を選び直せないため）
+  useEffect(() => {
+    for (const line of lines) {
+      const stock = products[line.productId]?.stock_quantity
+      if (stock !== null && stock !== undefined && stock > 0 && line.quantity > stock) {
+        setCartQuantity(line.productId, stock)
+      }
+    }
+  }, [lines, products])
+
   const rows = lines.map((line) => {
     const product = products[line.productId]
-    const unavailable = !product || !product.is_active || product.category !== 'product'
+    // まだ読み込んでいない（いま入れたばかりの）商品を「販売していません」と見せない
+    const loading = !product && fetchedIds !== ids
+    const unavailable = !loading && (!product || !product.is_active || product.category !== 'product')
     const soldOut = product?.stock_quantity !== null && product?.stock_quantity !== undefined && product.stock_quantity < line.quantity
-    return { line, product, unavailable, soldOut }
+    return { line, product, unavailable, soldOut, loading }
   })
-  const buyable = rows.filter((r) => !r.unavailable && !r.soldOut)
+  const buyable = rows.filter((r) => !r.loading && !r.unavailable && !r.soldOut)
   const blocked = rows.some((r) => r.unavailable || r.soldOut)
+  const anyLoading = rows.some((r) => r.loading)
   const subtotal = buyable.reduce((sum, r) => sum + r.product!.base_price * r.line.quantity, 0)
   const itemCount = buyable.reduce((sum, r) => sum + r.line.quantity, 0)
   const total = subtotal + (buyable.length > 0 ? SHIPPING_FEE : 0)
@@ -79,13 +102,14 @@ export default function CartClient() {
     setProblemId(null)
     persist({ name: form.name, email: form.email, phone: form.phone })
     setSubmitting(true)
+    const submitted = buyable.map((r) => ({ productId: r.line.productId, quantity: r.line.quantity }))
     try {
       const res = await fetch('/api/cart/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          items: buyable.map((r) => ({ productId: r.line.productId, quantity: r.line.quantity })),
+          items: submitted,
         }),
       })
       const data = await res.json()
@@ -95,6 +119,7 @@ export default function CartClient() {
         setSubmitting(false)
         return
       }
+      rememberCheckout(submitted)
       window.location.href = data.url
     } catch {
       setErrorMsg('通信エラーが発生しました。時間をおいて再度お試しください。')
@@ -129,7 +154,7 @@ export default function CartClient() {
       <section className="lg:col-span-8 bg-white rounded-2xl shadow-sm p-5 sm:p-6">
         <h1 className="text-2xl font-bold text-gray-900 pb-4 border-b border-gray-200">ショッピングカート</h1>
         <ul className="divide-y divide-gray-100">
-          {rows.map(({ line, product, unavailable, soldOut }) => {
+          {rows.map(({ line, product, unavailable, soldOut, loading }) => {
             const image = firstImageUrl(product?.media_urls)
             const max = product?.stock_quantity == null ? MAX_LINE_QUANTITY : Math.max(1, Math.min(MAX_LINE_QUANTITY, product.stock_quantity))
             return (
@@ -149,9 +174,11 @@ export default function CartClient() {
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link href={`/products/${line.productId}`} className="text-base font-medium text-gray-900 hover:text-purple-700">
-                    {product?.name ?? 'この商品は表示できません'}
+                    {product?.name ?? (loading ? '…' : 'この商品は表示できません')}
                   </Link>
-                  {unavailable ? (
+                  {loading ? (
+                    <p className="text-base text-gray-500 mt-1">読み込んでいます...</p>
+                  ) : unavailable ? (
                     <p className="text-base text-red-600 mt-1">現在は販売していません。カートから外してください。</p>
                   ) : soldOut ? (
                     <p className="text-base text-red-600 mt-1">
@@ -277,6 +304,7 @@ export default function CartClient() {
             fromAccount={fromAccount}
           />
 
+          {loadError && <p className="text-base text-red-600">{loadError}</p>}
           {blocked && (
             <p className="text-base text-red-600">販売していない・在庫が足りない商品があります。カートから外すと、残りの商品で進めます。</p>
           )}
@@ -284,7 +312,7 @@ export default function CartClient() {
 
           <button
             type="submit"
-            disabled={submitting || buyable.length === 0 || blocked}
+            disabled={submitting || buyable.length === 0 || blocked || anyLoading || Boolean(loadError)}
             className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors disabled:opacity-50"
           >
             {submitting ? '決済画面へ移動しています...' : 'レジに進む（お支払いへ）'}

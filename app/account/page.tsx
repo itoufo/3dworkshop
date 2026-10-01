@@ -43,6 +43,8 @@ export default async function AccountPage({
       .from('product_orders')
       .select('id, quantity, total_amount, status, payment_status, created_at, product:products(name)')
       .eq('customer_id', customer.id)
+      // 決済画面で戻った・閉じた注文（支払い待ちのまま残る行）は出さない
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: false }),
     supabaseAdmin!
       .from('bookings')
