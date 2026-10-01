@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { verifyMiraiidToken } from '@/lib/store/miraiid'
+import { isSameOriginJson } from '@/lib/store/request'
 import { issueStoreSession, STORE_SESSION_COOKIE, storeSessionCookieOptions } from '@/lib/store/session'
 
 /**
@@ -18,19 +19,6 @@ import { issueStoreSession, STORE_SESSION_COOKIE, storeSessionCookieOptions } fr
  *   トークンを被害者のブラウザに送らせ、被害者を攻撃者のアカウントでログインさせられる。
  *   その後に被害者が入れた振込先やデータが攻撃者のアカウントに入る。
  */
-
-/** 同じホストのページから fetch された JSON だけを通す */
-function isSameOriginJson(request: NextRequest): boolean {
-  if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) return false
-  const origin = request.headers.get('origin')
-  const host = request.headers.get('host')
-  if (!origin || !host) return false
-  try {
-    return new URL(origin).host === host
-  } catch {
-    return false
-  }
-}
 
 /**
  * メールアドレスを大文字小文字を区別せずに探すための ilike のパターン。
