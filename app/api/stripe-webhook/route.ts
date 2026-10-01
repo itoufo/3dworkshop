@@ -7,9 +7,7 @@ import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { fulfillCutterOrder } from '@/lib/cookie-cutter/server'
 import { DOWNLOAD_VALID_DAYS } from '@/lib/cookie-cutter/pricing'
 import { siteUrl } from '@/lib/site-url'
-import { createStoreDownloadToken, STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/orders'
-import { notifyStoreOrderPaid } from '@/lib/store/notify'
-import { STORE_URL } from '@/lib/store/urls'
+import { fulfillStorePayment } from '@/lib/store/fulfill'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
@@ -394,106 +392,17 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ received: true })
         }
 
-        // stores.3dlab.jp（出品マーケット）の購入
-        if (type === 'store_order') {
+        // stores.3dlab.jp（出品マーケット）の購入。
+        //   store_cart  … カート（作品ページの「今すぐ購入」も1点のカート）。checkout_id で行を束ねる
+        //   store_order … カート導入前の1点決済。導入前に作られた決済画面（30分で失効）の分だけ残す
+        if (type === 'store_cart' || type === 'store_order') {
+          const checkoutId = session.metadata?.checkout_id
           const orderId = session.metadata?.order_id
-          if (!orderId) {
-            console.error('Store order: order_id not in metadata')
+          if (type === 'store_cart' ? !checkoutId : !orderId) {
+            console.error('Store payment: id not in metadata', type)
             return NextResponse.json({ received: true })
           }
-          if (!supabaseAdmin) {
-            throw new Error('Supabase admin client not available')
-          }
-
-          const collected = session.collected_information?.shipping_details
-          const address = collected?.address
-          const shippingLines = address
-            ? [
-                collected?.name || '',
-                address.postal_code ? `〒${address.postal_code}` : '',
-                `${address.state || ''}${address.city || ''}${address.line1 || ''}`,
-                address.line2 || '',
-                session.customer_details?.phone ? `電話 ${session.customer_details.phone}` : '',
-              ].filter(Boolean)
-            : []
-
-          // 種類は注文の行から読む（metadata の書き損じで印刷の注文に合言葉を出したりしない）
-          const { data: pendingOrder } = await supabaseAdmin
-            .from('store_orders')
-            .select('kind')
-            .eq('id', orderId)
-            .maybeSingle()
-          if (!pendingOrder) {
-            console.error('Store order not found:', orderId)
-            return NextResponse.json({ received: true })
-          }
-          const kind = pendingOrder.kind as 'data' | 'print'
-          const downloadToken = kind === 'data' ? createStoreDownloadToken() : null
-          const now = new Date()
-
-          // ⚠ pending のものだけを paid にする。Stripe は同じイベントを再送するので、
-          //   2回目以降は0行になり、メールも合言葉も二重に出ない
-          const { data: updated, error: orderError } = await supabaseAdmin
-            .from('store_orders')
-            .update({
-              status: 'paid',
-              paid_at: now.toISOString(),
-              updated_at: now.toISOString(),
-              stripe_session_id: session.id,
-              stripe_payment_intent_id: (session.payment_intent as string) || null,
-              shipping: address
-                ? {
-                    name: collected?.name || null,
-                    phone: session.customer_details?.phone || null,
-                    address: address as unknown as Record<string, unknown>,
-                  }
-                : null,
-              ...(downloadToken
-                ? {
-                    download_token: downloadToken,
-                    download_expires_at: new Date(now.getTime() + STORE_DOWNLOAD_VALID_DAYS * 86400_000).toISOString(),
-                  }
-                : {}),
-            })
-            .eq('id', orderId)
-            .eq('status', 'pending')
-            .select(
-              'id, kind, price, seller_amount, buyer_name, buyer_email, variant_label, product:store_products(id, title), seller:store_sellers(display_name, login_email)',
-            )
-
-          if (orderError) {
-            console.error('Error updating store_order:', orderError)
-            throw orderError
-          }
-          const order = updated?.[0]
-          if (!order) {
-            console.log('Store order already processed or missing:', orderId)
-            return NextResponse.json({ received: true })
-          }
-
-          const product = (Array.isArray(order.product) ? order.product[0] : order.product) as { id: string; title: string } | null
-          const seller = (Array.isArray(order.seller) ? order.seller[0] : order.seller) as
-            | { display_name: string; login_email: string | null }
-            | null
-          await notifyStoreOrderPaid({
-            id: order.id,
-            kind: order.kind,
-            price: order.price,
-            sellerAmount: order.seller_amount,
-            productId: product?.id ?? '',
-            // 組み合わせ（サイズ・色など）があれば作品名に添える。メールの件名・本文・管理者宛てすべてに出る
-            productTitle: `${product?.title ?? '作品'}${order.variant_label ? `（${order.variant_label}）` : ''}`,
-            buyerName: order.buyer_name || session.customer_details?.name || 'お客様',
-            buyerEmail: order.buyer_email || session.customer_details?.email || '',
-            downloadUrl: downloadToken ? `${STORE_URL}/download#${downloadToken}` : undefined,
-            downloadValidDays: STORE_DOWNLOAD_VALID_DAYS,
-            downloadMaxCount: STORE_DOWNLOAD_MAX_COUNT,
-            shippingLines,
-            shippingLeadTimeText: SHIPPING_LEAD_TIME_TEXT,
-            sellerName: seller?.display_name ?? '',
-            sellerEmail: seller?.login_email ?? null,
-          })
-
+          await fulfillStorePayment(session, type === 'store_cart' ? { checkoutId: checkoutId! } : { orderId: orderId! })
           return NextResponse.json({ received: true })
         }
 
@@ -783,13 +692,17 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session
         const bookingId = session.metadata?.booking_id
 
-        // ストアの注文で決済されずに期限が切れたもの
-        if (session.metadata?.type === 'store_order' && session.metadata.order_id && supabaseAdmin) {
-          await supabaseAdmin
+        // ストアの注文で決済されずに期限が切れたもの（カート・1点とも）
+        if ((session.metadata?.type === 'store_cart' || session.metadata?.type === 'store_order') && supabaseAdmin) {
+          const query = supabaseAdmin
             .from('store_orders')
             .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-            .eq('id', session.metadata.order_id)
             .eq('status', 'pending')
+          if (session.metadata.type === 'store_cart' && session.metadata.checkout_id) {
+            await query.eq('checkout_id', session.metadata.checkout_id)
+          } else if (session.metadata.order_id) {
+            await query.eq('id', session.metadata.order_id)
+          }
           break
         }
 

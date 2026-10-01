@@ -45,6 +45,23 @@ export async function getPublicProduct(id: string): Promise<PublicProduct | null
   return (data as unknown as PublicProduct) ?? null
 }
 
+/** 公開中の作品をまとめて読む（カート用）。⚠ 絞り方は getPublicProduct と同じ */
+export async function getPublicProducts(ids: string[]): Promise<PublicProduct[]> {
+  const valid = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id))
+  if (!supabaseAdmin || valid.length === 0) return []
+  const { data, error } = await supabaseAdmin
+    .from('store_products')
+    .select(PRODUCT_COLUMNS)
+    .in('id', valid)
+    .eq('status', 'published')
+    .eq('seller.status', 'approved')
+  if (error) {
+    console.error('[store] products', error.message)
+    return []
+  }
+  return (data ?? []) as unknown as PublicProduct[]
+}
+
 export interface PublicSeller {
   id: string
   display_name: string

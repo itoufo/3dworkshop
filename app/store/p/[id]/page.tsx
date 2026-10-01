@@ -106,13 +106,12 @@ export default async function StoreProductPage({ params }: Props) {
           />
           <StoreBuyForm
             productId={product.id}
+            title={product.title}
             dataPrice={dataPrice}
             printPrice={printPrice}
             printSpec={product.print_spec}
             axes={product.option_axes}
             variants={product.print_variants}
-            defaultName={user?.name ?? ''}
-            defaultEmail={user?.email ?? ''}
           />
         </div>
       </div>
