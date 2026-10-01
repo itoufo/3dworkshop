@@ -31,6 +31,7 @@ const TEXT = {
     name: 'お名前',
     email: 'メールアドレス',
     total: '合計金額',
+    discount: '割引',
     loading: '読み込み中...',
     home: '/',
     date: (date: string, time: string) => `${new Date(date).toLocaleDateString('ja-JP')} ${time}`,
@@ -54,6 +55,7 @@ const TEXT = {
     name: 'Name',
     email: 'Email',
     total: 'Total',
+    discount: 'Discount',
     loading: 'Loading...',
     home: '/en',
     date: (date: string, time: string) => `${enDateMedium(date)}, ${time.slice(0, 5)} (JST)`,
@@ -231,9 +233,16 @@ function SuccessContent({ locale }: { locale: Locale }) {
                 <dt className="text-gray-600">{t.email}</dt>
                 <dd className="font-medium">{booking.customer?.email}</dd>
               </div>
+              {/* total_amount は割引前の満額。クーポン・早割の割引は discount_amount に入っている */}
+              {(booking.discount_amount ?? 0) > 0 && (
+                <div className="flex justify-between pt-3 border-t">
+                  <dt className="text-gray-600">{t.discount}</dt>
+                  <dd className="font-medium text-green-600">-{formatPrice(Math.min(booking.discount_amount ?? 0, booking.total_amount))}</dd>
+                </div>
+              )}
               <div className="flex justify-between pt-3 border-t">
                 <dt className="text-gray-900 font-semibold">{t.total}</dt>
-                <dd className="font-bold text-xl">{formatPrice(booking.total_amount)}</dd>
+                <dd className="font-bold text-xl">{formatPrice(Math.max(0, booking.total_amount - (booking.discount_amount ?? 0)))}</dd>
               </div>
             </dl>
           </div>

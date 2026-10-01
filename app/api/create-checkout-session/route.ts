@@ -91,8 +91,10 @@ export async function POST(request: NextRequest) {
     // クーポン割引はクライアント値を上限クランプして使用（既存挙動の踏襲）
     const couponDiscount = Math.max(0, Math.min(discount_amount || 0, base))
     const totalDiscount = couponDiscount + earlyBirdDiscount
-    // Stripeの最低決済金額(¥50)を下回らないようにクランプ
-    const unitAmount = Math.max(50, base - totalDiscount)
+    // 全額割引（100%クーポン等）は ¥0 で通す。¥50 に切り上げると無料のはずの予約に請求が立つ。
+    // 1〜49円だけは Stripe の最低決済金額(¥50)に切り上げる
+    const remaining = base - totalDiscount
+    const unitAmount = remaining <= 0 ? 0 : Math.max(50, remaining)
 
     // Stripe Checkout セッションを作成
     const session = await stripe.checkout.sessions.create({
@@ -134,7 +136,8 @@ export async function POST(request: NextRequest) {
       .update({
         stripe_session_id: session.id,
         coupon_id: coupon_id || null,
-        discount_amount: totalDiscount
+        // 実際に請求した額と一致させる（¥50 への切り上げ・満額超えの割引を反映）
+        discount_amount: base - unitAmount
       })
       .eq('id', booking_id)
 

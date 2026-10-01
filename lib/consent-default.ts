@@ -5,15 +5,14 @@
  * 原本: 「AI×3Dプリンター オリジナルフィギュア参加同意書.docx」。紙の署名欄は
  * 予約フォームのチェックで代える文言に置き換えている。
  */
-export const DEFAULT_CONSENT_TEXT = `AI×3Dプリンターでオリジナルフィギュアをつくろう 参加同意書
-主催：3DLab(株式会社ウォーカー・株式会社sunU)
-協力：武藤工業株式会社
+export const DEFAULT_CONSENT_TEXT = `主催：3DLab(株式会社ウォーカー・株式会社sunU)
 本イベントへご参加いただくにあたり、以下の内容をご確認いただき、ご同意のうえお申し込みください。
 1．イベントについて
 本イベントでは、AIを活用してオリジナルキャラクターをデザインし、3Dプリンターでフィギュアを制作する体験を行います。
 参加者および保護者の皆様には、安全で円滑なイベント運営のため、スタッフの指示に従っていただきますようお願いいたします。
 2．データ作成について
 AIは創作を支援するツールであり、生成される内容が必ずしも正確・適切であるとは限りません。また、AIの判断により、入力された内容であっても生成できない場合があります。 本イベントで制作したキャラクターデザインおよびフィギュアは、参加者個人でお楽しみいただくためのものです。
+本イベントで生成したデータ（キャラクターデザイン、3Dデータ等）は、参加者と3DLabの共同資産となります。
 
 3．3Dプリンターについて
 イベントでは実際に3Dプリンターが稼働します。
@@ -37,7 +36,7 @@ AIは創作を支援するツールであり、生成される内容が必ずし
 
 6．写真・動画の撮影および使用について
 本イベントでは、イベントの記録および広報を目的として写真・動画の撮影を行います。 撮影した写真・動画は、以下の媒体で使用する場合があります。
-・主催者(3DLab)および協力企業(武藤工業株式会社）のホームページ
+・主催者(3DLab)のホームページ
 ・SNS（Instagram、Facebook、X、LINE、YouTube等）
 ・パンフレット、チラシ、ポスター等の広報物
 ・イベント報告書・実績資料
@@ -66,9 +65,7 @@ export function getConsentText(workshop: { consent_text?: string | null }): stri
  * ⚠ 英語は consent_text（日本語ページと共用）に入れない。入れると日本語ページの同意書まで英語になる
  * ⚠ 日本語の本文を直したら、こちらも直すこと
  */
-export const DEFAULT_CONSENT_TEXT_EN = `Create Your Own 3D Figure with AI × 3D Printer — Participation Agreement
-Organizer: 3DLab (Walker Inc. / sunU Inc.)
-In cooperation with: MUTOH INDUSTRIES LTD.
+export const DEFAULT_CONSENT_TEXT_EN = `Organizer: 3DLab (Walker Inc. / sunU Inc.)
 Before taking part in this event, please read the following and book only if you agree.
 
 1. About the event
@@ -77,6 +74,7 @@ For a safe and smooth event, we ask all participants and parents or guardians to
 
 2. About creating the data
 AI is a tool that supports creative work, and what it generates is not always accurate or appropriate. The AI may also be unable to generate certain content, even if you enter it. The character designs and figures made at this event are for the participants' personal enjoyment.
+The data generated at this event (character designs, 3D data, etc.) is jointly owned by the participant and 3DLab.
 
 3. About the 3D printers
 3D printers will be running during the event.
@@ -100,7 +98,7 @@ For safety, please observe the following:
 
 6. Photos and videos
 We take photos and videos during the event to record it and for publicity. These photos and videos may be used in the following:
-・The websites of the organizer (3DLab) and the cooperating company (MUTOH INDUSTRIES LTD.)
+・The website of the organizer (3DLab)
 ・Social media (Instagram, Facebook, X, LINE, YouTube, etc.)
 ・Promotional materials such as brochures, flyers, and posters
 ・Event reports and records of past activities
