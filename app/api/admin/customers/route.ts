@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
+import { isBookingSource } from '@/lib/booking-sources'
 
 // 管理画面からの顧客の手動登録。
 //
@@ -103,6 +104,14 @@ export async function POST(request: NextRequest) {
     gender = body.gender as Gender
   }
 
+  let acquisitionSource: string | null = null
+  if (body.acquisition_source !== undefined && body.acquisition_source !== null && body.acquisition_source !== '') {
+    if (!isBookingSource(body.acquisition_source)) {
+      return NextResponse.json({ error: '流入経路の値が不正です' }, { status: 400 })
+    }
+    acquisitionSource = body.acquisition_source
+  }
+
   // 同じメールがすでにあれば上書きせず知らせる。
   // 決済履歴が紐づく行を、手入力で黙って書き換えないため。
   // 大文字小文字違いで過去に入った行（checkout は小文字化していない）も拾う。
@@ -130,9 +139,9 @@ export async function POST(request: NextRequest) {
 
   const { data: customer, error } = await supabaseAdmin
     .from('customers')
-    .insert({ name, email, phone, age, gender, address })
+    .insert({ name, email, phone, age, gender, address, acquisition_source: acquisitionSource })
     // password_hash などのログイン情報は返さない
-    .select('id, name, email, phone, age, gender, address, created_at')
+    .select('id, name, email, phone, age, gender, address, acquisition_source, created_at')
     .single()
 
   if (error || !customer) {

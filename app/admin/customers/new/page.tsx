@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { ArrowLeft, UserCircle, Phone, MapPin, Save, AlertCircle } from 'lucide-react'
+import { ArrowLeft, UserCircle, Phone, MapPin, Save, AlertCircle, Route } from 'lucide-react'
+import { BOOKING_SOURCES, BOOKING_SOURCE_LABELS } from '@/lib/booking-sources'
 
 // 管理画面からの顧客の手動登録。
 // 電話や対面で申し込みを受けた人など、サイトのフォームを通っていない顧客を入れる。
@@ -26,6 +27,7 @@ export default function NewCustomerPage() {
     age: '',
     gender: '',
     address: '',
+    acquisition_source: '',
   })
   const [creating, setCreating] = useState(false)
   const [navigating, setNavigating] = useState(false)
@@ -55,7 +57,13 @@ export default function NewCustomerPage() {
 
       alert('顧客を登録しました')
       setNavigating(true)
-      router.push('/admin?tab=customers')
+      // 手動予約の画面から「新しい顧客を登録」で来たときは、登録した顧客を選んだ状態で戻す
+      const next = new URLSearchParams(window.location.search).get('next')
+      router.push(
+        next === 'booking' && data.customer?.id
+          ? `/admin/bookings/new?customer_id=${encodeURIComponent(data.customer.id)}`
+          : '/admin?tab=customers',
+      )
     } catch (error) {
       console.error('Error creating customer:', error)
       setErrorMessage('顧客の登録に失敗しました（通信エラー）')
@@ -201,6 +209,34 @@ export default function NewCustomerPage() {
                     onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
                     placeholder="〒000-0000 ○○県○○市…"
                   />
+                </div>
+              </div>
+
+              {/* 流入経路 */}
+              <div className="bg-indigo-50 rounded-xl p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                  <Route className="w-5 h-5 mr-2 text-indigo-600" />
+                  流入経路
+                </h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    最初にどこから来たお客様か
+                  </label>
+                  <select
+                    className={inputClass}
+                    value={customer.acquisition_source}
+                    onChange={(e) => setCustomer({ ...customer, acquisition_source: e.target.value })}
+                  >
+                    <option value="">未選択</option>
+                    {BOOKING_SOURCES.map((source) => (
+                      <option key={source} value={source}>
+                        {BOOKING_SOURCE_LABELS[source]}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    予約ごとの経路と販売手数料は、予約の手動登録で入れます
+                  </p>
                 </div>
               </div>
 
