@@ -8,6 +8,7 @@ import { Menu, X, ChevronDown, User, Globe } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { WorkshopCategory } from '@/types'
 import { englishPathFor, japanesePathFor } from '@/lib/i18n'
+import CartLink from '@/components/CartLink'
 
 /**
  * ヘッダー。
@@ -352,6 +353,7 @@ export default function Header() {
                   マイページ
                 </span>
               </Link>
+              <CartLink />
             </nav>
 
             {/* Mobile: 言語の切り替えはメニューを開かなくても押せるように外に出す */}
@@ -365,6 +367,7 @@ export default function Header() {
               <Globe className="w-4 h-4 shrink-0" aria-hidden />
               English
             </Link>
+            <CartLink />
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail, generateServiceOrderConfirmationEmail, generateProductionRequestPaymentEmail, generateProductOrderConfirmationEmail, generateCutterOrderEmail } from '@/app/lib/email'
+import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail, generateServiceOrderConfirmationEmail, generateProductionRequestPaymentEmail, generateProductOrderConfirmationEmail, generateProductCartConfirmationEmail, generateCutterOrderEmail } from '@/app/lib/email'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { fulfillCutterOrder } from '@/lib/cookie-cutter/server'
 import { DOWNLOAD_VALID_DAYS } from '@/lib/cookie-cutter/pricing'
@@ -186,6 +186,110 @@ export async function POST(request: NextRequest) {
               }
             } catch (mailErr) {
               console.error('Service order email send error:', mailErr)
+            }
+          }
+
+          return NextResponse.json({ received: true })
+        }
+
+        // カート（/cart）でまとめて買った物販の処理。
+        // 同じ checkout_id の行（1行＝1商品）を全部支払い済みにし、在庫を引き、確認メールを1通送る。
+        if (type === 'product_cart') {
+          const checkoutId = session.metadata?.checkout_id
+          if (!checkoutId) {
+            console.error('Product cart: checkout_id not in metadata')
+            return NextResponse.json({ received: true })
+          }
+          if (!supabaseAdmin) {
+            throw new Error('Supabase admin client not available')
+          }
+
+          const collected = session.collected_information?.shipping_details
+          const address = collected?.address
+          const addressLines = address
+            ? [
+                address.postal_code ? `〒${address.postal_code}` : '',
+                `${address.state || ''}${address.city || ''}${address.line1 || ''}`,
+                address.line2 || '',
+              ].filter(Boolean)
+            : []
+
+          // ⚠ 支払い済みでない行だけを更新する。Stripe は同じイベントを再送することがあり、
+          //   2回目で在庫を二重に引いたり、確認メールを2通送ったりしないため
+          const { data: orders, error: ordersError } = await supabaseAdmin
+            .from('product_orders')
+            .update({
+              status: 'paid',
+              payment_status: 'paid',
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent as string,
+              shipping_name: collected?.name || null,
+              shipping_phone: session.customer_details?.phone || null,
+              shipping_address: address ? (address as unknown as Record<string, unknown>) : null,
+            })
+            .eq('checkout_id', checkoutId)
+            .neq('payment_status', 'paid')
+            .select(`
+              *,
+              product:products(*),
+              customer:customers(*)
+            `)
+            .order('created_at', { ascending: true })
+
+          if (ordersError) {
+            console.error('Error updating product cart orders:', ordersError)
+            throw ordersError
+          }
+          if (!orders || orders.length === 0) {
+            // 再送（もう処理済み）か、行が見つからない
+            return NextResponse.json({ received: true })
+          }
+
+          // 在庫管理をしている商品 (stock_quantity が null でない) だけ数量を引く
+          for (const order of orders) {
+            if (order.product && order.product.stock_quantity !== null) {
+              const nextStock = Math.max(0, order.product.stock_quantity - order.quantity)
+              const { error: stockError } = await supabaseAdmin
+                .from('products')
+                .update({ stock_quantity: nextStock })
+                .eq('id', order.product_id)
+                .gte('stock_quantity', order.quantity)
+              if (stockError) {
+                console.error('Error decrementing product stock:', stockError)
+              }
+            }
+          }
+
+          const customer = orders[0]?.customer
+          if (customer?.email) {
+            try {
+              const { subject, html } = generateProductCartConfirmationEmail({
+                customerName: customer.name || 'お客様',
+                items: orders.map((o) => ({
+                  productName: o.product?.name ?? '商品',
+                  quantity: o.quantity,
+                  unitPrice: o.unit_price,
+                })),
+                shippingFee: orders.reduce((sum, o) => sum + (o.shipping_fee ?? 0), 0),
+                totalAmount: orders.reduce((sum, o) => sum + o.total_amount, 0),
+                notes: orders.find((o) => o.notes)?.notes ?? null,
+                shippingLeadTimeText: SHIPPING_LEAD_TIME_TEXT,
+                shippingName: collected?.name || null,
+                shippingPhone: session.customer_details?.phone || null,
+                shippingAddressLines: addressLines,
+                checkoutId,
+              })
+              const emailResult = await sendEmail({
+                to: customer.email,
+                cc: ['yuho.ito@walker.co.jp', '3dlab@sunu25.com', 'nanzinaniwa6@gmail.com'],
+                subject,
+                html,
+              })
+              if (!emailResult.success) {
+                console.error('Product cart email failed:', emailResult.error)
+              }
+            } catch (mailErr) {
+              console.error('Product cart email send error:', mailErr)
             }
           }
 

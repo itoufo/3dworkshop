@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { CheckCircle } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import ClearCartOnSuccess from '@/components/ClearCartOnSuccess'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function ProductOrderSuccessPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <Header />
+      <ClearCartOnSuccess />
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />

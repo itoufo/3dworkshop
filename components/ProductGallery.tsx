@@ -9,13 +9,15 @@ import { isVideoUrl } from '@/lib/media'
 interface Props {
   media: string[]
   alt: string
+  /** 'left' は Amazon のように、PC 幅でサムネイルを左に縦に並べる（スマホは下に並ぶ） */
+  thumbs?: 'bottom' | 'left'
 }
 
 /**
  * 商品の写真・動画を見せるギャラリー。
  * メイン1枚＋サムネイル、左右送り。動画は再生コントロール付きで表示する。
  */
-export default function ProductGallery({ media, alt }: Props) {
+export default function ProductGallery({ media, alt, thumbs = 'bottom' }: Props) {
   const [index, setIndex] = useState(0)
 
   if (media.length === 0) {
@@ -31,9 +33,11 @@ export default function ProductGallery({ media, alt }: Props) {
   const prev = () => setIndex((i) => (i - 1 + media.length) % media.length)
   const next = () => setIndex((i) => (i + 1) % media.length)
 
+  const left = thumbs === 'left'
+
   return (
-    <div>
-      <div className="relative w-full aspect-square bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div className={left ? 'lg:flex lg:flex-row-reverse lg:gap-3' : ''}>
+      <div className="relative w-full aspect-square bg-white rounded-2xl shadow-sm overflow-hidden lg:flex-1">
         {currentIsVideo ? (
           <video
             key={current}
@@ -85,14 +89,21 @@ export default function ProductGallery({ media, alt }: Props) {
       </div>
 
       {media.length > 1 && (
-        <div className="grid grid-cols-5 gap-2 mt-3">
+        <div
+          className={
+            left
+              ? 'grid grid-cols-5 gap-2 mt-3 lg:mt-0 lg:flex lg:flex-col lg:w-16 lg:shrink-0 lg:max-h-[32rem] lg:overflow-y-auto'
+              : 'grid grid-cols-5 gap-2 mt-3'
+          }
+        >
           {media.map((url, i) => (
             <button
               key={`${url}-${i}`}
               type="button"
               onClick={() => setIndex(i)}
               aria-label={`${isVideoUrl(url) ? '動画' : '写真'} ${i + 1}件目を表示`}
-              className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+              onMouseEnter={left ? () => setIndex(i) : undefined}
+              className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${left ? 'lg:w-16 lg:shrink-0' : ''} ${
                 i === index ? 'border-purple-600' : 'border-transparent hover:border-purple-300'
               }`}
             >
