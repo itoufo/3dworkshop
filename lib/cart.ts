@@ -86,10 +86,16 @@ export function removeFromCart(productId: string) {
 
 const PENDING_KEY = '3dlab-cart-checkout'
 
-/** 決済に進む直前に、送った商品と数量を覚えておく（決済完了でその分だけ引くため） */
-export function rememberCheckout(lines: CartLine[]) {
+/**
+ * 決済に進む直前に、送った商品と数量を決済ごと（checkout_id）に覚えておく（決済完了でその分だけ引くため）。
+ * ⚠ 1つだけ覚えると、2つのタブで同時に決済へ進んだとき別の決済の分を引いてしまう
+ */
+export function rememberCheckout(checkoutId: string, lines: CartLine[]) {
   try {
-    window.localStorage.setItem(PENDING_KEY, JSON.stringify(lines))
+    const all = JSON.parse(window.localStorage.getItem(PENDING_KEY) || '{}')
+    const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
+    map[checkoutId] = lines
+    window.localStorage.setItem(PENDING_KEY, JSON.stringify(map))
   } catch {
     // 覚えられなければ、決済完了でカートには触らない
   }
@@ -99,11 +105,14 @@ export function rememberCheckout(lines: CartLine[]) {
  * 決済が終わったら、決済に送った分だけをカートから引く。
  * ⚠ カートを丸ごと空にしない。決済画面にいる間に別のタブで入れた商品まで消えてしまう
  */
-export function settleCheckout() {
+export function settleCheckout(checkoutId: string) {
   let paid: CartLine[] = []
   try {
-    paid = JSON.parse(window.localStorage.getItem(PENDING_KEY) || '[]')
-    window.localStorage.removeItem(PENDING_KEY)
+    const all = JSON.parse(window.localStorage.getItem(PENDING_KEY) || '{}')
+    if (!all || typeof all !== 'object' || Array.isArray(all)) return
+    paid = all[checkoutId] ?? []
+    delete all[checkoutId]
+    window.localStorage.setItem(PENDING_KEY, JSON.stringify(all))
   } catch {
     return
   }

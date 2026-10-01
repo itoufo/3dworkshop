@@ -54,21 +54,27 @@ export default function CartClient() {
       setLoaded(true)
       return
     }
+    // ⚠ 古い問い合わせの返事が後から届いても使わない（別タブで商品が増えたときなど）
+    let cancelled = false
     supabase
       .from('products')
       .select('id, name, base_price, media_urls, stock_quantity, is_active, category')
       .in('id', ids.split(','))
       .then(({ data, error }) => {
+        if (cancelled) return
         if (error) {
-          // 読めなかったのを「販売していません」と見せない
+          // 読めなかったのを「販売していません」と見せない（読み込み済みにしない）
           setLoadError('商品情報を読み込めませんでした。ページを開き直してください。')
         } else {
           setLoadError(null)
           setProducts(Object.fromEntries(((data as CartProduct[]) ?? []).map((p) => [p.id, p])))
+          setFetchedIds(ids)
         }
-        setFetchedIds(ids)
         setLoaded(true)
       })
+    return () => {
+      cancelled = true
+    }
   }, [ids, ready])
 
   // 在庫を超えて入っている数量は在庫の数に合わせる（数量の欄では同じ値を選び直せないため）
@@ -119,7 +125,7 @@ export default function CartClient() {
         setSubmitting(false)
         return
       }
-      rememberCheckout(submitted)
+      if (data.checkoutId) rememberCheckout(data.checkoutId, submitted)
       window.location.href = data.url
     } catch {
       setErrorMsg('通信エラーが発生しました。時間をおいて再度お試しください。')

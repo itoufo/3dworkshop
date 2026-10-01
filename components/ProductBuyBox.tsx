@@ -23,6 +23,8 @@ export default function ProductBuyBox({ productId, productName, price, stockQuan
   const router = useRouter()
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
+  /** 実際にカートに入っている数（上限で減ることがある） */
+  const [inCartQuantity, setInCartQuantity] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [going, setGoing] = useState(false)
 
@@ -40,9 +42,13 @@ export default function ProductBuyBox({ productId, productName, price, stockQuan
     if (!productId) return false
     try {
       const inCart = addToCart(productId, quantity, stockQuantity === null ? undefined : maxQuantity)
-      setError(
-        inCart.capped ? `在庫が残り ${maxQuantity} 点のため、カートには ${inCart.quantity} 点まで入れています` : null
-      )
+      setInCartQuantity(inCart.quantity)
+      // 上限は「在庫」か「1商品 20 点まで」のどちらか小さいほう。理由を取り違えて出さない
+      const reason =
+        stockQuantity !== null && stockQuantity <= MAX_LINE_QUANTITY
+          ? `在庫が残り ${stockQuantity} 点のため`
+          : `1つの商品は ${MAX_LINE_QUANTITY} 点までのため`
+      setError(inCart.capped ? `${reason}、カートには ${inCart.quantity} 点まで入れています` : null)
       return true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'カートに入れられませんでした')
@@ -123,7 +129,11 @@ export default function ProductBuyBox({ productId, productName, price, stockQuan
             <Check className="w-4 h-4 mr-1" />
             カートに入れました
           </p>
-          {productName && <p className="text-sm text-green-700 mt-0.5">{productName} × {quantity}</p>}
+          {productName && (
+            <p className="text-sm text-green-700 mt-0.5">
+              {productName}（カートに {inCartQuantity} 点）
+            </p>
+          )}
           <Link href="/cart" className="inline-block mt-2 text-purple-700 font-medium underline underline-offset-2">
             カートを見る →
           </Link>

@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
     }
 
     const checkoutId = randomUUID()
+    // まとめて入れると created_at が全行同じになる。カートの順に並べられるよう1ミリ秒ずつずらす
+    const insertedAt = Date.now()
     const rows = lines.map((line, index) => {
       const shippingFee = index === 0 ? SHIPPING_FEE : 0
       return {
@@ -132,6 +134,7 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         payment_status: 'pending',
         checkout_id: checkoutId,
+        created_at: new Date(insertedAt + index).toISOString(),
       }
     })
     const { error: orderError } = await supabaseAdmin.from('product_orders').insert(rows)
@@ -191,7 +194,7 @@ export async function POST(request: NextRequest) {
 
     await supabaseAdmin.from('product_orders').update({ stripe_session_id: session.id }).eq('checkout_id', checkoutId)
 
-    return NextResponse.json({ sessionId: session.id, url: session.url })
+    return NextResponse.json({ sessionId: session.id, url: session.url, checkoutId })
   } catch (err) {
     console.error('[cart/checkout] error', err)
     return NextResponse.json({ error: '決済セッションの作成に失敗しました' }, { status: 500 })
