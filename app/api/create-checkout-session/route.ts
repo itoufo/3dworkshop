@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getConsentText } from '@/lib/consent-default'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,19 +28,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
     }
 
-    // 参加同意書への同意がない予約は決済に進めない（予約行はブラウザから作られるので、ここで確かめる）
+    // 参加同意書への同意がない予約は決済に進めない。
+    // ⚠ 同意の日時と本文はここ（サーバー）で書く。予約行はブラウザが anon キーで作るので、
+    //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうる
     const { data: bookingRow } = await supabaseAdmin
       .from('bookings')
-      .select('consent_agreed_at')
+      .select('id, status, workshop_id')
       .eq('id', booking_id)
       .single()
 
-    if (!bookingRow) {
+    if (!bookingRow || bookingRow.workshop_id !== workshop.id) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
-    if (!bookingRow.consent_agreed_at) {
-      return NextResponse.json({ error: '参加同意書への同意が必要です' }, { status: 400 })
+    if (body.consent !== true) {
+      // デプロイ前に開いたままのタブ（同意欄のない古い画面）から来た場合。仮予約を残すと早割の枠を食うので取り消す
+      if (bookingRow.status === 'pending') {
+        await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
+      }
+      return NextResponse.json({ error: 'ページの表示が古いため、参加同意書への同意を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。' }, { status: 400 })
     }
+    await supabaseAdmin
+      .from('bookings')
+      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentText(workshop) })
+      .eq('id', booking_id)
 
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
     const qty = participants || 1

@@ -361,9 +361,6 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null,
           // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
           companion_count: isFamilySession ? booking.companionCount : 0,
-          // 同意した日時と、その時点の同意書本文（後で本文を直しても何に同意したか残る）
-          consent_agreed_at: new Date().toISOString(),
-          consent_text_snapshot: consentText
         })
         .select()
         .single()
@@ -375,7 +372,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         const freeRes = await fetch('/api/create-free-booking', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ booking_id: bookingData.id }),
+          // 同意の日時と本文はサーバー側で記録する
+          body: JSON.stringify({ booking_id: bookingData.id, consent: agreedToConsent }),
         })
         const freeData = await freeRes.json()
 
@@ -411,7 +409,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           amount: workshop.price * booking.participants,
           participants: booking.participants,
           coupon_id: appliedCoupon?.id,
-          discount_amount: couponValidation.discount_amount || 0
+          discount_amount: couponValidation.discount_amount || 0,
+          consent: agreedToConsent,
         }),
       })
 
@@ -1122,7 +1121,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             {/* 参加同意書 */}
             <div className="mb-6">
               <p className="text-sm font-semibold text-gray-800 mb-2">参加同意書</p>
-              <div className="max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div className="max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3">
                 {consentText}
               </div>
               <label className="mt-3 flex items-start gap-2 cursor-pointer">
@@ -1146,6 +1145,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             >
               {submitting ? '処理中...' : isFree ? '予約を確定する' : '決済画面へ進む'}
             </button>
+            {!agreedToConsent && !submitting && (
+              <p className="mt-2 text-center text-sm text-gray-600">
+                参加同意書の「同意します」にチェックすると進めます
+              </p>
+            )}
 
             <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
               <Shield className="w-4 h-4 mr-1" />
