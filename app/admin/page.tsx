@@ -16,6 +16,7 @@ import {
 } from '@/lib/request-statuses'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
+import { BOOKING_SOURCES, BOOKING_SOURCE_LABELS, bookingSourceLabel, isBookingSource, type BookingSource } from '@/lib/booking-sources'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
 import PushNotificationPanel from '@/components/admin/PushNotificationPanel'
@@ -348,6 +349,7 @@ export default function AdminDashboard() {
   const validBookings = realBookings.filter((b) => b.status !== 'cancelled')
 
   const totalSales = validBookings.reduce((sum, b) => sum + b.total_amount, 0)
+  const totalCommission = validBookings.reduce((sum, b) => sum + (b.commission_amount || 0), 0)
 
   // 予約管理タブの表示対象（キャンセルはデフォルト非表示・ワークショップ絞り込み対応）
   const filterWorkshop = bookingWorkshopFilter
@@ -370,28 +372,59 @@ export default function AdminDashboard() {
   }
 
   const now = new Date()
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const monthKeyOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  const currentMonthKey = monthKeyOf(now)
 
-  // 月別売上（予約作成日ベース、直近12ヶ月）
-  const monthlySalesMap = new Map<string, number>()
-  for (const b of validBookings) {
-    const d = new Date(b.created_at)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    monthlySalesMap.set(key, (monthlySalesMap.get(key) || 0) + b.total_amount)
+  /**
+   * 売上を計上する月。開催日（予約した回の日付）で振り分ける。
+   * ⚠ 申込日（created_at）ではない。9月に申し込まれた10月開催の予約は10月の売上。
+   *   開催日の入っていない古い行だけ申込日で数える
+   */
+  const salesMonthKey = (b: Booking): string => {
+    const eventDate = b.booking_date || b.workshop_session?.event_date || b.workshop?.event_date
+    // 'YYYY-MM-DD' の文字列をそのまま切る（Date に通すと UTC 解釈で月がずれることがある）
+    if (eventDate && /^\d{4}-\d{2}/.test(eventDate)) return eventDate.slice(0, 7)
+    return monthKeyOf(new Date(b.created_at))
   }
 
-  const monthlySales: { key: string; label: string; amount: number }[] = []
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  // 月別売上（開催日ベース）。総額と手数料を別に持ち、手取り = 総額 - 手数料
+  const monthlySalesMap = new Map<string, { amount: number; commission: number }>()
+  for (const b of validBookings) {
+    const key = salesMonthKey(b)
+    const cur = monthlySalesMap.get(key) || { amount: 0, commission: 0 }
+    cur.amount += b.total_amount
+    cur.commission += b.commission_amount || 0
+    monthlySalesMap.set(key, cur)
+  }
+
+  // 過去11ヶ月＋今月＋先2ヶ月（開催日ベースなので、先の月にも予約済みの売上がある）
+  const monthlySales: { key: string; label: string; amount: number; commission: number; isFuture: boolean }[] = []
+  for (let i = -11; i <= 2; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+    const key = monthKeyOf(d)
+    const m = monthlySalesMap.get(key) || { amount: 0, commission: 0 }
     monthlySales.push({
       key,
       label: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`,
-      amount: monthlySalesMap.get(key) || 0,
+      amount: m.amount,
+      commission: m.commission,
+      isFuture: i > 0,
     })
   }
 
-  const currentMonthSales = monthlySalesMap.get(currentMonthKey) || 0
+  // 流入経路別の内訳（全期間・キャンセル除く）
+  const salesBySource = new Map<BookingSource, { count: number; amount: number; commission: number }>()
+  for (const b of validBookings) {
+    const source: BookingSource = isBookingSource(b.source) ? b.source : 'website'
+    const cur = salesBySource.get(source) || { count: 0, amount: 0, commission: 0 }
+    cur.count += 1
+    cur.amount += b.total_amount
+    cur.commission += b.commission_amount || 0
+    salesBySource.set(source, cur)
+  }
+
+  const currentMonth = monthlySalesMap.get(currentMonthKey) || { amount: 0, commission: 0 }
+  const currentMonthSales = currentMonth.amount
   const maxMonthlySales = Math.max(...monthlySales.map((m) => m.amount), 1)
 
   return (
@@ -467,11 +500,16 @@ export default function AdminDashboard() {
               </div>
               <span className="text-xs bg-white/20 px-2 py-1 rounded-full">今月</span>
             </div>
-            <h3 className="text-sm font-medium text-white/80">今月の売上</h3>
+            <h3 className="text-sm font-medium text-white/80">今月開催分の売上</h3>
             <p className="text-3xl font-bold">
               ¥{currentMonthSales.toLocaleString()}
             </p>
-            <p className="text-xs text-white/60 mt-2">全期間: ¥{totalSales.toLocaleString()}（キャンセル除く）</p>
+            <p className="text-xs text-white/80 mt-1">
+              手数料 ¥{currentMonth.commission.toLocaleString()} ／ 手取り ¥{(currentMonthSales - currentMonth.commission).toLocaleString()}
+            </p>
+            <p className="text-xs text-white/60 mt-1">
+              全期間: ¥{totalSales.toLocaleString()}（手取り ¥{(totalSales - totalCommission).toLocaleString()}・キャンセル除く）
+            </p>
           </div>
         </div>
 
@@ -483,37 +521,77 @@ export default function AdminDashboard() {
                 <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
                 売上の月別推移
               </h3>
-              <p className="text-sm text-gray-600 mt-1">直近12ヶ月・予約作成日ベース（キャンセル除く）</p>
+              <p className="text-sm text-gray-600 mt-1">開催日ベース・先2ヶ月は予約済みの分（キャンセル除く）。濃い部分が手取り、薄い部分が販売手数料</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500">今月</p>
+              <p className="text-xs text-gray-500">今月開催分</p>
               <p className="text-2xl font-bold text-purple-600">¥{currentMonthSales.toLocaleString()}</p>
             </div>
           </div>
           <div className="flex items-end justify-between gap-2 h-56">
             {monthlySales.map((m) => {
               const heightPct = (m.amount / maxMonthlySales) * 100
+              const commissionPct = m.amount > 0 ? (m.commission / m.amount) * 100 : 0
               const isCurrent = m.key === currentMonthKey
+              const net = m.amount - m.commission
               return (
                 <div key={m.key} className="flex-1 flex flex-col items-center justify-end h-full group">
                   <div className="text-xs font-medium text-gray-700 mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                     ¥{m.amount.toLocaleString()}
                   </div>
                   <div
-                    className={`w-full rounded-t-lg transition-all ${
-                      isCurrent
-                        ? 'bg-gradient-to-t from-purple-600 to-pink-500'
-                        : 'bg-gradient-to-t from-purple-300 to-purple-400 group-hover:from-purple-400 group-hover:to-purple-500'
-                    }`}
+                    className={`w-full rounded-t-lg overflow-hidden flex flex-col transition-all ${m.isFuture ? 'opacity-50' : ''}`}
                     style={{ height: `${Math.max(heightPct, m.amount > 0 ? 2 : 0)}%` }}
-                    title={`${m.label}: ¥${m.amount.toLocaleString()}`}
-                  />
+                    title={`${m.label}${m.isFuture ? '（予定）' : ''}: 総額 ¥${m.amount.toLocaleString()} / 手数料 ¥${m.commission.toLocaleString()} / 手取り ¥${net.toLocaleString()}`}
+                  >
+                    {m.commission > 0 && (
+                      <div className="w-full bg-gray-300" style={{ height: `${commissionPct}%` }} />
+                    )}
+                    <div
+                      className={`w-full flex-1 ${
+                        isCurrent
+                          ? 'bg-gradient-to-t from-purple-600 to-pink-500'
+                          : 'bg-gradient-to-t from-purple-300 to-purple-400 group-hover:from-purple-400 group-hover:to-purple-500'
+                      }`}
+                    />
+                  </div>
                   <div className={`text-xs mt-2 ${isCurrent ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>
                     {m.label.slice(2)}
                   </div>
                 </div>
               )
             })}
+          </div>
+          {/* 流入経路別の内訳 */}
+          <div className="mt-8 overflow-x-auto">
+            <h4 className="text-base font-semibold text-gray-900 mb-3">流入経路別（全期間・キャンセル除く）</h4>
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500">経路</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500">件数</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500">総額</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500">販売手数料</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500">手取り</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {BOOKING_SOURCES.filter((src) => salesBySource.has(src)).map((src) => {
+                  const row = salesBySource.get(src)!
+                  return (
+                    <tr key={src}>
+                      <td className="px-4 py-2 text-gray-900">{BOOKING_SOURCE_LABELS[src]}</td>
+                      <td className="px-4 py-2 text-right text-gray-700">{row.count}</td>
+                      <td className="px-4 py-2 text-right text-gray-700">¥{row.amount.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-gray-700">¥{row.commission.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right font-semibold text-gray-900">
+                        ¥{(row.amount - row.commission).toLocaleString()}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
         </>
@@ -532,6 +610,13 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => handleNavigate('/admin/bookings/new')}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                予約を手動登録
+              </button>
               {filterWorkshop && (
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                   <Calendar className="w-4 h-4" />
@@ -602,6 +687,9 @@ export default function AdminDashboard() {
                     クーポン
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    流入経路
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     アクション
                   </th>
                 </tr>
@@ -609,7 +697,7 @@ export default function AdminDashboard() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {displayedBookings.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                       表示できる予約がありません
                     </td>
                   </tr>
@@ -740,6 +828,11 @@ export default function AdminDashboard() {
                           (割引前: ¥{(booking.total_amount + booking.discount_amount).toLocaleString()})
                         </div>
                       )}
+                      {booking.commission_amount != null && booking.commission_amount > 0 && (
+                        <div className="text-xs text-gray-500">
+                          手数料 ¥{booking.commission_amount.toLocaleString()} ／ 手取り ¥{(booking.total_amount - booking.commission_amount).toLocaleString()}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {booking.coupon_id && booking.coupon ? (
@@ -754,6 +847,12 @@ export default function AdminDashboard() {
                         </div>
                       ) : (
                         <span className="text-xs text-gray-400">なし</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{bookingSourceLabel(booking.source)}</div>
+                      {booking.source_detail && (
+                        <div className="text-xs text-gray-500">{booking.source_detail}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -778,9 +877,18 @@ export default function AdminDashboard() {
       {/* 顧客管理 */}
       {activeTab === 'customers' && (
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">顧客一覧</h3>
-            <p className="text-sm text-gray-600 mt-1">全{customers.length}名の顧客</p>
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">顧客一覧</h3>
+              <p className="text-sm text-gray-600 mt-1">全{customers.length}名の顧客</p>
+            </div>
+            <button
+              onClick={() => handleNavigate('/admin/customers/new')}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              新規顧客登録
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -796,7 +904,13 @@ export default function AdminDashboard() {
                     属性
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    流入経路
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     登録日
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    操作
                   </th>
                 </tr>
               </thead>
@@ -848,12 +962,24 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.acquisition_source ? bookingSourceLabel(customer.acquisition_source) : <span className="text-gray-400">—</span>}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(customer.created_at).toLocaleDateString('ja-JP', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
                       })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleNavigate(`/admin/bookings/new?customer_id=${encodeURIComponent(customer.id)}`)}
+                        className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-800"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        予約を追加
+                      </button>
                     </td>
                   </tr>
                 ))}
