@@ -93,8 +93,13 @@ const PENDING_KEY = '3dlab-cart-checkout'
 export function rememberCheckout(checkoutId: string, lines: CartLine[]) {
   try {
     const all = JSON.parse(window.localStorage.getItem(PENDING_KEY) || '{}')
-    const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
-    map[checkoutId] = lines
+    const map: Record<string, { at: number; lines: CartLine[] }> =
+      all && typeof all === 'object' && !Array.isArray(all) ? all : {}
+    // 決済をやめた分は残り続けるので、1日たったものは捨てる（Stripe の決済画面も24時間で失効する）
+    for (const [id, entry] of Object.entries(map)) {
+      if (!entry || typeof entry.at !== 'number' || Date.now() - entry.at > 24 * 60 * 60 * 1000) delete map[id]
+    }
+    map[checkoutId] = { at: Date.now(), lines }
     window.localStorage.setItem(PENDING_KEY, JSON.stringify(map))
   } catch {
     // 覚えられなければ、決済完了でカートには触らない
@@ -110,7 +115,7 @@ export function settleCheckout(checkoutId: string) {
   try {
     const all = JSON.parse(window.localStorage.getItem(PENDING_KEY) || '{}')
     if (!all || typeof all !== 'object' || Array.isArray(all)) return
-    paid = all[checkoutId] ?? []
+    paid = all[checkoutId]?.lines ?? []
     delete all[checkoutId]
     window.localStorage.setItem(PENDING_KEY, JSON.stringify(all))
   } catch {

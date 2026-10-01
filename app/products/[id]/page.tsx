@@ -74,7 +74,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   // シリーズの子商品は、シリーズのページでその商品を選んだ状態に転送する
   // （注文確認メールや決済キャンセルの戻り先はこの URL のままなので、ここで受ける）
-  if (product.series_id) {
+  // ⚠ シリーズのページに出るのは物販（category='product'）だけ。ほかの種類はここ（単品のページ）で見せる
+  if (product.series_id && product.category === 'product') {
     const slug = await getSeriesSlug(product.series_id)
     if (!slug) notFound()
     redirect(`/products/series/${slug}?v=${product.id}`)
