@@ -60,6 +60,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       .from('store_products')
       .select('data_file_path, data_file_name')
       .eq('id', product.id)
+      // ⚠ 上で公開中を確かめたあとに出品者がデータを差し替えると、審査前のファイルが注文に写る。ここでも絞る
+      .eq('status', 'published')
       .maybeSingle()
     if (!files?.data_file_path) {
       console.error('[store-checkout] product has no data file', product.id)

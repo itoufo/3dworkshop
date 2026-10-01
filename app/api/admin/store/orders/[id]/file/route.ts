@@ -18,19 +18,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params
   const { data: order } = await supabaseAdmin!
     .from('store_orders')
-    .select('data_file_path, data_file_name, product:store_products(data_file_path, data_file_name)')
+    .select('data_file_path, data_file_name')
     .eq('id', id)
     .maybeSingle()
-  const product = (Array.isArray(order?.product) ? order?.product[0] : order?.product) as
-    | { data_file_path: string | null; data_file_name: string | null }
-    | null
-    | undefined
-  const path = order?.data_file_path ?? product?.data_file_path
-  if (!path) return NextResponse.json({ error: 'データがありません' }, { status: 404 })
+  if (!order?.data_file_path) return NextResponse.json({ error: 'データがありません' }, { status: 404 })
 
+  // ファイル名は出品者が付けたもの。ヘッダを壊す文字を落とす
+  const fileName = order.data_file_name ? order.data_file_name.replace(/[\\/:*?"<>|\r\n]/g, '_') : true
   const { data, error } = await supabaseAdmin!.storage
     .from(STORE_FILES_BUCKET)
-    .createSignedUrl(path, 60, { download: order?.data_file_name || product?.data_file_name || true })
+    .createSignedUrl(order.data_file_path, 60, { download: fileName })
   if (error || !data) return NextResponse.json({ error: 'データを取り出せませんでした' }, { status: 500 })
   return NextResponse.redirect(data.signedUrl)
 }

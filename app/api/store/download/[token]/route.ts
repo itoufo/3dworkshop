@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { STORE_FILES_BUCKET } from '@/lib/store/storage'
 import { STORE_DOWNLOAD_MAX_COUNT, STORE_SIGNED_URL_SECONDS } from '@/lib/store/orders'
+import { STORE_URL } from '@/lib/store/urls'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,8 +17,15 @@ function fail(message: string, status: number) {
  *
  * ⚠ bucket は非公開のまま。渡すのは寿命 60 秒の署名付き URL だけ。
  * ⚠ 回数は「読んだ値のまま」の条件つきで +1 する。同時に何度も叩かれても上限を超えない。
+ * ⚠ 数えるのは POST（ダウンロードページのボタン）だけ。メールの安全確認やリンクのプレビューは
+ *   GET でリンクを開くので、GET で数えると購入者が押す前に回数が減る。GET はページへ戻すだけ。
  */
 export async function GET(_request: NextRequest, context: { params: Promise<{ token: string }> }) {
+  const { token } = await context.params
+  return NextResponse.redirect(`${STORE_URL}/download/${encodeURIComponent(token)}`, 303)
+}
+
+export async function POST(_request: NextRequest, context: { params: Promise<{ token: string }> }) {
   if (!supabaseAdmin) return fail('Server misconfigured', 500)
 
   const { token } = await context.params
@@ -26,7 +34,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
   for (let attempt = 0; attempt < 3; attempt++) {
     const { data: order } = await supabaseAdmin
       .from('store_orders')
-      .select('id, kind, status, download_count, download_expires_at, data_file_path, data_file_name, product:store_products(data_file_path, data_file_name, title)')
+      .select('id, kind, status, download_count, download_expires_at, data_file_path, data_file_name, product:store_products(title)')
       .eq('download_token', token)
       .maybeSingle()
 
@@ -39,15 +47,13 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
       return fail('ダウンロード回数の上限に達しました。お手数ですがお問い合わせください', 429)
     }
 
-    // ⚠ 買った時点のファイル（注文に写したもの）を渡す。出品者があとで差し替えた審査前のファイルではない。
-    //   写す前の注文だけ、作品の今のファイルに戻る
-    const product = (Array.isArray(order.product) ? order.product[0] : order.product) as
-      | { data_file_path: string | null; data_file_name: string | null; title: string }
-      | null
-    const filePath = order.data_file_path ?? product?.data_file_path ?? null
+    // ⚠ 買った時点のファイル（注文に写したもの）だけを渡す。作品の今のファイルには戻らない
+    //   （出品者が差し替えた審査前のファイルを渡してしまう）
+    const product = (Array.isArray(order.product) ? order.product[0] : order.product) as { title: string } | null
+    const filePath = order.data_file_path
     if (!filePath) return fail('データが見つかりません。お手数ですがお問い合わせください', 404)
     const ext = filePath.split('.').pop() ?? 'stl'
-    const fileName = (order.data_file_name || product?.data_file_name || `${product?.title ?? 'model'}.${ext}`).replace(
+    const fileName = (order.data_file_name || `${product?.title ?? 'model'}.${ext}`).replace(
       /[\\/:*?"<>|\r\n]/g,
       '_',
     )

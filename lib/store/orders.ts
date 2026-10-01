@@ -5,10 +5,7 @@ import { randomBytes } from 'crypto'
  * ストアの注文まわりの決まりごと（決済・Webhook・ダウンロード・管理画面で共通）。
  */
 
-/** データ購入のダウンロード期限（日） */
-export const STORE_DOWNLOAD_VALID_DAYS = 30
-/** データ購入のダウンロード回数の上限 */
-export const STORE_DOWNLOAD_MAX_COUNT = 20
+export { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from './download-limits'
 /** ダウンロード用に発行する署名付き URL の寿命（秒）。リンクを転送されても使い回せないよう短くする */
 export const STORE_SIGNED_URL_SECONDS = 60
 

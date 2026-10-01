@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Download, Package, ShieldCheck } from 'lucide-react'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
+import { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/download-limits'
 
 interface Props {
   productId: string
@@ -88,7 +89,7 @@ export default function StoreBuyForm({ productId, dataPrice, printPrice, printSp
               </span>
               <span className="block text-sm text-gray-600 mt-0.5">
                 {o.kind === 'data'
-                  ? 'お支払い後すぐにダウンロードできます（30日間・20回まで）。ご自分の3Dプリンターで印刷できます。'
+                  ? `お支払い後すぐにダウンロードできます（${STORE_DOWNLOAD_VALID_DAYS}日間・${STORE_DOWNLOAD_MAX_COUNT}回まで）。ご自分の3Dプリンターで印刷できます。`
                   : `${SHIPPING_LEAD_TIME_TEXT}・送料無料（全国一律）${printSpec ? `。${printSpec}` : ''}`}
               </span>
             </span>

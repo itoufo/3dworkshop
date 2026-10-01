@@ -417,7 +417,17 @@ export async function POST(request: NextRequest) {
               ].filter(Boolean)
             : []
 
-          const kind = session.metadata?.kind === 'print' ? 'print' : 'data'
+          // 種類は注文の行から読む（metadata の書き損じで印刷の注文に合言葉を出したりしない）
+          const { data: pendingOrder } = await supabaseAdmin
+            .from('store_orders')
+            .select('kind')
+            .eq('id', orderId)
+            .maybeSingle()
+          if (!pendingOrder) {
+            console.error('Store order not found:', orderId)
+            return NextResponse.json({ received: true })
+          }
+          const kind = pendingOrder.kind as 'data' | 'print'
           const downloadToken = kind === 'data' ? createStoreDownloadToken() : null
           const now = new Date()
 
@@ -474,7 +484,7 @@ export async function POST(request: NextRequest) {
             productTitle: product?.title ?? '作品',
             buyerName: order.buyer_name || session.customer_details?.name || 'お客様',
             buyerEmail: order.buyer_email || session.customer_details?.email || '',
-            downloadUrl: downloadToken ? `${STORE_URL}/api/store/download/${downloadToken}` : undefined,
+            downloadUrl: downloadToken ? `${STORE_URL}/download/${downloadToken}` : undefined,
             downloadValidDays: STORE_DOWNLOAD_VALID_DAYS,
             downloadMaxCount: STORE_DOWNLOAD_MAX_COUNT,
             shippingLines,
@@ -793,6 +803,23 @@ export async function POST(request: NextRequest) {
             .eq('id', bookingId)
 
           console.log(`Booking ${bookingId} cancelled due to expired session`)
+        }
+        break
+      }
+
+      // Stripe の管理画面で全額返金したら、ストアの注文も返金済みにしてダウンロードを止める。
+      // ⚠ Stripe の Webhook 設定で charge.refunded を受け取るようにしないと届かない
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge
+        const paymentIntentId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
+        // 一部返金ではデータを止めない（送料の返金など）。全額のときだけ
+        if (charge.refunded && paymentIntentId && supabaseAdmin) {
+          const now = new Date().toISOString()
+          await supabaseAdmin
+            .from('store_orders')
+            .update({ status: 'refunded', refunded_at: now, updated_at: now })
+            .eq('stripe_payment_intent_id', paymentIntentId)
+            .in('status', ['paid', 'shipped'])
         }
         break
       }
