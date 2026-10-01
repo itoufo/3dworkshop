@@ -10,6 +10,11 @@ import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { FolderOpen, Calendar, Lock, Copy, Users, Ticket } from 'lucide-react'
 import WorkshopSessionsEditor from '@/components/admin/WorkshopSessionsEditor'
+import ZeroBookingCutoffField, {
+  DEFAULT_ZERO_BOOKING_CUTOFF,
+  zeroBookingCutoffFromWorkshop,
+  zeroBookingCutoffToColumns,
+} from '@/components/admin/ZeroBookingCutoffField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -21,6 +26,8 @@ export default function EditWorkshop() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
+  // 予約0人のときの締切（formData とは別に持つ）
+  const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -91,6 +98,7 @@ export default function EditWorkshop() {
           early_bird_discount: workshopData.early_bird_discount?.toString() || '',
           early_bird_slots: workshopData.early_bird_slots?.toString() || ''
         })
+        setZeroCutoff(zeroBookingCutoffFromWorkshop(workshopData))
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
         }
@@ -180,6 +188,7 @@ export default function EditWorkshop() {
           early_bird_enabled: formData.early_bird_enabled,
           early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
+          ...zeroBookingCutoffToColumns(zeroCutoff),
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -453,6 +462,8 @@ export default function EditWorkshop() {
                 </div>
               )}
             </div>
+
+            <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

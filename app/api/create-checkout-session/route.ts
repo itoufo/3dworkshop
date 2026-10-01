@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +26,14 @@ export async function POST(request: NextRequest) {
 
     if (!workshop) {
       return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
+    }
+
+    // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める
+    if (booking_id) {
+      const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
+      if (deadline.closed) {
+        return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
+      }
     }
 
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）

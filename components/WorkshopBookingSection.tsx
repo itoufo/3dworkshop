@@ -11,16 +11,13 @@ import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
 import { formatPrice, isFreePrice } from '@/lib/price'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
+import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst } from '@/lib/booking-deadline'
 
-function todayIso(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
+// 開始時刻（JST）を過ぎていない回。端末のタイムゾーンに左右されないよう JST で比べる
 function getUpcomingSessions(w: Workshop): WorkshopSession[] {
-  const today = todayIso()
+  const now = Date.now()
   return (w.sessions ?? [])
-    .filter(s => s.status === 'scheduled' && s.event_date >= today)
+    .filter(s => s.status === 'scheduled' && sessionStartJst(s).getTime() > now)
     .sort((a, b) => {
       if (a.event_date !== b.event_date) return a.event_date.localeCompare(b.event_date)
       return (a.event_time || '').localeCompare(b.event_time || '')
@@ -47,13 +44,52 @@ interface WorkshopBookingSectionProps {
 
 export default function WorkshopBookingSection({ workshop, relatedWorkshops, isPastWorkshop }: WorkshopBookingSectionProps) {
   const upcomingSessions = useMemo(() => getUpcomingSessions(workshop), [workshop])
+  // 予約0人の締切を過ぎて受付終了になった回（参加者数が要るので API で確かめる）
+  const [closedSessionIds, setClosedSessionIds] = useState<Set<string>>(new Set())
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     upcomingSessions[0]?.id ?? null
   )
   const selectedSession = useMemo(
-    () => upcomingSessions.find(s => s.id === selectedSessionId) ?? upcomingSessions[0] ?? null,
-    [upcomingSessions, selectedSessionId]
+    () =>
+      upcomingSessions.find(s => s.id === selectedSessionId) ??
+      upcomingSessions.find(s => !closedSessionIds.has(s.id)) ??
+      upcomingSessions[0] ??
+      null,
+    [upcomingSessions, selectedSessionId, closedSessionIds]
   )
+
+  // 0人締切の時刻を過ぎている回だけ、受付終了かどうかを問い合わせる（通常は直近の1〜2回）
+  useEffect(() => {
+    const now = Date.now()
+    const candidates = upcomingSessions.filter(s => {
+      const cutoff = zeroBookingCutoffJst(workshop, s)
+      return cutoff && cutoff.getTime() <= now
+    })
+    if (candidates.length === 0) return
+    let cancelled = false
+    Promise.all(
+      candidates.map(async s => {
+        const params = new URLSearchParams({ workshopId: workshop.id, sessionId: s.id })
+        const res = await fetch(`/api/check-availability?${params.toString()}`)
+        if (!res.ok) return null
+        const data = await res.json()
+        return data?.is_closed ? s.id : null
+      })
+    )
+      .then(ids => {
+        if (cancelled) return
+        const closed = new Set(ids.filter((id): id is string => !!id))
+        setClosedSessionIds(closed)
+        // 選んでいた回が締切済みなら、受付中の回に切り替える
+        setSelectedSessionId(prev =>
+          prev && closed.has(prev) ? upcomingSessions.find(s => !closed.has(s.id))?.id ?? prev : prev
+        )
+      })
+      .catch(err => console.error('Error checking closed sessions:', err))
+    return () => {
+      cancelled = true
+    }
+  }, [upcomingSessions, workshop])
 
   const [booking, setBooking] = useState({
     participants: 1,
@@ -107,6 +143,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     is_full: boolean
     manual_participants: number
     booked_participants: number
+    total_participants?: number
+    // 予約締切（開始時刻・予約0人の締切）
+    is_closed?: boolean
+    closes_at?: string | null
+    close_reason?: 'started' | 'zero_booking_cutoff' | null
     early_bird?: {
       enabled: boolean
       discount: number
@@ -114,6 +155,17 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       remaining: number
     } | null
   } | null>(null)
+
+  // 満席か締切後なら申込を受け付けない
+  const isClosed = !!availability?.is_closed
+  const cannotBook = !!availability?.is_full || isClosed
+  // 予約0人の回にだけ出す「◯月◯日 24:00 締切」。開始時刻より前に来るときだけ
+  const zeroCutoffLabel = (() => {
+    if (!availability || isClosed || (availability.total_participants ?? 1) > 0 || !selectedSession) return null
+    const cutoff = zeroBookingCutoffJst(workshop, selectedSession)
+    if (!cutoff || cutoff.getTime() >= sessionStartJst(selectedSession).getTime()) return null
+    return formatCutoffJst(cutoff)
+  })()
 
   // 参加費0円の回（無料の特別開催など）。Stripe は最低¥50のため決済自体を通さない
   const isFree = isFreePrice(workshop.price)
@@ -413,6 +465,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       const sessionId = data?.sessionId
       // セッション作成失敗を握りつぶさない（sessionId が無いまま先へ進むと
       // リダイレクトされず「処理中…」で固まるため、明示的にエラー化する）
+      if (response.status === 409 && data?.code === 'booking_closed') {
+        gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'closed' })
+        alert(`${data.error}。ほかの日程をお選びください。`)
+        window.location.reload()
+        return
+      }
       if (!response.ok || !sessionId) {
         throw new Error(data?.error || '決済ページの作成に失敗しました')
       }
@@ -518,9 +576,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           <div className="flex items-end justify-between">
             <span className="text-3xl font-bold">{formatPrice(workshop.price)}</span>
             {availability && (
-              availability.is_full ? (
+              cannotBook ? (
                 <span className="inline-flex items-center px-3 py-1 bg-red-500 rounded-full text-sm font-bold">
-                  満席
+                  {isClosed ? '受付終了' : '満席'}
                 </span>
               ) : (
                 <span className="inline-flex items-center px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
@@ -554,20 +612,24 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                     })
                     const timeLabel = s.event_time ? `${s.event_time.slice(0, 5)} 開始` : ''
                     const selected = s.id === selectedSession?.id
+                    const closed = closedSessionIds.has(s.id)
                     return (
                       <label
                         key={s.id}
-                        className={`flex items-center p-3 rounded-lg cursor-pointer transition-all ${
-                          selected
-                            ? 'bg-white border-2 border-purple-500 shadow-sm'
-                            : 'bg-white/60 border-2 border-transparent hover:bg-white'
+                        className={`flex items-center p-3 rounded-lg transition-all ${
+                          closed
+                            ? 'bg-gray-100 border-2 border-transparent opacity-60 cursor-not-allowed'
+                            : selected
+                              ? 'bg-white border-2 border-purple-500 shadow-sm cursor-pointer'
+                              : 'bg-white/60 border-2 border-transparent hover:bg-white cursor-pointer'
                         }`}
                       >
                         <input
                           type="radio"
                           name="workshop-session"
                           value={s.id}
-                          checked={selected}
+                          checked={selected && !closed}
+                          disabled={closed}
                           onChange={() => handleSessionSelect(s.id)}
                           className="mr-3 accent-purple-600"
                         />
@@ -575,6 +637,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                           <div className="font-medium text-gray-900">{dateLabel}</div>
                           {timeLabel && <div className="text-gray-600 text-xs">{timeLabel}</div>}
                         </div>
+                        {closed && (
+                          <span className="ml-2 flex-shrink-0 rounded-full bg-gray-300 px-2 py-0.5 text-xs font-bold text-gray-700">
+                            受付終了
+                          </span>
+                        )}
                         {s.is_family_friendly && <FamilyFriendlyBadge className="ml-2 flex-shrink-0" />}
                       </label>
                     )
@@ -633,8 +700,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 定員 {workshop.max_participants}名
                 {availability && (
                   <>
-                    {availability.is_full ? (
-                      <span className="ml-2 text-red-600 font-bold">（満席）</span>
+                    {cannotBook ? (
+                      <span className="ml-2 text-red-600 font-bold">（{isClosed ? '受付終了' : '満席'}）</span>
                     ) : (
                       <span className="ml-2 text-green-600">
                         （残り{availability.available_spots}名）
@@ -644,6 +711,12 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 )}
               </span>
             </div>
+            {zeroCutoffLabel && (
+              <div className="flex items-center text-sm text-gray-700">
+                <Clock className="w-4 h-4 mr-2 text-purple-600" />
+                <span className="font-medium text-gray-900">申込締切 {zeroCutoffLabel}</span>
+              </div>
+            )}
             {availability && availability.manual_participants > 0 && (
               <div className="text-xs text-orange-600 ml-6">
                 ※ 他媒体からの予約: {availability.manual_participants}名
@@ -652,7 +725,16 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           </div>
         </div>
 
-        {availability?.is_full ? (
+        {isClosed ? (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
+            <p className="text-gray-800 font-semibold mb-2">この回の受付は終了しました</p>
+            <p className="text-sm text-gray-600">
+              {upcomingSessions.some(s => !closedSessionIds.has(s.id) && s.id !== selectedSession?.id)
+                ? 'ほかの日程をお選びください。'
+                : '次回の開催をお待ちください。'}
+            </p>
+          </div>
+        ) : availability?.is_full ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <p className="text-red-800 font-semibold mb-2">このワークショップは満席です</p>
             <p className="text-sm text-red-600">キャンセル待ちをご希望の場合は、お問い合わせください。</p>
@@ -685,7 +767,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       </div>
 
       {/* Booking Modal */}
-      {modalOpen && !availability?.is_full && (
+      {modalOpen && !cannotBook && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -1133,7 +1215,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       )}
 
       {/* Floating Booking Button (Mobile Only) */}
-      {!availability?.is_full && !modalOpen && (
+      {!cannotBook && !modalOpen && (
         <button
           onClick={openBookingModal}
           className="lg:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"

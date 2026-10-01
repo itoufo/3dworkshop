@@ -38,6 +38,9 @@ export interface Workshop {
   early_bird_enabled?: boolean
   early_bird_discount?: number | null
   early_bird_slots?: number | null
+  // 予約0人のときの締切: (開催日 − days_before 日) の time（JST）。null なら開始時刻でのみ締切
+  zero_booking_cutoff_days_before?: number | null
+  zero_booking_cutoff_time?: string | null
   sessions?: WorkshopSession[]
   created_at: string
   updated_at: string

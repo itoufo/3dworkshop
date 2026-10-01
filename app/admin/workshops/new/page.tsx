@@ -8,6 +8,11 @@ import { WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
+import ZeroBookingCutoffField, {
+  DEFAULT_ZERO_BOOKING_CUTOFF,
+  zeroBookingCutoffFromWorkshop,
+  zeroBookingCutoffToColumns,
+} from '@/components/admin/ZeroBookingCutoffField'
 import { ArrowLeft, Upload, Calendar, Clock, MapPin, Users, CreditCard, Type, FileImage, Save, FolderOpen, Lock, Ticket, Copy } from 'lucide-react'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
@@ -63,6 +68,8 @@ export default function NewWorkshopPage() {
   const [copying, setCopying] = useState(false)
   const [sourceWorkshops, setSourceWorkshops] = useState<SourceWorkshop[]>([])
   const [sourceId, setSourceId] = useState('')
+  // 予約0人のときの締切（既定は前日 24:00。コピー元があればその設定を引き継ぐ）
+  const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
 
   // 選択したイベントの内容をフォームに流し込む（日時は既に入力済みのものを保持）
   async function applySource(id: string) {
@@ -99,6 +106,7 @@ export default function NewWorkshopPage() {
         early_bird_discount: src.early_bird_discount?.toString() || '',
         early_bird_slots: src.early_bird_slots?.toString() || ''
       }))
+      setZeroCutoff(zeroBookingCutoffFromWorkshop(src))
       setImageFile(null)
       setImagePreview(src.image_url || null)
     } finally {
@@ -212,7 +220,8 @@ export default function NewWorkshopPage() {
           collect_demographics: workshop.collect_demographics,
           early_bird_enabled: workshop.early_bird_enabled,
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
-          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null
+          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
+          ...zeroBookingCutoffToColumns(zeroCutoff)
         })
         .select()
         .single()
@@ -514,6 +523,8 @@ export default function NewWorkshopPage() {
                 </div>
               )}
             </div>
+
+            <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
 
             {/* 基本情報 */}
             <div className="bg-purple-50 rounded-xl p-6 space-y-4">
