@@ -34,6 +34,7 @@ export default function ProductForm({ product }: Props) {
   // シリーズの子商品にするか。非公開のシリーズも選べるように管理 API から読む
   const [seriesList, setSeriesList] = useState<ProductSeries[]>([])
   const [seriesError, setSeriesError] = useState<string | null>(null)
+  const [seriesLoaded, setSeriesLoaded] = useState(false)
   const [seriesId, setSeriesId] = useState<string>(product?.series_id ?? '')
   const [variantOptions, setVariantOptions] = useState<Record<string, string>>(product?.variant_options ?? {})
   const [seriesSort, setSeriesSort] = useState<string>(String(product?.series_sort ?? 0))
@@ -53,6 +54,7 @@ export default function ProductForm({ product }: Props) {
     adminJson<{ series: ProductSeries[] }>('/api/admin/product-series').then((res) => {
       if (res.ok) setSeriesList(res.data.series)
       else setSeriesError(res.message)
+      setSeriesLoaded(true)
     })
   }, [])
 
@@ -72,6 +74,16 @@ export default function ProductForm({ product }: Props) {
       return acc
     }, {})
 
+    // ⚠ シリーズ一覧が読めていないまま保存すると、項目の値（variant_options）を空で上書きしてしまう
+    if (seriesId && !selectedSeries) {
+      alert(
+        seriesLoaded
+          ? 'シリーズの情報を読み込めませんでした。ページを開き直してから保存してください。'
+          : 'シリーズの情報を読み込んでいます。少し待ってから保存してください。'
+      )
+      return
+    }
+
     // シリーズの子商品なら、軸ごとの値がそろっていないと選択肢に出せない
     const axes = selectedSeries?.option_axes ?? []
     const variant: Record<string, string> = {}
@@ -82,6 +94,23 @@ export default function ProductForm({ product }: Props) {
         return
       }
       variant[axis] = value
+    }
+
+    // 同じシリーズに同じ組み合わせがあると、お客さまはどちらか一方しか選べなくなる
+    if (seriesId) {
+      const { data: siblings } = await supabase
+        .from('products')
+        .select('id, name, variant_options')
+        .eq('series_id', seriesId)
+      const twin = (siblings ?? []).find(
+        (s) =>
+          s.id !== product?.id &&
+          axes.every((axis) => (s.variant_options as Record<string, string> | null)?.[axis] === variant[axis])
+      )
+      if (twin) {
+        alert(`同じシリーズに同じ組み合わせ（${axes.map((a) => variant[a]).join(' / ')}）の商品「${twin.name}」があります。値を変えてください。`)
+        return
+      }
     }
 
     const payload = {
@@ -226,6 +255,7 @@ export default function ProductForm({ product }: Props) {
                 {seriesError && <p className="text-sm text-red-600">シリーズを読み込めませんでした: {seriesError}</p>}
                 <select
                   value={seriesId}
+                  disabled={!seriesLoaded}
                   onChange={(e) => setSeriesId(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
                 >
@@ -320,7 +350,7 @@ export default function ProductForm({ product }: Props) {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || (Boolean(seriesId) && !seriesLoaded)}
                   className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:shadow-lg transition-all duration-300 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4 mr-2" />

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
+import { jsonLdString } from '@/lib/json-ld'
 import Footer from '@/components/Footer'
 import MediaCoverage from '@/components/MediaCoverage'
 import SeriesPurchaseClient from '@/components/SeriesPurchaseClient'
@@ -104,7 +105,7 @@ export default async function ProductSeriesPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productGroupJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(productGroupJsonLd) }} />
       <Header />
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">

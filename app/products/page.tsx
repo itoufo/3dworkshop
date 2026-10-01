@@ -1,4 +1,5 @@
 import Header from '@/components/Header'
+import { jsonLdString } from '@/lib/json-ld'
 import Footer from '@/components/Footer'
 import ProductsListClient, { type SeriesCard } from '@/components/ProductsListClient'
 import { getAllProducts, getAllSeries } from '@/lib/products'
@@ -31,6 +32,7 @@ export default async function ProductsPage() {
         image: firstImageUrl(s.media_urls) || firstImageUrl(items.flatMap((i) => i.media_urls ?? [])),
         lowestPrice: lowestPrice(items) ?? 0,
         itemCount: items.length,
+        inStock: items.some((i) => i.stock_quantity === null || i.stock_quantity > 0),
       }
     })
     // 公開中の子商品が無いシリーズは買えないので出さない
@@ -85,7 +87,7 @@ export default async function ProductsPage() {
             lowPrice: card.lowestPrice,
             offerCount: card.itemCount,
             priceCurrency: 'JPY',
-            availability: 'https://schema.org/InStock',
+            availability: card.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             url: `${SITE_URL}/products/series/${card.slug}`,
           },
         },
@@ -130,11 +132,11 @@ export default async function ProductsPage() {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbData) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(itemListData) }}
       />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">

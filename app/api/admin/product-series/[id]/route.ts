@@ -46,7 +46,18 @@ export async function PATCH(req: Request, { params }: Ctx) {
     return Response.json({ error: 'db_error', message: error.message }, { status: 500 })
   }
   if (!data) return Response.json({ error: 'not_found', message: 'シリーズが見つかりません' }, { status: 404 })
-  return Response.json({ series: data })
+
+  // 項目名を変えると、子商品に入っている値（古い項目名のもの）とつながらなくなる。
+  // 止めはしない（商品側を直すには先にシリーズの項目が要る）が、何件直す必要があるかを返す
+  const { data: items } = await supabaseAdmin!
+    .from('products')
+    .select('variant_options')
+    .eq('series_id', id)
+  const incomplete = (items ?? []).filter((item) =>
+    parsed.value.option_axes.some((axis) => !(item.variant_options as Record<string, string> | null)?.[axis])
+  ).length
+
+  return Response.json({ series: data, incomplete_items: incomplete })
 }
 
 // シリーズを消しても子商品は消えない（products.series_id は ON DELETE SET NULL）。単品に戻る

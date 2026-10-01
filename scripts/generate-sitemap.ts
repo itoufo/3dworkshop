@@ -306,14 +306,26 @@ async function fetchProductSeries(): Promise<SeriesRow[]> {
   try {
     const { data, error } = await supabase
       .from('product_series')
-      .select('slug, updated_at')
+      .select('id, slug, updated_at')
       .eq('is_active', true)
 
     if (error) {
       console.error('Error fetching product series:', error)
       return []
     }
-    return data || []
+
+    // 公開中の子商品が無いシリーズのページは 404 になるので載せない
+    const { data: items, error: itemsError } = await supabase
+      .from('products')
+      .select('series_id')
+      .eq('is_active', true)
+      .not('series_id', 'is', null)
+    if (itemsError) {
+      console.error('Error fetching product series items:', itemsError)
+      return []
+    }
+    const withItems = new Set((items ?? []).map((i) => i.series_id))
+    return (data || []).filter((s) => withItems.has(s.id)).map(({ slug, updated_at }) => ({ slug, updated_at }))
   } catch (error) {
     console.error('Error fetching product series:', error)
     return []

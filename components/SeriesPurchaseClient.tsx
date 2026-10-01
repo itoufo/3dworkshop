@@ -43,25 +43,27 @@ export default function SeriesPurchaseClient({
   items,
   shareUrl,
 }: Props) {
-  const [selection, setSelection] = useState<Selection>(() => (items[0] ? selectionOf(items[0], axes) : {}))
+  // ⚠ 選んでいる商品は id で持つ。組み合わせから逆引きすると、同じ組み合わせの商品が2つあるときや
+  //   項目名を変えて値が古いままのときに、?v= で指した商品とは別の（値段も違う）商品を売ってしまう
+  const [currentId, setCurrentId] = useState<string | null>(items[0]?.id ?? null)
+  const current = items.find((i) => i.id === currentId) ?? null
+  const selection: Selection = current ? selectionOf(current, axes) : {}
 
   // ?v=<子商品のid> で開かれたら、その子商品を選んだ状態にする。
   // ⚠ searchParams をサーバーで読むとページが ISR にならないので、ここ（ブラウザ）で読む
   useEffect(() => {
     const v = new URLSearchParams(window.location.search).get('v')
-    const item = v ? items.find((i) => i.id === v) : null
-    if (item) setSelection(selectionOf(item, axes))
-  }, [items, axes])
+    if (v && items.some((i) => i.id === v)) setCurrentId(v)
+  }, [items])
 
   const values = useMemo(() => axisValues(items, axes), [items, axes])
-  const current = findItem(items, axes, selection)
   const minPrice = lowestPrice(items)
 
   function choose(axis: string, value: string) {
     const next = selectValue(items, axes, selection, axis, value)
-    setSelection(next)
     const item = findItem(items, axes, next)
     if (item) {
+      setCurrentId(item.id)
       // 選んだ状態を URL に残す（共有・戻るで同じものが開く）。ページは読み直さない
       const url = new URL(window.location.href)
       url.searchParams.set('v', item.id)

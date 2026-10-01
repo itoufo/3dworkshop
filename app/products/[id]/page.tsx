@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
+import { jsonLdString } from '@/lib/json-ld'
 import Footer from '@/components/Footer'
 import ProductGallery from '@/components/ProductGallery'
 import ShareButtons from '@/components/ShareButtons'
@@ -109,7 +110,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(productJsonLd) }}
       />
       <Header />
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">

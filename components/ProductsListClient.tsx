@@ -19,6 +19,8 @@ export interface SeriesCard {
   image: string | null
   lowestPrice: number
   itemCount: number
+  /** 子商品のどれか1つでも買えるか（受注製作か在庫あり） */
+  inStock: boolean
 }
 
 interface ProductsListClientProps {

@@ -47,7 +47,7 @@ export default function SeriesForm({ series }: Props) {
     }
 
     setSaving(true)
-    const res = await adminJson<{ series: ProductSeries }>(
+    const res = await adminJson<{ series: ProductSeries; incomplete_items?: number }>(
       isEdit ? `/api/admin/product-series/${series!.id}` : '/api/admin/product-series',
       {
         method: isEdit ? 'PATCH' : 'POST',
@@ -68,7 +68,13 @@ export default function SeriesForm({ series }: Props) {
       alert(res.message)
       return
     }
-    alert(isEdit ? 'シリーズを更新しました' : 'シリーズを作成しました')
+    const incomplete = res.data.incomplete_items ?? 0
+    alert(
+      (isEdit ? 'シリーズを更新しました' : 'シリーズを作成しました') +
+        (incomplete > 0
+          ? `\n\n項目の値が入っていない商品が ${incomplete} 件あります。お客さまはその商品を選べません。商品管理で値を入れてください。`
+          : '')
+    )
     backToList()
     router.refresh()
   }
