@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto'
+import { DECLINE_SENTENCE } from '@/lib/chat-decline'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 /**
@@ -12,7 +13,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
  *   これは知識ではなく安全装置で、管理画面から緩められると値引きや空席を勝手に約束し始める。
  */
 
-export const CONTACT = '080-9453-0911（「3DLabのサイトを見た」とお伝えください）／ 3dlab@sunu25.com'
+/** 問い合わせ先メール。電話番号はサイトのどこにも出さない */
+export const CONTACT_EMAIL = '3dlab@sunu25.com'
+/** 「〜へお問い合わせください」に続ける形の連絡先 */
+export const CONTACT = `メール ${CONTACT_EMAIL}`
 
 export const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
 export const EMBEDDING_DIMENSIONS = 1536 // ⚠ migration の VECTOR(1536) と揃っている。変えるなら両方
@@ -140,7 +144,7 @@ type Chunk = { title: string; body: string }
 
 /**
  * 知識テーブルがまだ無い＝ migration を流す前の状態。
- * ⚠ これを「障害」として扱わない。来訪者には「準備中」と出したい（電話番号を案内する）。
+ * ⚠ これを「障害」として扱わない。来訪者には「準備中」と出したい（担当者へのメール問い合わせを案内する。電話番号は出さない）。
  *   「うまく答えられませんでした」を出すと、直せる設定漏れが不具合に見える。
  */
 export class KnowledgeUnavailableError extends Error {}
@@ -154,8 +158,16 @@ function isMissingRelation(error: { code?: string; message?: string } | null): b
 
 export type Retrieval = {
   chunks: Chunk[]
-  /** vector = 類似検索が効いた / fallback = 埋め込みが無いので公開分を全部渡した */
-  mode: 'vector' | 'fallback'
+  /**
+   * この質問に対して知識をどう引けたか。管理画面（/admin/chat-logs）で
+   * 「知識が足りない質問」を拾うために、この値をそのまま記録している。
+   *
+   *   matched  … 類似検索が当たった
+   *   no_match … 類似検索は動いたが0件。⚠ これが「知識に無いことを聞かれた」回
+   *   fallback … 検索が成立していない（埋め込みが1件も無い・OpenAI が落ちている等）。
+   *              質問のせいではないので、知識の不足とは別物として扱うこと
+   */
+  mode: 'matched' | 'no_match' | 'fallback'
   /**
    * 公開されている知識が1件も無い（＝ migration 未適用か、全部非公開）。
    * ⚠ 「今回の質問に当たらなかった」と混ぜないこと。混ぜると、関係ない質問をされただけで
@@ -211,7 +223,7 @@ export async function retrieveKnowledge(question: string): Promise<Retrieval> {
       // 関数が無いなど。答えられなくするより、全件渡してでも答える
       console.error('[chat-knowledge] match_chat_knowledge', error.message)
     } else if ((matched ?? []).length > 0) {
-      return { chunks: [...head, ...(matched as Chunk[])], mode: 'vector', corpusEmpty: false }
+      return { chunks: [...head, ...(matched as Chunk[])], mode: 'matched', corpusEmpty: false }
     } else {
       // 0件だった。ここで「関係する知識が無い」と決めつけない。
       // ⚠ migration 直後は誰にも埋め込みが無く、検索は必ず0件になる。
@@ -225,7 +237,7 @@ export async function retrieveKnowledge(question: string): Promise<Retrieval> {
         .not('embedding', 'is', null)
 
       // ベクトルがあるうえでの0件なら、本当に関係する知識が無い
-      if ((count ?? 0) > 0) return { chunks: head, mode: 'vector', corpusEmpty: false }
+      if ((count ?? 0) > 0) return { chunks: head, mode: 'no_match', corpusEmpty: false }
       // 1件も無いなら検索が成立していない。下の全件渡しへ落とす
     }
   }
@@ -300,10 +312,12 @@ ${knowledge}
 ${FENCE_CLOSE}
 
 # 守ること
-- 知識に書かれていないことは推測しない。「こちらでは分かりかねます。${CONTACT} へお問い合わせください」と答える。
+- 知識に書かれていないことは推測しない。「${DECLINE_SENTENCE}。${CONTACT} へお問い合わせください」と答える。
+  ⚠ この言い回しは変えない。管理画面が「答えられなかった回」を拾う目印にしている（lib/chat-decline.ts）。
 - 値引き、無料対応、知識に無い納期、空席の有無を約束しない。日程と空席は予約ページを案内する。
 - 合計金額の掛け算をしない。単価をそのまま伝える。一度言った金額は約束になる。
 - 相手の氏名・住所・電話番号・クレジットカード情報を聞き出さない。申し込みはフォームから行ってもらう。
+- こちらの電話番号は案内しない。連絡手段はメールだけを伝える。
 - 完成品は当日渡しではない。聞かれなくても、申し込みに関わる話では後日発送だと伝える。
 - 回答は3〜4文まで。長くしない。箇条書きは2〜4項目まで。
 - 日本語で、です・ます調で答える。
@@ -403,9 +417,10 @@ export async function completeChat(
 //   モデルは「自分が前にそう言った」と受け取って言い直す。値引きしない・当日渡しではない、
 //   というこの機能の要が破られる（2026-08-31 のレビューで指摘）。
 //
-// 会話をサーバーに保存すると個人情報を預かることになるので、保存はしない。
-// 代わりに、返した文章に署名を付けて返し、次のリクエストで署名ごと受け取って検証する。
+// 返した文章に署名を付けて返し、次のリクエストで署名ごと受け取って検証する。
 // 署名が合わない assistant の発言は捨てる（会話は続くが、その発言は無かったことになる）。
+// ⚠ 会話そのものは chat_conversations / chat_messages に記録している（lib/chat-log.ts）。
+//   ただしあれは管理画面で読むための控えで、モデルに渡す履歴はここの署名でしか信用しない。
 
 /**
  * 署名の鍵。
@@ -413,7 +428,7 @@ export async function completeChat(
  *   インスタンスをまたいで同じ値であることが要る（プロセスごとの乱数にすると、
  *   別インスタンスに振られた瞬間に履歴が全部捨てられる）。
  */
-function replySigningSecret(): string | null {
+export function replySigningSecret(): string | null {
   return process.env.CHAT_SIGNING_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || null
 }
 

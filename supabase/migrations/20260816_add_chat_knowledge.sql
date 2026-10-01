@@ -144,7 +144,7 @@ INSERT INTO public.chat_knowledge (title, body, tags, is_pinned, is_published, s
 ),
 (
   '予約',
-  E'公式サイトの申し込みフォーム、または電話。じゃらんnetからも予約できる（即時予約）。\n⚠ 空席や開催日をこの場で断定しない。日程は予約ページを見てもらう。',
+  E'公式サイトの申し込みフォーム。じゃらんnetからも予約できる（即時予約）。\n⚠ 空席や開催日をこの場で断定しない。日程は予約ページを見てもらう。',
   ARRAY['予約'], FALSE, TRUE, 70
 ),
 (

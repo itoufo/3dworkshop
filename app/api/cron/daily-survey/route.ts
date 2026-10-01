@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { isCronAuthorized } from '@/lib/cron-auth'
 import { isPushConfigured, sendAndLogPush } from '@/lib/push'
 import { jstDateString } from '@/lib/surveys'
 import { dummyInitialVotes } from '@/lib/survey-seed'
@@ -27,25 +27,6 @@ export const runtime = 'nodejs'
 // ⚠ 静的化させない。ビルド時に1回実行されて終わる
 export const dynamic = 'force-dynamic'
 
-function isAuthorized(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return false // 未設定なら誰も通さない（開けっ放しにしない）
-
-  // Vercel Cron は `Authorization: Bearer <CRON_SECRET>` を自分で付けてくる。
-  // GitHub Actions 側は `x-cron-secret` を自分で付けている。どちらも受ける。
-  const bearer = request.headers.get('authorization')
-  const provided =
-    request.headers.get('x-cron-secret') ||
-    (bearer?.startsWith('Bearer ') ? bearer.slice('Bearer '.length) : null)
-  if (!provided) return false
-
-  // ⚠ === で比べない。文字列比較は先頭から順に見るので、掛かった時間で正解が漏れる
-  const a = Buffer.from(provided, 'utf8')
-  const b = Buffer.from(secret, 'utf8')
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
-}
-
 /** Vercel Cron は GET で叩いてくる。中身は POST と同じ */
 export async function GET(request: NextRequest) {
   return handle(request)
@@ -56,7 +37,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handle(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 

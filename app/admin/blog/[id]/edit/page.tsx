@@ -167,7 +167,7 @@ export default function EditBlogPostPage() {
 
       alert('ブログ記事を更新しました')
       setNavigating(true)
-      router.push('/admin')
+      router.push('/admin?tab=blog')
     } catch (error) {
       console.error('Error updating blog post:', error)
       alert('ブログ記事の更新に失敗しました')
@@ -195,7 +195,7 @@ export default function EditBlogPostPage() {
 
       alert('ブログ記事を削除しました')
       setNavigating(true)
-      router.push('/admin')
+      router.push('/admin?tab=blog')
     } finally {
       setUploading(false)
     }

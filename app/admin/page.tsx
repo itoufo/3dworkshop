@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Cookies from 'js-cookie'
 import { supabase } from '@/lib/supabase'
+import { toAdminTab, type AdminTab } from '@/lib/admin-tabs'
+import {
+  REQUESTS_CHANGED_EVENT,
+  REQUEST_STATUS_LABELS,
+  SERVICE_REQUEST_STATUSES,
+  WORKSHOP_REQUEST_STATUSES,
+  type RequestKind,
+  type ServiceRequestStatus,
+  type WorkshopRequestStatus,
+} from '@/lib/request-statuses'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock, MessageCircle, BellRing, ClipboardList } from 'lucide-react'
+import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
 import PushNotificationPanel from '@/components/admin/PushNotificationPanel'
 import SurveyPanel from '@/components/admin/SurveyPanel'
 
@@ -36,7 +47,7 @@ interface WorkshopRequestRow {
   participants: number | null
   preferred_dates: string | null
   message: string | null
-  status: 'new' | 'contacted' | 'scheduled' | 'closed'
+  status: WorkshopRequestStatus
   created_at: string
   workshop?: { title: string } | null
   category?: { name: string; slug: string } | null
@@ -50,9 +61,22 @@ interface ServiceRequestRow {
   phone: string | null
   quantity: number | null
   message: string | null
-  status: 'new' | 'contacted' | 'quoted' | 'closed'
+  status: ServiceRequestStatus
   created_at: string
   service?: { title: string; type: string } | null
+}
+
+/** 区画ごとの見出し。⚠ 左メニューの項目名と揃える（違う名前だと今どこにいるか分からなくなる） */
+const TAB_TITLES: Record<AdminTab, { title: string; description: string }> = {
+  bookings: { title: '3DLab 管理ダッシュボード', description: '3Dプリンタ教室の予約と顧客情報を管理' },
+  customers: { title: '顧客管理', description: '申し込みのあったお客様の一覧' },
+  workshops: { title: 'ワークショップ', description: '開催するワークショップの作成と編集' },
+  categories: { title: 'カテゴリ', description: 'ワークショップのカテゴリ（まとめページ）' },
+  coupons: { title: 'クーポン', description: '割引クーポンの発行と利用状況' },
+  blog: { title: 'ブログ', description: '記事の作成と公開' },
+  requests: { title: 'リクエスト', description: '開催希望・法人向けサービスのお問い合わせ' },
+  notifications: { title: '通知', description: 'アプリに入れている方へのお知らせ配信' },
+  surveys: { title: 'アンケート', description: '2択アンケートの設問と回答' },
 }
 
 export default function AdminDashboard() {
@@ -65,25 +89,58 @@ export default function AdminDashboard() {
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'customers' | 'workshops' | 'categories' | 'coupons' | 'blog' | 'requests' | 'notifications' | 'surveys'>('bookings')
   const [navigating, setNavigating] = useState(false)
+  /** 問い合わせが読めなかったときの表示。⚠ 空一覧と区別するために要る */
+  const [requestsError, setRequestsError] = useState<string | null>(null)
+  /** 対応状況を更新中の行。二重送信と、応答の追い越しを防ぐ */
+  const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
   const [showCancelled, setShowCancelled] = useState(false)
   const [hideInternal, setHideInternal] = useState(true)
-  const [bookingWorkshopFilter, setBookingWorkshopFilter] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab && ['bookings', 'customers', 'workshops', 'categories', 'coupons', 'blog', 'requests', 'notifications'].includes(tab)) {
-      setActiveTab(tab as typeof activeTab)
-    }
-    setBookingWorkshopFilter(searchParams.get('workshop_id'))
-  }, [searchParams])
+  // ⚠ どの区画を見ているかは URL だけで決まる。state に写して useEffect で追わない。
+  //   写すと、左メニューを踏んでから effect が走るまでの1回、前の区画（=予約一覧の全行）
+  //   を描いてから捨てることになる。導出なら最初から正しい区画で描く。
+  //   区画名の一覧は lib/admin-tabs.ts（左メニューもそこから取る）
+  const activeTab = toAdminTab(searchParams.get('tab'))
+  const bookingWorkshopFilter = searchParams.get('workshop_id')
+
+  /** 統計と売上グラフを出すか。/admin（タブ指定なし）＝ダッシュボードのときだけ。
+   *  ⚠ 各区画の上に毎回これを出すと、左メニューで選んだ中身に届くまで800pxスクロールさせられる */
+  const showOverview = !searchParams.get('tab')
 
   useEffect(() => {
     fetchData()
   }, [])
+
+  /**
+   * 問い合わせの取得。
+   * ⚠ 失敗を黙って空一覧にしない。「0件」と「読めなかった」は画面上で区別できないので、
+   *   このPRが直した「届いているのに出ていない」状態に逆戻りする
+   */
+  async function loadRequests() {
+    try {
+      const res = await fetch('/api/admin/requests')
+      if (res.status === 401) {
+        // ⚠ 画面側の admin_auth は残っているのに署名付きの admin_session だけ切れている状態。
+        //   文字で出してもログイン画面に戻れないので、画面側の cookie を捨てて戻す
+        Cookies.remove('admin_auth')
+        location.reload()
+        return
+      }
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setRequestsError(data.message || '問い合わせの取得に失敗しました')
+        return
+      }
+      setRequestsError(null)
+      setWorkshopRequests((data.workshopRequests as WorkshopRequestRow[]) || [])
+      setServiceRequests((data.serviceRequests as ServiceRequestRow[]) || [])
+    } catch {
+      setRequestsError('問い合わせの取得に失敗しました（通信エラー）')
+    }
+  }
 
   async function fetchData() {
     try {
@@ -156,16 +213,12 @@ export default function AdminDashboard() {
       }))
 
       // リクエスト一覧 (ワークショップ開催・サービス購入相談)
-      const [wsReqRes, svcReqRes] = await Promise.all([
-        supabase
-          .from('workshop_requests')
-          .select('*, workshop:workshops(title), category:workshop_categories(name, slug)')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('service_requests')
-          .select('*, service:services(title, type)')
-          .order('created_at', { ascending: false }),
-      ])
+      // ⚠ anon キーでは読めない（RLS が INSERT だけ許可）。管理用の API 経由で取る。
+      //   ここを supabase 直読みに戻すと、届いた問い合わせが1件も出ない状態に逆戻りする
+      // ⚠ fetch は通信に失敗すると例外を投げる（supabase-js は投げずに error を返す）。
+      //   ここで投げさせると、取得済みの予約・顧客・ワークショップまで画面に出せなくなる。
+      //   この1件だけ別に捕まえる
+      await loadRequests()
 
       setBookings(bookingsData || [])
       setCustomers(customersData || [])
@@ -173,8 +226,6 @@ export default function AdminDashboard() {
       setCoupons(couponsData || [])
       setBlogPosts(blogPostsData || [])
       setCategories(categoriesWithCount)
-      if (!wsReqRes.error) setWorkshopRequests((wsReqRes.data as WorkshopRequestRow[]) || [])
-      if (!svcReqRes.error) setServiceRequests((svcReqRes.data as ServiceRequestRow[]) || [])
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -182,24 +233,60 @@ export default function AdminDashboard() {
     }
   }
 
-  async function updateWorkshopRequestStatus(id: string, status: WorkshopRequestRow['status']) {
-    const { error } = await supabase.from('workshop_requests').update({ status }).eq('id', id)
-    if (error) {
-      console.error(error)
-      alert('ステータス更新に失敗しました')
-      return
+  /**
+   * 対応状況の更新。
+   * ⚠ anon キーでは書けない（RLS が INSERT だけ許可）。しかも RLS は0件更新でも
+   *   エラーを返さないので、直書きしていた頃は「押すと画面だけ変わって DB は元のまま」
+   *   だった。API 側で更新できた行数を確かめている。
+   * ⚠ 同じ行への2回目は受け付けない。続けて変えると応答の到着順が入れ替わり、
+   *   画面が DB と違う値で落ち着くことがある
+   */
+  async function updateRequestStatus(
+    kind: 'workshop',
+    id: string,
+    status: WorkshopRequestStatus,
+  ): Promise<void>
+  async function updateRequestStatus(
+    kind: 'service',
+    id: string,
+    status: ServiceRequestStatus,
+  ): Promise<void>
+  async function updateRequestStatus(kind: RequestKind, id: string, status: string): Promise<void> {
+    if (updatingRequestId) return
+    setUpdatingRequestId(id)
+    try {
+      const res = await fetch('/api/admin/requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind, id, status }),
+      })
+      if (res.status === 401) {
+        Cookies.remove('admin_auth')
+        location.reload()
+        return
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        console.error('リクエストの更新に失敗:', data)
+        alert(data.message || 'ステータス更新に失敗しました')
+        return
+      }
+      if (kind === 'workshop') {
+        setWorkshopRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status: status as WorkshopRequestStatus } : r)),
+        )
+      } else {
+        setServiceRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status: status as ServiceRequestStatus } : r)),
+        )
+      }
+      // 左メニューの未対応件数に知らせる（別のコンポーネントなので合図で伝える）
+      window.dispatchEvent(new Event(REQUESTS_CHANGED_EVENT))
+    } catch {
+      alert('ステータス更新に失敗しました（通信エラー）')
+    } finally {
+      setUpdatingRequestId(null)
     }
-    setWorkshopRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
-  }
-
-  async function updateServiceRequestStatus(id: string, status: ServiceRequestRow['status']) {
-    const { error } = await supabase.from('service_requests').update({ status }).eq('id', id)
-    if (error) {
-      console.error(error)
-      alert('ステータス更新に失敗しました')
-      return
-    }
-    setServiceRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
   }
 
   async function updateBookingStatus(bookingId: string, status: string) {
@@ -314,8 +401,8 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">3DLab 管理ダッシュボード</h2>
-            <p className="text-gray-600 mt-1">3Dプリンタ教室の予約と顧客情報を管理</p>
+            <h2 className="text-3xl font-bold text-gray-900">{TAB_TITLES[activeTab].title}</h2>
+            <p className="text-gray-600 mt-1">{TAB_TITLES[activeTab].description}</p>
           </div>
           <div className="flex items-center space-x-3">
             <RevalidateButton />
@@ -330,7 +417,9 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-        
+
+        {showOverview && (
+        <>
         {/* 統計情報 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white">
@@ -427,127 +516,8 @@ export default function AdminDashboard() {
             })}
           </div>
         </div>
-
-        {/* タブ */}
-        <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
-          <nav className="flex space-x-2">
-            <button
-              onClick={() => {
-                setActiveTab('bookings')
-                if (bookingWorkshopFilter) router.replace('/admin?tab=bookings')
-              }}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'bookings'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Calendar className="w-4 h-4 inline mr-2" />
-              予約管理
-            </button>
-            <button
-              onClick={() => setActiveTab('customers')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'customers'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              顧客管理
-            </button>
-            <button
-              onClick={() => setActiveTab('workshops')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'workshops'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <CreditCard className="w-4 h-4 inline mr-2" />
-              ワークショップ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'categories'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <FolderOpen className="w-4 h-4 inline mr-2" />
-              カテゴリ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('coupons')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'coupons'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Tag className="w-4 h-4 inline mr-2" />
-              クーポン管理
-            </button>
-            <button
-              onClick={() => setActiveTab('blog')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'blog'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 inline mr-2" />
-              ブログ管理
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 relative ${
-                activeTab === 'requests'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Inbox className="w-4 h-4 inline mr-2" />
-              リクエスト
-              {(workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length) > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white">
-                  {workshopRequests.filter(r => r.status === 'new').length + serviceRequests.filter(r => r.status === 'new').length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('notifications')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'notifications'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BellRing className="w-4 h-4 inline mr-2" />
-              通知
-            </button>
-            <button
-              onClick={() => setActiveTab('surveys')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${
-                activeTab === 'surveys'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <ClipboardList className="w-4 h-4 inline mr-2" />
-              アンケート
-            </button>
-            {/* ⚠ これだけ別ページ。タブではなく遷移する（知識の編集は独立した画面） */}
-            <button
-              onClick={() => router.push('/admin/chat-knowledge')}
-              className="flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-            >
-              <MessageCircle className="w-4 h-4 inline mr-2" />
-              チャットの知識
-            </button>
-          </nav>
-        </div>
+        </>
+        )}
       </div>
 
       {/* 予約管理 */}
@@ -1440,6 +1410,17 @@ export default function AdminDashboard() {
       {/* リクエスト管理 */}
       {activeTab === 'requests' && (
         <div className="space-y-6">
+          {/* ⚠ 読めなかったことを必ず出す。黙って空一覧にすると
+              「届いているのに出ていない」に逆戻りして、また誰も気づかない */}
+          {requestsError && (
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4">
+              <p className="text-base font-bold text-red-800">{requestsError}</p>
+              <p className="mt-1 text-sm text-red-700">
+                下の一覧は空に見えていますが、届いていないという意味ではありません。
+                画面を再読み込みしても直らない場合はご連絡ください。
+              </p>
+            </div>
+          )}
           <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1497,13 +1478,17 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3">
                           <select
                             value={req.status}
-                            onChange={(e) => updateWorkshopRequestStatus(req.id, e.target.value as WorkshopRequestRow['status'])}
-                            className="text-xs px-2 py-1 border border-gray-300 rounded"
+                            onChange={(e) =>
+                              updateRequestStatus('workshop', req.id, e.target.value as WorkshopRequestStatus)
+                            }
+                            disabled={updatingRequestId === req.id}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
                           >
-                            <option value="new">未対応</option>
-                            <option value="contacted">連絡済</option>
-                            <option value="scheduled">日程確定</option>
-                            <option value="closed">クローズ</option>
+                            {WORKSHOP_REQUEST_STATUSES.map((st) => (
+                              <option key={st} value={st}>
+                                {REQUEST_STATUS_LABELS[st]}
+                              </option>
+                            ))}
                           </select>
                         </td>
                       </tr>
@@ -1563,13 +1548,17 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3">
                           <select
                             value={req.status}
-                            onChange={(e) => updateServiceRequestStatus(req.id, e.target.value as ServiceRequestRow['status'])}
-                            className="text-xs px-2 py-1 border border-gray-300 rounded"
+                            onChange={(e) =>
+                              updateRequestStatus('service', req.id, e.target.value as ServiceRequestStatus)
+                            }
+                            disabled={updatingRequestId === req.id}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
                           >
-                            <option value="new">未対応</option>
-                            <option value="contacted">連絡済</option>
-                            <option value="quoted">見積送付済</option>
-                            <option value="closed">クローズ</option>
+                            {SERVICE_REQUEST_STATUSES.map((st) => (
+                              <option key={st} value={st}>
+                                {REQUEST_STATUS_LABELS[st]}
+                              </option>
+                            ))}
                           </select>
                         </td>
                       </tr>

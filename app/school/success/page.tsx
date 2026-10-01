@@ -161,8 +161,6 @@ export default function SchoolSuccessPage() {
             {/* Contact Info */}
             <div className="bg-gray-50 rounded-2xl p-6 mb-8">
               <p className="text-sm text-gray-600 mb-2">お問い合わせ</p>
-              <p className="font-medium text-gray-900">080-9453-0911</p>
-              <p className="text-gray-500 text-xs">※「3DLabを見た」とお伝えください</p>
               <p className="font-medium text-gray-900">3dlab@sunu25.com</p>
             </div>
 
@@ -189,7 +187,7 @@ export default function SchoolSuccessPage() {
           <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center">
             <p className="text-sm text-yellow-800">
               <strong>重要：</strong>メールが届かない場合は、迷惑メールフォルダをご確認いただくか、<br />
-              お電話にてお問い合わせください。
+              別のメールアドレスから 3dlab@sunu25.com までお問い合わせください。
             </p>
           </div>
         </div>

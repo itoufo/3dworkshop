@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, BellOff, BellRing, Share, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Bell, BellOff, BellRing, ChevronRight, Loader2 } from 'lucide-react'
 import {
   getPushState,
   isIOS,
@@ -24,6 +26,7 @@ import { gaEvent } from '@/lib/gtag'
  *   片方だけにするなら、あちらの配列とここの文言を同時に直す。
  */
 export default function PushSubscribeButton() {
+  const pathname = usePathname()
   const [state, setState] = useState<PushState>('loading')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -73,10 +76,18 @@ export default function PushSubscribeButton() {
       <div className="text-center">
         <p className={headingClass}>新しい開催日程を通知で受け取る</p>
         <p className={noteClass}>
-          iPhone・iPad では、共有ボタン
-          <Share className="inline w-4 h-4 mx-1 align-text-bottom" />
-          から「ホーム画面に追加」をすると、通知を受け取れるようになります。
+          iPhone・iPad では、ホーム画面に追加すると通知を受け取れます。
         </p>
+        {pathname !== '/notify' && (
+        <Link
+          href="/notify"
+          onClick={() => gaEvent('push_guide_open', { source: 'footer' })}
+          className="mt-3 inline-flex items-center gap-1 rounded-full border border-purple-300 px-5 py-2.5 text-base font-semibold text-purple-200 hover:bg-gray-800"
+        >
+          画面つきの手順を見る
+          <ChevronRight className="w-5 h-5" aria-hidden="true" />
+        </Link>
+        )}
       </div>
     )
   }

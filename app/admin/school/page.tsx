@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import AdminSidebar from '@/components/AdminSidebar'
 import { Users, CheckCircle, XCircle, Clock, Mail, Phone, User, BookOpen } from 'lucide-react'
 
 interface SchoolEnrollment {
@@ -129,219 +128,215 @@ export default function SchoolAdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      
-      <main className="flex-1 p-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">スクール生管理</h1>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">スクール生管理</h1>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">総申込数</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <Users className="w-8 h-8 text-purple-600" />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">総申込数</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">受講中</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">承認待ち</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-                </div>
-                <Clock className="w-8 h-8 text-yellow-600" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">基本実践</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.basic}</p>
-                </div>
-                <BookOpen className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">自由創作</p>
-                  <p className="text-2xl font-bold text-pink-600">{stats.free}</p>
-                </div>
-                <BookOpen className="w-8 h-8 text-pink-600" />
-              </div>
+              <Users className="w-8 h-8 text-purple-600" />
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div className="flex flex-wrap gap-4">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">ステータス</label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="all">すべて</option>
-                  <option value="active">受講中</option>
-                  <option value="pending">承認待ち</option>
-                  <option value="paused">一時停止</option>
-                  <option value="cancelled">キャンセル</option>
-                </select>
+                <p className="text-sm text-gray-600">受講中</p>
+                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">クラス</label>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="all">すべて</option>
-                  <option value="basic">基本実践クラス</option>
-                  <option value="free">自由創作クラス</option>
-                </select>
-              </div>
+              <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           </div>
 
-          {/* Enrollments List */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {loading ? (
-              <div className="p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">承認待ち</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
               </div>
-            ) : filteredEnrollments.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                申込データがありません
+              <Clock className="w-8 h-8 text-yellow-600" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">基本実践</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.basic}</p>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        申込日
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        生徒情報
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        保護者情報
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        クラス
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        料金
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        支払状況
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ステータス
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        操作
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredEnrollments.map((enrollment) => (
-                      <tr key={enrollment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(enrollment.enrollment_date).toLocaleDateString('ja-JP')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{enrollment.student_name}</p>
-                            <p className="text-sm text-gray-500">
-                              {enrollment.student_age}歳 {enrollment.student_grade && `/ ${enrollment.student_grade}`}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm">
-                            <div className="flex items-center mb-1">
-                              <User className="w-4 h-4 text-gray-400 mr-2" />
-                              <span className="text-gray-900">{enrollment.customer?.name}</span>
-                            </div>
-                            <div className="flex items-center mb-1">
-                              <Mail className="w-4 h-4 text-gray-400 mr-2" />
-                              <span className="text-gray-600">{enrollment.customer?.email}</span>
-                            </div>
-                            {enrollment.customer?.phone && (
-                              <div className="flex items-center">
-                                <Phone className="w-4 h-4 text-gray-400 mr-2" />
-                                <span className="text-gray-600">{enrollment.customer?.phone}</span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${
-                              enrollment.class_type === 'basic' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-pink-100 text-pink-800'
-                            }`}>
-                              {enrollment.class_type === 'basic' ? '基本実践' : '自由創作'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>
-                            <p>月謝: ¥{enrollment.monthly_fee.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500">入会金: ¥{enrollment.registration_fee.toLocaleString()}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getPaymentStatusBadge(enrollment.payment_status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            {getStatusIcon(enrollment.status)}
-                            <span className="text-sm text-gray-900">{getStatusLabel(enrollment.status)}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={enrollment.status}
-                            onChange={(e) => updateEnrollmentStatus(enrollment.id, e.target.value)}
-                            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                          >
-                            <option value="pending">承認待ち</option>
-                            <option value="active">受講中</option>
-                            <option value="paused">一時停止</option>
-                            <option value="cancelled">キャンセル</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <BookOpen className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">自由創作</p>
+                <p className="text-2xl font-bold text-pink-600">{stats.free}</p>
               </div>
-            )}
+              <BookOpen className="w-8 h-8 text-pink-600" />
+            </div>
           </div>
         </div>
-      </main>
+
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">ステータス</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">すべて</option>
+                <option value="active">受講中</option>
+                <option value="pending">承認待ち</option>
+                <option value="paused">一時停止</option>
+                <option value="cancelled">キャンセル</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">クラス</label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">すべて</option>
+                <option value="basic">基本実践クラス</option>
+                <option value="free">自由創作クラス</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Enrollments List */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+            </div>
+          ) : filteredEnrollments.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              申込データがありません
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      申込日
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      生徒情報
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      保護者情報
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      クラス
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      料金
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      支払状況
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ステータス
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredEnrollments.map((enrollment) => (
+                    <tr key={enrollment.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(enrollment.enrollment_date).toLocaleDateString('ja-JP')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{enrollment.student_name}</p>
+                          <p className="text-sm text-gray-500">
+                            {enrollment.student_age}歳 {enrollment.student_grade && `/ ${enrollment.student_grade}`}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <div className="flex items-center mb-1">
+                            <User className="w-4 h-4 text-gray-400 mr-2" />
+                            <span className="text-gray-900">{enrollment.customer?.name}</span>
+                          </div>
+                          <div className="flex items-center mb-1">
+                            <Mail className="w-4 h-4 text-gray-400 mr-2" />
+                            <span className="text-gray-600">{enrollment.customer?.email}</span>
+                          </div>
+                          {enrollment.customer?.phone && (
+                            <div className="flex items-center">
+                              <Phone className="w-4 h-4 text-gray-400 mr-2" />
+                              <span className="text-gray-600">{enrollment.customer?.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${
+                            enrollment.class_type === 'basic' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-pink-100 text-pink-800'
+                          }`}>
+                            {enrollment.class_type === 'basic' ? '基本実践' : '自由創作'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>
+                          <p>月謝: ¥{enrollment.monthly_fee.toLocaleString()}</p>
+                          <p className="text-xs text-gray-500">入会金: ¥{enrollment.registration_fee.toLocaleString()}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getPaymentStatusBadge(enrollment.payment_status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(enrollment.status)}
+                          <span className="text-sm text-gray-900">{getStatusLabel(enrollment.status)}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={enrollment.status}
+                          onChange={(e) => updateEnrollmentStatus(enrollment.id, e.target.value)}
+                          className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                          <option value="pending">承認待ち</option>
+                          <option value="active">受講中</option>
+                          <option value="paused">一時停止</option>
+                          <option value="cancelled">キャンセル</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

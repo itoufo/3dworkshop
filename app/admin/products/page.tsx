@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
-import AdminSidebar from '@/components/AdminSidebar'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import { firstImageUrl, isVideoUrl } from '@/lib/media'
@@ -62,11 +61,9 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="flex">
+    <>
       {navigating && <LoadingOverlay message="読み込んでいます..." />}
-      <AdminSidebar />
-
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -183,6 +180,6 @@ export default function AdminProductsPage() {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

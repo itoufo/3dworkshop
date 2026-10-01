@@ -11,7 +11,7 @@
 
 // ⚠ 中身を変えたら必ず上げること。activate で「名前が違うキャッシュ」を消しているので、
 //   名前が変わらない限り古い中身が residual として残り続ける。
-const CACHE_VERSION = 'v2'
+const CACHE_VERSION = 'v3'
 const STATIC_CACHE = `3dlab-static-${CACHE_VERSION}`
 const OFFLINE_URL = '/offline.html'
 
