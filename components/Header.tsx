@@ -96,7 +96,15 @@ function splitCategoryName(name: string): { tag: string | null; title: string } 
  * 本番は 400（空の枠）、開発は例外になる。ヘッダーは全ページにあるので、渡す前にここで弾く。
  */
 function isOptimizableImageUrl(url: string): boolean {
-  return url.startsWith('/') || /^https:\/\/[a-z0-9-]+\.supabase\.co\//i.test(url)
+  // サイト内のパス。`//host/...`（プロトコル相対）は外部ホストなので通さない
+  if (url.startsWith('/')) return !url.startsWith('//')
+  try {
+    const { protocol, hostname } = new URL(url)
+    // ⚠ next.config.js の images.remotePatterns と同じホストにそろえること
+    return protocol === 'https:' && (hostname === 'images.unsplash.com' || hostname.endsWith('.supabase.co'))
+  } catch {
+    return false
+  }
 }
 
 export default function Header() {
@@ -301,6 +309,7 @@ export default function Header() {
                       <div className="grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-11rem)] overflow-y-auto">
                         {categories.map((cat) => {
                           const { tag, title } = splitCategoryName(cat.name)
+                          const imageUrl = cat.image_url?.trim() ?? ''
                           return (
                             <Link
                               key={cat.id}
@@ -311,10 +320,10 @@ export default function Header() {
                               onClick={() => setWorkshopDropdownOpen(false)}
                             >
                               <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-purple-100 to-pink-100">
-                                {cat.image_url && isOptimizableImageUrl(cat.image_url) ? (
+                                {imageUrl && isOptimizableImageUrl(imageUrl) ? (
                                   // 名前が隣にあるので、画像は飾り扱い（alt は空）
                                   <Image
-                                    src={optimizeImageUrl(cat.image_url, 75)}
+                                    src={optimizeImageUrl(imageUrl, 75)}
                                     alt=""
                                     fill
                                     sizes="56px"
@@ -367,7 +376,12 @@ export default function Header() {
                   <div
                     key={entry.label}
                     className="relative"
-                    onMouseEnter={() => setOpenGroup(entry.label)}
+                    onMouseEnter={() => {
+                      // ワークショップのパネルは遅れて閉じるので、ここで閉じておく（2枚重なって出ないように）
+                      cancelWorkshopClose()
+                      setWorkshopDropdownOpen(false)
+                      setOpenGroup(entry.label)
+                    }}
                     onMouseLeave={() => setOpenGroup(null)}
                   >
                     {/* まとまり自体は行き先を持たないのでボタン。押すと開閉する（キーボード操作用） */}
