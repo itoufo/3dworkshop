@@ -63,12 +63,34 @@ export function parseOptionalGender(value: unknown): Parsed<CustomerGender | nul
 /**
  * メールアドレスで顧客行を探し、無ければ作り、あれば名前・電話などを今回の入力で更新する。
  * 渡さなかった列（年齢・性別・住所を省いた場合）は元の値のまま残る。
+ *
+ * ⚠ 会員（パスワードを登録済み）の行は、本人がログインしているときだけ更新する。
+ *   申込フォームはログイン不要で、メールアドレスは自己申告。他人のメールアドレスを入れるだけで
+ *   その人の氏名・電話・住所を書き換えられると、会員のフォームの初期値（配送先など）が
+ *   他人の値になる。会員登録（app/api/account/register）が既存の行を書き換えないのと同じ理由。
+ *   会員でない行は従来どおり今回の入力で更新する（連絡先の変更を受け取る手段がほかに無い）。
+ *
+ * @param loggedInCustomerId いまログインしている会員の id（lib/customer-auth.ts の currentCustomer()）。未ログインは null
  */
 export async function upsertCustomerByEmail(
   admin: SupabaseClient,
   contact: CustomerContact,
   extra: { age?: number; gender?: CustomerGender; address?: string } = {},
+  loggedInCustomerId: string | null = null,
 ): Promise<{ id: string } | null> {
+  const { data: existing, error: lookupError } = await admin
+    .from('customers')
+    .select('id, password_hash')
+    .eq('email', contact.email)
+    .maybeSingle()
+  if (lookupError) {
+    console.error('[public-customer] lookup failed:', lookupError.code, lookupError.message)
+    return null
+  }
+  if (existing?.password_hash && existing.id !== loggedInCustomerId) {
+    return { id: existing.id as string }
+  }
+
   // 電話が任意のフォームで空欄だったときは、電話の列に触らない（登録済みの電話番号を空で上書きしない）
   const { phone, ...rest } = contact
   const { data, error } = await admin

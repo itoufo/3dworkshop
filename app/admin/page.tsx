@@ -469,7 +469,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* ⚠ 読めなかったことを必ず出す。黙って空一覧にすると、予約0件・売上0円に見える */}
-        {bookingsError && (activeTab === 'bookings' || activeTab === 'customers') && (
+        {/* ワークショップ区画も予約から「予約N名」を数えているので対象に含める */}
+        {bookingsError && (activeTab === 'bookings' || activeTab === 'customers' || activeTab === 'workshops') && (
           <div className="mb-8 rounded-xl border-2 border-red-200 bg-red-50 p-4">
             <p className="text-base font-bold text-red-800">予約・顧客の情報を読み込めませんでした（{bookingsError}）</p>
             <p className="mt-1 text-base text-red-700">

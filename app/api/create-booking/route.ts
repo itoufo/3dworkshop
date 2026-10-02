@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { currentCustomer } from '@/lib/customer-auth'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { jstToday } from '@/lib/booking-deadline'
+import { MAX_PARTICIPANTS_PER_BOOKING } from '@/lib/booking-limits'
 import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import {
   parseCustomerContact,
@@ -33,8 +35,8 @@ const MAX_BOOKINGS = 20
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** フォームで選べる人数の上限より十分大きい値。桁の打ち間違いと悪戯を止めるためのもの */
-const MAX_PARTICIPANTS = 100
+/** 1回の予約の人数の上限。フォームで選べる人数と同じ値にする */
+const MAX_PARTICIPANTS = MAX_PARTICIPANTS_PER_BOOKING
 const MINOR_GRADES_MAX = 500
 
 function bad(error: string) {
@@ -123,6 +125,31 @@ export async function POST(request: NextRequest) {
     session = data
   }
 
+  const member = await currentCustomer()
+
+  // 同じ人がこの回に作りかけた仮予約（決済画面まで進まなかったもの）を取り消してから数える。
+  // ⚠ 決済画面の作成（/api/create-checkout-session）が通信断などで失敗すると、仮予約だけが残る。
+  //   Stripe のセッションが無いので失効の Webhook も来ず、そのままだと本人のやり直しが
+  //   「自分の仮予約のせいで満席」で通らなくなる
+  const { data: sameCustomer } = await supabaseAdmin
+    .from('customers')
+    .select('id')
+    .eq('email', contact.value.email)
+    .maybeSingle()
+  if (sameCustomer) {
+    let stale = supabaseAdmin
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('customer_id', sameCustomer.id)
+      .eq('workshop_id', workshop.id)
+      .eq('status', 'pending')
+      .eq('payment_status', 'pending')
+      .is('stripe_session_id', null)
+    stale = sessionId ? stale.eq('session_id', sessionId) : stale.is('session_id', null)
+    const { error: staleError } = await stale
+    if (staleError) console.error('[create-booking] stale pending cleanup failed:', staleError.code, staleError.message)
+  }
+
   // 残席の確認。数え方は空席表示（/api/check-availability）と同じ関数を使う
   const maxParticipants: number | null = session?.max_participants ?? workshop.max_participants ?? null
   if (maxParticipants !== null) {
@@ -147,11 +174,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {
-    // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
-    ...(workshop.collect_demographics && age.value !== null ? { age: age.value } : {}),
-    ...(workshop.collect_demographics && gender.value !== null ? { gender: gender.value } : {}),
-  })
+  const customer = await upsertCustomerByEmail(
+    supabaseAdmin,
+    contact.value,
+    {
+      // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
+      ...(workshop.collect_demographics && age.value !== null ? { age: age.value } : {}),
+      ...(workshop.collect_demographics && gender.value !== null ? { gender: gender.value } : {}),
+    },
+    member?.id ?? null,
+  )
   if (!customer) return NextResponse.json({ error: '予約の作成に失敗しました' }, { status: 500 })
 
   const { data: booking, error } = await supabaseAdmin

@@ -74,11 +74,12 @@ export async function POST(request: NextRequest) {
     // 二重確定を防ぐ（リトライ・二重送信時は既存の予約をそのまま返す）
     // ⚠ 上で読んだ booking は顧客行・ワークショップ行を全列で持っている。そのまま返さない
     if (booking.status === 'confirmed') {
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: existingError } = await supabaseAdmin
         .from('bookings')
         .select(BOOKING_SUMMARY_COLUMNS)
         .eq('id', booking_id)
         .single()
+      if (existingError || !existing) throw existingError ?? new Error('confirmed booking could not be re-read')
       return NextResponse.json({ success: true, booking: existing })
     }
 

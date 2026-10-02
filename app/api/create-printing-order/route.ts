@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { currentCustomer } from '@/lib/customer-auth'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { parseCustomerContact, upsertCustomerByEmail } from '@/lib/public-customer'
 import {
@@ -24,9 +25,9 @@ export const dynamic = 'force-dynamic'
 
 const WINDOW_MS = 10 * 60 * 1000
 const MAX_ORDERS = 10
-/** 同じメールアドレス宛ての依頼（＝確認メール）は1時間に3件まで */
+/** 同じメールアドレス宛ての依頼（＝確認メール）は1時間に5件まで（部品を何点か続けて依頼する分の余裕） */
 const RECIPIENT_WINDOW_MS = 60 * 60 * 1000
-const MAX_PER_RECIPIENT = 3
+const MAX_PER_RECIPIENT = 5
 
 /** printing_orders の列幅（VARCHAR） */
 const FILE_NAME_MAX = 255
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
 
   // STL はフォームが先に stl-files バケットへ上げている。そこ以外の URL は受け付けない
   const stlFileUrl = typeof body.stl_file_url === 'string' ? body.stl_file_url : ''
-  if (!stlFileUrl.startsWith(`${supabaseUrl}/storage/v1/object/public/stl-files/`)) {
+  // 環境変数の末尾に / が付いていても合うようにする（supabase-js は公開 URL を作るときに取り除く）
+  if (!stlFileUrl.startsWith(`${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/stl-files/`)) {
     return bad('STLファイルをアップロードしてください')
   }
   const stlFileName = typeof body.stl_file_name === 'string' ? body.stl_file_name.trim() : ''
@@ -102,7 +104,8 @@ export async function POST(request: NextRequest) {
 
   const cost = calculatePrintingCost(quantity, size)
 
-  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value)
+  const member = await currentCustomer()
+  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {}, member?.id ?? null)
   if (!customer) return NextResponse.json({ error: '注文の作成に失敗しました' }, { status: 500 })
 
   const orderNumber = `3DP-${Date.now()}`

@@ -14,6 +14,7 @@ import { getConsentTextFor } from '@/lib/consent-default'
 import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst, formatCutoffJstEn } from '@/lib/booking-deadline'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import { BOOKING_TEXT, type BookingText, type Locale } from '@/lib/i18n'
+import { MAX_PARTICIPANTS_PER_BOOKING } from '@/lib/booking-limits'
 import { parseParticipantOption, participantChoicesTotal, groupParticipantChoices, type ParticipantOptionChoice } from '@/lib/participant-option'
 
 // 開始時刻（JST）を過ぎていない回。端末のタイムゾーンに左右されないよう JST で比べる
@@ -914,7 +915,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 setBooking({ ...booking, participants: p, minorCount: c, minorGrades: resizeGrades(booking.minorGrades, c) })
               }}
             >
-              {[...Array(Math.min(availability?.available_spots || workshop.max_participants, 5))].map((_, i) => (
+              {[...Array(Math.min(availability?.available_spots || workshop.max_participants, MAX_PARTICIPANTS_PER_BOOKING))].map((_, i) => (
                 <option key={i + 1} value={i + 1}>
                   {t.people(i + 1)}
                 </option>

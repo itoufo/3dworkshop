@@ -121,7 +121,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             </div>
             <div class="info-row">
               <span class="info-label">生徒名：</span>
-              <span class="info-value">${enrollment.student_name}様</span>
+              <span class="info-value">${escapeHtml(enrollment.student_name)}様</span>
             </div>
             ${enrollment.student_age ? `
             <div class="info-row">
@@ -132,7 +132,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             ${enrollment.student_grade ? `
             <div class="info-row">
               <span class="info-label">学年：</span>
-              <span class="info-value">${enrollment.student_grade}</span>
+              <span class="info-value">${escapeHtml(enrollment.student_grade)}</span>
             </div>
             ` : ''}
             
