@@ -142,7 +142,7 @@ export interface Booking {
   participant_choices?: ParticipantOptionChoice[] | null
   consent_agreed_at?: string | null
   consent_text_snapshot?: string | null
-  // 流入経路と他サイトの販売手数料（円）。手取り = total_amount - commission_amount
+  // 流入経路と他サイトの販売手数料（円）。手取り = 実請求額(total_amount - discount_amount) - commission_amount
   source?: 'website' | 'booking_site' | 'email' | 'phone' | 'referral' | 'other'
   source_detail?: string | null
   commission_amount?: number
