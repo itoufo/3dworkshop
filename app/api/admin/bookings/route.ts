@@ -39,6 +39,23 @@ const LIST_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'] as cons
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/**
+ * 予約一覧で返す列。管理画面（app/admin/page.tsx）が読むものだけ。
+ * ⚠ `*` や `workshops(*)` で返さない。ワークショップ行は本文（rich_description）が1件あたり数KB〜十数KB あり、
+ *   予約の行数ぶん重複して載る。全列で返すと予約 約570件で Vercel の応答サイズ上限（4.5MB）を超え、
+ *   一覧も売上の集計も読めなくなる（2026-10 時点の実測: 220件で 1.7MB）。
+ *   画面に項目を足すときは、ここに必要な列だけを足す。
+ */
+const BOOKING_LIST_COLUMNS = [
+  'id, workshop_id, session_id, customer_id, coupon_id, booking_date, booking_time, participants',
+  'total_amount, discount_amount, commission_amount, status, payment_status',
+  'minor_count, minor_grades, companion_count, participant_choices, source, source_detail, created_at',
+  'workshop:workshops(id, title, event_date, event_time, location, participant_option)',
+  'workshop_session:workshop_sessions(id, event_date, event_time)',
+  `customer:customers(${ADMIN_CUSTOMER_COLUMNS})`,
+  'coupon:coupons(id, code)',
+].join(', ')
+
 /** 予約の一覧。ワークショップ・開催回・顧客・クーポンを付けて、新しい順に全件返す */
 export async function GET() {
   const denied = await requireAdmin()
@@ -48,13 +65,14 @@ export async function GET() {
   }
   const admin = supabaseAdmin
 
+  // ⚠ 古い順に読んで、返す前に新しい順へ並べ替える。新しい順のままページを繰ると、
+  //   読んでいる最中に予約が1件入ったとき全行が1つ後ろへずれ、ページの境目の行が2回入る
+  //   （売上に2回足される）。古い順なら新しい行は末尾に付くだけなので、ずれない
   const { data, error } = await fetchAllRows((from, to) =>
     admin
       .from('bookings')
-      .select(
-        `*, workshop:workshops(*), workshop_session:workshop_sessions(*), customer:customers(${ADMIN_CUSTOMER_COLUMNS}), coupon:coupons(*)`,
-      )
-      .order('created_at', { ascending: false })
+      .select(BOOKING_LIST_COLUMNS)
+      .order('created_at', { ascending: true })
       .order('id', { ascending: true })
       .range(from, to),
   )
@@ -63,7 +81,7 @@ export async function GET() {
     return NextResponse.json({ error: 'db_error', message: '予約の取得に失敗しました' }, { status: 500 })
   }
 
-  return NextResponse.json({ bookings: data })
+  return NextResponse.json({ bookings: data.reverse() })
 }
 
 /** 対応状況（保留・確定・キャンセル）の変更 */

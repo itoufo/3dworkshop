@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { BOOKING_SUMMARY_COLUMNS } from '@/lib/booking-summary'
+
+/** BOOKING_SUMMARY_COLUMNS で読んだ行のうち、このルートが自分で使う部分 */
+type BookingSummaryRow = {
+  customer_id: string | null
+  status: string | null
+  workshop: { price: number | null } | { price: number | null }[] | null
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
@@ -17,25 +25,24 @@ export async function POST(request: NextRequest) {
     // 無料ワークショップは Stripe を経由しないため sessionId が無い。
     // 確定済みの予約を booking_id で引いて完了画面に返すだけ（ここでは何も更新しない）。
     if (!sessionId && freeBookingId) {
-      const { data: freeBooking, error: freeError } = await supabaseAdmin
+      const { data: freeData, error: freeError } = await supabaseAdmin
         .from('bookings')
-        .select(`
-          *,
-          workshop:workshops(*),
-          customer:customers(*)
-        `)
+        .select(BOOKING_SUMMARY_COLUMNS)
         .eq('id', freeBookingId)
         .single()
 
-      if (freeError || !freeBooking) {
+      if (freeError || !freeData) {
         return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
       }
+      const freeBooking = freeData as unknown as BookingSummaryRow
+      // PostgREST は多対一でもリレーションを配列で返すことがあるため両方を見る
+      const freeWorkshop = Array.isArray(freeBooking.workshop) ? freeBooking.workshop[0] : freeBooking.workshop
       // 有料の予約を決済なしで完了扱いにしない
-      if ((freeBooking.workshop?.price ?? 0) > 0 || freeBooking.status !== 'confirmed') {
+      if ((freeWorkshop?.price ?? 0) > 0 || freeBooking.status !== 'confirmed') {
         return NextResponse.json({ error: 'Booking not confirmed' }, { status: 400 })
       }
 
-      return NextResponse.json({ success: true, booking: freeBooking })
+      return NextResponse.json({ success: true, booking: freeData })
     }
 
     if (!sessionId) {
@@ -87,16 +94,13 @@ export async function POST(request: NextRequest) {
           : session.payment_intent?.id || null
       })
       .eq('id', bookingId)
-      .select(`
-        *,
-        workshop:workshops(*),
-        customer:customers(*)
-      `)
+      .select(BOOKING_SUMMARY_COLUMNS)
       .single()
 
     if (bookingError) {
       throw bookingError
     }
+    const customerId = (booking as unknown as BookingSummaryRow | null)?.customer_id ?? null
 
     // クーポンが使用された場合、使用履歴を記録
     if (couponId && discountAmount > 0 && booking) {
@@ -123,7 +127,7 @@ export async function POST(request: NextRequest) {
         .insert({
           coupon_id: couponId,
           booking_id: bookingId,
-          customer_id: booking.customer_id,
+          customer_id: customerId,
           discount_amount: discountAmount
         })
     }

@@ -81,6 +81,8 @@ export const BOOKING_TEXT = {
   ja: {
     couponCheckError: 'クーポンの検証中にエラーが発生しました',
     closedAlert: (serverMessage: string) => `${serverMessage}。ほかの日程をお選びください。`,
+    seatsUnavailable: (serverMessage?: string) =>
+      `${serverMessage || '満席のためお申し込みいただけません'}。ページを再読み込みしますので、空席をご確認ください。`,
     freeConfirmFailed: '予約の確定に失敗しました。お手数ですが、少し時間をおいて再度お試しください。',
     checkoutCreateFailed: '決済ページの作成に失敗しました',
     stripeLoadFailed: '決済モジュールの読み込みに失敗しました',
@@ -199,6 +201,7 @@ export const BOOKING_TEXT = {
   en: {
     couponCheckError: 'Something went wrong while checking the coupon.',
     closedAlert: () => 'Booking for this date has closed. Please choose another date.',
+    seatsUnavailable: () => 'There are not enough seats left for this date. The page will reload so you can check availability.',
     freeConfirmFailed: 'We could not confirm your booking. Please wait a moment and try again.',
     checkoutCreateFailed: 'We could not open the payment page.',
     stripeLoadFailed: 'We could not load the payment module.',

@@ -55,11 +55,12 @@ export async function GET() {
   }
   const admin = supabaseAdmin
 
+  // 古い順に読んで、返す前に新しい順へ並べ替える（読んでいる最中に行が増えても、ページの境目で行がずれない）
   const { data, error } = await fetchAllRows((from, to) =>
     admin
       .from('customers')
       .select(ADMIN_CUSTOMER_COLUMNS)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
       .order('id', { ascending: true })
       .range(from, to),
   )
@@ -68,7 +69,7 @@ export async function GET() {
     return NextResponse.json({ error: 'db_error', message: '顧客の取得に失敗しました' }, { status: 500 })
   }
 
-  return NextResponse.json({ customers: data })
+  return NextResponse.json({ customers: data.reverse() })
 }
 
 export async function POST(request: NextRequest) {

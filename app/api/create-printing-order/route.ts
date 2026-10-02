@@ -24,6 +24,9 @@ export const dynamic = 'force-dynamic'
 
 const WINDOW_MS = 10 * 60 * 1000
 const MAX_ORDERS = 10
+/** 同じメールアドレス宛ての依頼（＝確認メール）は1時間に3件まで */
+const RECIPIENT_WINDOW_MS = 60 * 60 * 1000
+const MAX_PER_RECIPIENT = 3
 
 /** printing_orders の列幅（VARCHAR） */
 const FILE_NAME_MAX = 255
@@ -63,8 +66,9 @@ export async function POST(request: NextRequest) {
   if (!stlFileUrl.startsWith(`${supabaseUrl}/storage/v1/object/public/stl-files/`)) {
     return bad('STLファイルをアップロードしてください')
   }
-  const stlFileName = typeof body.stl_file_name === 'string' ? body.stl_file_name.trim().slice(0, FILE_NAME_MAX) : ''
+  const stlFileName = typeof body.stl_file_name === 'string' ? body.stl_file_name.trim() : ''
   if (!stlFileName) return bad('STLファイルをアップロードしてください')
+  if (stlFileName.length > FILE_NAME_MAX) return bad(`ファイル名は${FILE_NAME_MAX}文字以内にしてください`)
   const fileSizeMb = Number(body.file_size_mb)
   if (!Number.isFinite(fileSizeMb) || fileSizeMb < 0) return bad('ファイルサイズが正しくありません')
 
@@ -86,7 +90,15 @@ export async function POST(request: NextRequest) {
       return bad(`希望する色は${MATERIAL_COLOR_MAX - CUSTOM_COLOR_PREFIX.length}文字以内で入力してください`)
     }
   }
-  const notes = typeof body.notes === 'string' ? body.notes.slice(0, NOTES_MAX) : ''
+  const notes = typeof body.notes === 'string' ? body.notes : ''
+  // 黙って切り詰めない（書いたものが欠けたことに誰も気づけない）
+  if (notes.length > NOTES_MAX) return bad(`備考は${NOTES_MAX}文字以内で入力してください`)
+
+  // 確認メールは入力されたアドレスへ送る。同じ宛先へ何通も送らせない（他人のアドレスを入れて送り付けられる）
+  const recipientKey = `create-printing-order-to:${contact.value.email.toLowerCase()}`
+  if (await tooManyRequests(recipientKey, { windowMs: RECIPIENT_WINDOW_MS, max: MAX_PER_RECIPIENT })) {
+    return NextResponse.json({ error: '短時間に送信が多すぎます。しばらくしてからお試しください。' }, { status: 429 })
+  }
 
   const cost = calculatePrintingCost(quantity, size)
 

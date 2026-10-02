@@ -21,9 +21,9 @@ import { SELLER_MIN_ENROLLED_MONTHS } from './urls'
 const MAX_CUSTOMERS = 10
 const MAX_DB_ROWS = 20
 /**
- * スクールの月謝として認める最低額（円）。app/school/apply/page.tsx の月謝（17,000円）。
- * ⚠ 金額も見る。スクールの申込 API（create-school-checkout-session）は月謝の額をブラウザから
- *   受け取っているので、50円の「スクールの定期課金」を作って3ヶ月待てば資格を得られてしまう。
+ * スクールの月謝として認める最低額（円）。lib/school-classes.ts の月謝（17,000円）。
+ * ⚠ 金額も見る。スクールの申込 API（create-school-checkout-session）は以前、月謝の額をブラウザから
+ *   受け取っていた。その頃に作られた定期課金には、定価でないもの（50円など）が混じりうる。
  *   月謝を変えたらここも変える。割引はクーポンで掛かるので、価格そのものは定価のまま。
  */
 const SCHOOL_MONTHLY_FEE_MIN = 17000

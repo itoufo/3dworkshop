@@ -3,18 +3,40 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      enrollment_id,
-      class_type,
-      customer_email,
-      monthly_fee,
-      registration_fee,
-      coupon_id,
-      discount_amount = 0
-    } = body
+    const { enrollment_id, customer_email, coupon_id } = body
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not available')
+    }
+
+    // 月謝・入会金・クラスは申込行（/api/create-school-enrollment が lib/school-classes.ts から書いたもの）から取る。
+    // ⚠ ブラウザが送った金額で請求しない。申込行に書いた金額と請求額が食い違うと、
+    //   確認メール（申込行の金額を載せる）と実際の請求が合わなくなる
+    if (typeof enrollment_id !== 'string' || !UUID.test(enrollment_id)) {
+      return NextResponse.json({ error: '申込が見つかりません' }, { status: 404 })
+    }
+    const { data: enrollment } = await supabaseAdmin
+      .from('school_enrollments')
+      .select('id, class_type, monthly_fee, registration_fee')
+      .eq('id', enrollment_id)
+      .maybeSingle()
+    if (!enrollment) {
+      return NextResponse.json({ error: '申込が見つかりません' }, { status: 404 })
+    }
+    const class_type: string = enrollment.class_type
+    // numeric の列は文字列で返ることがあるので数値にする
+    const monthly_fee = Number(enrollment.monthly_fee)
+    const registration_fee = Number(enrollment.registration_fee)
+    // 割引は初回請求額（入会金 + 初月月謝）まで
+    const discount_amount = Math.max(
+      0,
+      Math.min(Math.floor(Number(body.discount_amount) || 0), monthly_fee + registration_fee),
+    )
 
     // リクエストから現在のホストを取得
     const host = request.headers.get('host')
@@ -112,10 +134,6 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create(sessionParams)
 
     // Update the enrollment with Stripe session ID
-    if (!supabaseAdmin) {
-      throw new Error('Supabase admin client not available')
-    }
-    
     await supabaseAdmin
       .from('school_enrollments')
       .update({ stripe_payment_intent_id: session.id })

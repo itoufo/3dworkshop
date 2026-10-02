@@ -26,8 +26,13 @@ function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 })
 }
 
-function text(value: unknown, max: number): string {
-  return typeof value === 'string' ? value.trim().slice(0, max) : ''
+/**
+ * 文字列の入力欄。上限を超えたら null（呼び出し側が 400 で断る）。
+ * ⚠ 黙って切り詰めない。書いたものが欠けたことに、申込者も管理者も気づけない
+ */
+function text(value: unknown, max: number): string | null {
+  const v = typeof value === 'string' ? value.trim() : ''
+  return v.length > max ? null : v
 }
 
 export async function POST(request: NextRequest) {
@@ -54,7 +59,7 @@ export async function POST(request: NextRequest) {
   const isAdult = studentType === 'adult'
 
   const studentName = text(body.student_name, TEXT_MAX)
-  if (!studentName) return bad('受講者のお名前を入力してください')
+  if (!studentName) return bad('受講者のお名前を正しく入力してください')
 
   const studentAge = Number(body.student_age)
   if (!Number.isInteger(studentAge) || studentAge < 1 || studentAge > 150) {
@@ -69,6 +74,11 @@ export async function POST(request: NextRequest) {
   if (!contact.ok) return bad(contact.error)
 
   const address = text(body.address, ADDRESS_MAX)
+  if (address === null) return bad(`住所は${ADDRESS_MAX}文字以内で入力してください`)
+  const studentGrade = text(body.student_grade, TEXT_MAX)
+  if (studentGrade === null) return bad(`学年は${TEXT_MAX}文字以内で入力してください`)
+  const notes = text(body.notes, NOTES_MAX)
+  if (notes === null) return bad(`備考は${NOTES_MAX}文字以内で入力してください`)
   const selectedClass = getSchoolClass(typeof body.class_type === 'string' ? body.class_type : null)
 
   const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {
@@ -86,12 +96,12 @@ export async function POST(request: NextRequest) {
       student_type: studentType,
       student_name: studentName,
       student_age: studentAge,
-      student_grade: isAdult ? null : text(body.student_grade, TEXT_MAX),
+      student_grade: isAdult ? null : studentGrade,
       monthly_fee: selectedClass.price,
       registration_fee: selectedClass.registrationFee,
       // 入会金 + 初月月謝
       total_amount: selectedClass.registrationFee + selectedClass.price,
-      notes: text(body.notes, NOTES_MAX),
+      notes,
       status: 'pending',
       payment_status: 'pending',
       enrollment_date: new Date().toISOString(),

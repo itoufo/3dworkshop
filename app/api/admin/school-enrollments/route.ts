@@ -27,11 +27,12 @@ export async function GET() {
   }
   const admin = supabaseAdmin
 
+  // 古い順に読んで、返す前に新しい順へ並べ替える（読んでいる最中に行が増えても、ページの境目で行がずれない）
   const { data, error } = await fetchAllRows((from, to) =>
     admin
       .from('school_enrollments')
       .select(COLUMNS)
-      .order('enrollment_date', { ascending: false })
+      .order('enrollment_date', { ascending: true })
       .order('id', { ascending: true })
       .range(from, to),
   )
@@ -40,7 +41,7 @@ export async function GET() {
     return NextResponse.json({ error: 'db_error', message: 'スクール申込の取得に失敗しました' }, { status: 500 })
   }
 
-  return NextResponse.json({ enrollments: data })
+  return NextResponse.json({ enrollments: data.reverse() })
 }
 
 export async function PATCH(request: NextRequest) {

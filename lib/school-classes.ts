@@ -31,7 +31,9 @@ const SCHOOL_CLASSES: Record<string, Omit<SchoolClass, 'registrationFee'>> = {
 
 /** 指定のクラス。知らない値・未指定は自由創作クラスにする（申込画面の従来の挙動） */
 export function getSchoolClass(classType: string | null | undefined): SchoolClass {
-  const base = SCHOOL_CLASSES[classType ?? ''] ?? SCHOOL_CLASSES.free
+  // ⚠ 自分のキーかを確かめて引く。素の SCHOOL_CLASSES[key] だと 'constructor' などの組み込みの名前に当たる
+  const key = classType ?? ''
+  const base = Object.prototype.hasOwnProperty.call(SCHOOL_CLASSES, key) ? SCHOOL_CLASSES[key] : SCHOOL_CLASSES.free
   // 通常 20000円（税別）= 22000円（税込）。キャンペーン期間中は 0 円。
   // 呼ばれた時点の値を使う（モジュール読み込み時に固定しない）
   return { ...base, registrationFee: getRegistrationFee() }

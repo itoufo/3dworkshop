@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { jstToday } from '@/lib/booking-deadline'
+import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import {
   parseCustomerContact,
   parseOptionalAge,
@@ -18,6 +19,8 @@ import {
  * 同意の記録・締切・選択肢（フィギュア等）の代金・早割・クーポンはそちらで扱うので、ここでは触らない。
  *
  * ⚠ 開催日時と金額はブラウザから受け取らず、DB のワークショップ・日程から決める。
+ * ⚠ 残席を超える人数・中止になった回の仮予約は作らない。仮予約も席を押さえる
+ *   （空席の計算は pending も数える）ので、確かめずに作ると1回の送信でその回を満席にできる。
  * ⚠ 返すのは予約の id だけ。顧客行・予約行の中身は返さない。
  */
 
@@ -81,7 +84,9 @@ export async function POST(request: NextRequest) {
     const n = Number(body.minor_count)
     if (!Number.isInteger(n) || n < 1 || n > MAX_PARTICIPANTS) return bad('高校生以下の人数が正しくありません')
     minorCount = n
-    minorGrades = typeof body.minor_grades === 'string' ? body.minor_grades.trim().slice(0, MINOR_GRADES_MAX) : ''
+    minorGrades = typeof body.minor_grades === 'string' ? body.minor_grades.trim() : ''
+    // 黙って切り詰めない（書いたものが欠けたことに誰も気づけない）
+    if (minorGrades.length > MINOR_GRADES_MAX) return bad(`学年は${MINOR_GRADES_MAX}文字以内で入力してください`)
   }
 
   const companionRaw = Number(body.companion_count ?? 0)
@@ -91,21 +96,55 @@ export async function POST(request: NextRequest) {
 
   const { data: workshop } = await supabaseAdmin
     .from('workshops')
-    .select('id, price, event_date, event_time, collect_demographics')
+    .select('id, price, event_date, event_time, collect_demographics, max_participants, manual_participants')
     .eq('id', workshopId)
     .maybeSingle()
   if (!workshop) return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
 
-  let session: { event_date: string | null; event_time: string | null; is_family_friendly: boolean | null } | null = null
+  let session: {
+    event_date: string | null
+    event_time: string | null
+    is_family_friendly: boolean | null
+    status: string | null
+    max_participants: number | null
+    manual_participants: number | null
+  } | null = null
   if (sessionId) {
     const { data } = await supabaseAdmin
       .from('workshop_sessions')
-      .select('id, workshop_id, event_date, event_time, is_family_friendly')
+      .select('id, workshop_id, event_date, event_time, is_family_friendly, status, max_participants, manual_participants')
       .eq('id', sessionId)
       .maybeSingle()
     // 別のワークショップの日程を付けた予約を作らせない（その回の空席計算に紛れ込む）
     if (!data || data.workshop_id !== workshop.id) return bad('開催日程がこのワークショップのものではありません')
+    if (data.status === 'cancelled') {
+      return NextResponse.json({ error: 'この日程は中止になりました', code: 'sold_out' }, { status: 409 })
+    }
     session = data
+  }
+
+  // 残席の確認。数え方は空席表示（/api/check-availability）と同じ関数を使う
+  const maxParticipants: number | null = session?.max_participants ?? workshop.max_participants ?? null
+  if (maxParticipants !== null) {
+    let taken: number
+    try {
+      taken =
+        (await sumBookedParticipants(supabaseAdmin, { workshopId: workshop.id, sessionId })) +
+        manualParticipantsFor(session, workshop)
+    } catch (e) {
+      console.error('[create-booking] seat count failed:', e)
+      return NextResponse.json({ error: '予約の作成に失敗しました' }, { status: 500 })
+    }
+    const remaining = maxParticipants - taken
+    if (participants > remaining) {
+      return NextResponse.json(
+        {
+          error: remaining > 0 ? `残り${remaining}名のため、${participants}名ではお申し込みいただけません` : '満席のためお申し込みいただけません',
+          code: 'sold_out',
+        },
+        { status: 409 },
+      )
+    }
   }
 
   const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {

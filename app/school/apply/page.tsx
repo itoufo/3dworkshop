@@ -128,7 +128,7 @@ export default function SchoolApplyPage() {
     setSubmitting(true)
 
     try {
-      // 顧客行と申込行はサーバーが作る。クラス名・月謝・入会金もサーバーが決めるので送らない
+      // 顧客行と申込行はサーバーが作る。クラス名・月謝・入会金はサーバーが決める（送るのはクラスの種別だけ）
       const createRes = await fetch('/api/create-school-enrollment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,12 +156,10 @@ export default function SchoolApplyPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        // 月謝・入会金・クラスは送らない（サーバーが申込行から取る）
         body: JSON.stringify({
           enrollment_id: enrollmentData.enrollment_id,
-          class_type: selectedClass.id,
           customer_email: formData.email,
-          monthly_fee: selectedClass.price,
-          registration_fee: selectedClass.registrationFee,
           coupon_id: appliedCoupon?.id,
           discount_amount: discountAmount
         }),

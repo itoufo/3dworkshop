@@ -422,6 +422,20 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       })
       const bookingData: { booking_id?: string; error?: string } = await createRes.json().catch(() => ({}))
       if (!createRes.ok || !bookingData.booking_id) {
+        // 残席不足・中止（409）: 表示中の空席が古い。理由を伝えて読み込み直す
+        if (createRes.status === 409) {
+          gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'sold_out' })
+          alert(t.seatsUnavailable(bookingData.error))
+          window.location.reload()
+          return
+        }
+        // 入力の不備（400）・送信が多すぎる（429）: サーバーが返した理由をそのまま伝える（英語ページは共通の文言）
+        if ((createRes.status === 400 || createRes.status === 429) && bookingData.error && t.useServerError) {
+          gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'create' })
+          alert(bookingData.error)
+          setSubmitting(false)
+          return
+        }
         throw new Error(bookingData.error || t.bookingFailed)
       }
       const bookingId = bookingData.booking_id
