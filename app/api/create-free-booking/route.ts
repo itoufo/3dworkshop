@@ -5,6 +5,7 @@ import { toLocale } from '@/lib/i18n'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
+import { parseParticipantOption } from '@/lib/participant-option'
 
 /**
  * 参加費0円のワークショップの予約確定。
@@ -51,6 +52,11 @@ export async function POST(request: NextRequest) {
     // 有料ワークショップをこの経路で確定させない（金額の真実はDBのみ）
     if ((workshop.price ?? 0) > 0) {
       return NextResponse.json({ error: 'This workshop requires payment' }, { status: 400 })
+    }
+    // 参加者ごとの選択肢（フィギュア等）があるワークショップは、参加費が0円でも選んだものに代金がありうる。
+    // 選択の確認と金額の計算は /api/create-checkout-session にしか無いので、この経路では確定させない
+    if (parseParticipantOption(workshop.participant_option)) {
+      return NextResponse.json({ error: 'This workshop requires checkout' }, { status: 400 })
     }
 
     // 参加同意書への同意がない予約は確定しない。

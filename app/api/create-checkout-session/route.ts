@@ -4,6 +4,13 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getConsentTextFor } from '@/lib/consent-default'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 import { toLocale } from '@/lib/i18n'
+import {
+  parseParticipantOption,
+  resolveParticipantChoices,
+  participantChoicesTotal,
+  summarizeParticipantChoices,
+  type ParticipantOptionChoice,
+} from '@/lib/participant-option'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +53,7 @@ export async function POST(request: NextRequest) {
     //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうる
     const { data: bookingRow } = await supabaseAdmin
       .from('bookings')
-      .select('id, status, workshop_id')
+      .select('id, status, workshop_id, stripe_session_id')
       .eq('id', booking_id)
       .single()
 
@@ -60,14 +67,54 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: 'ページの表示が古いため、参加同意書への同意を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。' }, { status: 400 })
     }
-    await supabaseAdmin
-      .from('bookings')
-      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)) })
-      .eq('id', booking_id)
-
     // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
     const qty = participants || 1
     const base = workshop.price * qty
+
+    // 参加者ごとの選択肢（例: 塗るフィギュア）。ブラウザが送るのは選んだ id だけで、名前と金額は DB から引く。
+    // 人数と数が合わない・知らない id が混じる場合は決済に進めない（選択肢を足す前に開いたままのタブなど）
+    const participantOption = parseParticipantOption(workshop.participant_option)
+    let participantChoices: ParticipantOptionChoice[] = []
+    if (participantOption) {
+      // 1つの予約行に決済セッションを作れるのは1回だけ。
+      // 2回目を受けると、予約行の控え（選んだものと満額）が後のセッションの内容で上書きされ、
+      // 先のセッション（安い選択）を支払った人の記録が「高い選択・支払い済み」になる。
+      // 予約フォームは送信のたびに新しい予約行を作るので、正常な操作では1回しか来ない
+      if (bookingRow.status !== 'pending' || bookingRow.stripe_session_id) {
+        return NextResponse.json({ error: 'この予約はすでに決済の手続きに入っています。お手数ですが、ページを再読み込みしてもう一度お申し込みください。', code: 'choices_invalid' }, { status: 409 })
+      }
+      const resolved = resolveParticipantChoices(participantOption, body.participant_choice_ids, qty)
+      if (!resolved) {
+        // 仮予約を残すと席と早割の枠を食うので取り消す
+        if (bookingRow.status === 'pending') {
+          await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
+        }
+        return NextResponse.json({ error: `「${participantOption.label}」の選択を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。`, code: 'choices_invalid' }, { status: 400 })
+      }
+      participantChoices = resolved
+    }
+    const optionTotal = participantChoicesTotal(participantChoices)
+    // 割引前の満額（参加費 ＋ 選んだものの代金）
+    const fullAmount = base + optionTotal
+
+    // 同意の記録と一緒に、満額と選択の控えを書く。
+    // ⚠ 決済セッションを作る前に書くこと。後に書くと、書き込みに失敗しても客は支払えてしまい、
+    //   「何を選んだか」が予約行に残らない（スタッフが用意するものが分からなくなる）
+    // ⚠ 予約行はブラウザが作るので、そこにある金額・選択は信用しない。満額は必ずここで書き直す
+    //   （選択肢の無いワークショップでは 参加費×人数 で、正常なブラウザが書く値と同じ）
+    const { error: recordError } = await supabaseAdmin
+      .from('bookings')
+      .update({
+        consent_agreed_at: new Date().toISOString(),
+        consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)),
+        total_amount: fullAmount,
+        ...(participantOption ? { participant_choices: participantChoices } : {}),
+      })
+      .eq('id', booking_id)
+    if (recordError && participantOption) {
+      console.error('Failed to record participant choices:', recordError)
+      return NextResponse.json({ error: 'Error creating checkout session' }, { status: 500 })
+    }
 
     // 早割: 先着 early_bird_slots 組（キャンセル以外の予約行数）以内なら「1名あたり割引」を適用。
     // 現在の予約行（作成済みpending）は除外して数える。
@@ -88,12 +135,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // クーポン割引はクライアント値を上限クランプして使用（既存挙動の踏襲）
+    // クーポン割引はクライアント値を上限クランプして使用（既存挙動の踏襲）。
+    // ⚠ 上限は参加費（base）まで。クーポンと早割は参加費への割引で、選んだもの（フィギュア等）の代金は割り引かない
     const couponDiscount = Math.max(0, Math.min(discount_amount || 0, base))
-    const totalDiscount = couponDiscount + earlyBirdDiscount
+    const totalDiscount = Math.min(couponDiscount + earlyBirdDiscount, base)
     // 全額割引（100%クーポン等）は ¥0 で通す。¥50 に切り上げると無料のはずの予約に請求が立つ。
     // 1〜49円だけは Stripe の最低決済金額(¥50)に切り上げる
-    const remaining = base - totalDiscount
+    const remaining = fullAmount - totalDiscount
     const unitAmount = remaining <= 0 ? 0 : Math.max(50, remaining)
 
     // Stripe Checkout セッションを作成
@@ -107,7 +155,9 @@ export async function POST(request: NextRequest) {
             currency: 'jpy',
             product_data: {
               name: workshop.title,
-              description: `${workshop.description} (${participants}名)`,
+              description: `${workshop.description} (${participants}名)${
+                participantOption ? ` / ${participantOption.label}: ${summarizeParticipantChoices(participantChoices)}` : ''
+              }`,
             },
             unit_amount: unitAmount,
           },
@@ -127,6 +177,7 @@ export async function POST(request: NextRequest) {
         coupon_id: coupon_id || '',
         discount_amount: couponDiscount,
         early_bird_discount: earlyBirdDiscount,
+        option_total: optionTotal,
       },
     })
 
@@ -137,7 +188,7 @@ export async function POST(request: NextRequest) {
         stripe_session_id: session.id,
         coupon_id: coupon_id || null,
         // 実際に請求した額と一致させる（¥50 への切り上げ・満額超えの割引を反映）
-        discount_amount: base - unitAmount
+        discount_amount: fullAmount - unitAmount,
       })
       .eq('id', booking_id)
 

@@ -16,6 +16,13 @@ import ZeroBookingCutoffField, {
   zeroBookingCutoffToColumns,
   zeroBookingCutoffError,
 } from '@/components/admin/ZeroBookingCutoffField'
+import ParticipantOptionField, {
+  EMPTY_PARTICIPANT_OPTION,
+  participantOptionFromWorkshop,
+  participantOptionToColumns,
+  participantOptionError,
+} from '@/components/admin/ParticipantOptionField'
+import { refreshPublicPages } from '@/lib/admin-api-client'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -77,6 +84,7 @@ export default function NewWorkshopPage() {
   const [sourceId, setSourceId] = useState('')
   // 予約0人のときの締切（既定は前日 24:00。コピー元があればその設定を引き継ぐ）
   const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
+  const [participantOption, setParticipantOption] = useState(EMPTY_PARTICIPANT_OPTION)
 
   // 選択したイベントの内容をフォームに流し込む（日時は既に入力済みのものを保持）
   async function applySource(id: string) {
@@ -119,6 +127,8 @@ export default function NewWorkshopPage() {
         consent_text: src.consent_text || ''
       }))
       setZeroCutoff(zeroBookingCutoffFromWorkshop(src))
+      // コピー元の選択肢もそのまま引き継ぐ（日程追加のたびに入れ直さなくて済むように）
+      setParticipantOption(participantOptionFromWorkshop(src))
       setImageFile(null)
       setImagePreview(src.image_url || null)
     } finally {
@@ -178,6 +188,12 @@ export default function NewWorkshopPage() {
     const cutoffError = zeroBookingCutoffError(zeroCutoff)
     if (cutoffError) {
       alert(cutoffError)
+      return
+    }
+    // 参加者ごとの選択肢も同じ（ON なのに不正なら、黙って「選択肢なし」で保存しない）
+    const optionError = participantOptionError(participantOption)
+    if (optionError) {
+      alert(optionError)
       return
     }
 
@@ -244,7 +260,8 @@ export default function NewWorkshopPage() {
           early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
           early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
           consent_text: workshop.consent_text.trim() || null,
-          ...zeroBookingCutoffToColumns(zeroCutoff)
+          ...zeroBookingCutoffToColumns(zeroCutoff),
+          ...participantOptionToColumns(participantOption)
         })
         .select()
         .single()
@@ -284,6 +301,9 @@ export default function NewWorkshopPage() {
           ? `\n${notifyResult.message}`
           : `\n\n⚠ 通知の送信に失敗しました: ${notifyResult.message}\n編集画面の開催日程一覧から「通知を送る」で再送してください。`
       }
+
+      // 公開ページ（ISR、最大1時間）を作り直す（一覧・カテゴリページに新しい回をすぐ出す）
+      await refreshPublicPages()
 
       alert(`ワークショップを追加しました${notifyNote}`)
       setNavigating(true)
@@ -616,6 +636,8 @@ export default function NewWorkshopPage() {
               />
             </div>
             <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
+
+            <ParticipantOptionField value={participantOption} onChange={setParticipantOption} />
 
             {/* 基本情報 */}
             <div className="bg-purple-50 rounded-xl p-6 space-y-4">

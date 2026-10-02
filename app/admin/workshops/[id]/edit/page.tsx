@@ -17,6 +17,14 @@ import ZeroBookingCutoffField, {
   zeroBookingCutoffToColumns,
   zeroBookingCutoffError,
 } from '@/components/admin/ZeroBookingCutoffField'
+import ParticipantOptionField, {
+  EMPTY_PARTICIPANT_OPTION,
+  participantOptionFromWorkshop,
+  participantOptionToColumns,
+  participantOptionError,
+  isUnreadableParticipantOption,
+} from '@/components/admin/ParticipantOptionField'
+import { refreshPublicPages } from '@/lib/admin-api-client'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -30,6 +38,9 @@ export default function EditWorkshop() {
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
   // 予約0人のときの締切（formData とは別に持つ）
   const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
+  const [participantOption, setParticipantOption] = useState(EMPTY_PARTICIPANT_OPTION)
+  /** DB の選択肢が読めない形だった。欄を触るまで、保存でこの列を上書きしない */
+  const [keepUnreadableOption, setKeepUnreadableOption] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -111,6 +122,8 @@ export default function EditWorkshop() {
           consent_text: workshopData.consent_text || ''
         })
         setZeroCutoff(zeroBookingCutoffFromWorkshop(workshopData))
+        setParticipantOption(participantOptionFromWorkshop(workshopData))
+        setKeepUnreadableOption(isUnreadableParticipantOption(workshopData))
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
         }
@@ -139,6 +152,12 @@ export default function EditWorkshop() {
     const cutoffError = zeroBookingCutoffError(zeroCutoff)
     if (cutoffError) {
       alert(cutoffError)
+      return
+    }
+    // 参加者ごとの選択肢も同じ（ON なのに不正なら、黙って「選択肢なし」で保存しない）
+    const optionError = participantOptionError(participantOption)
+    if (optionError) {
+      alert(optionError)
       return
     }
     
@@ -212,11 +231,16 @@ export default function EditWorkshop() {
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
           consent_text: formData.consent_text.trim() || null,
           ...zeroBookingCutoffToColumns(zeroCutoff),
+          ...(keepUnreadableOption ? {} : participantOptionToColumns(participantOption)),
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
 
       if (error) throw error
+
+      // 公開ページ（ISR、最大1時間）を作り直す。選択肢や金額を変えたのに古い表示が残ると、
+      // 予約フォームの内容とサーバーの確認が食い違って予約が通らなくなる
+      await refreshPublicPages()
 
       alert('ワークショップを更新しました')
       setNavigating(true)
@@ -555,6 +579,19 @@ export default function EditWorkshop() {
               />
             </div>
             <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
+
+            <ParticipantOptionField
+              value={participantOption}
+              onChange={(v) => {
+                setKeepUnreadableOption(false)
+                setParticipantOption(v)
+              }}
+            />
+            {keepUnreadableOption && (
+              <p className="text-xs text-amber-700">
+                ⚠ 保存されている選択肢を読み込めませんでした。この欄を触らずに保存した場合、今の値はそのまま残します。
+              </p>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

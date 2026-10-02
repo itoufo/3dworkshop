@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendEmail, generateBookingConfirmationEmail, generateSchoolEnrollmentEmail, generateServiceOrderConfirmationEmail, generateProductionRequestPaymentEmail, generateProductOrderConfirmationEmail, generateProductCartConfirmationEmail, generateCutterOrderEmail } from '@/app/lib/email'
+import { parseParticipantOption, parseParticipantChoices, summarizeParticipantChoices } from '@/lib/participant-option'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { fulfillCutterOrder } from '@/lib/cookie-cutter/server'
 import { DOWNLOAD_VALID_DAYS } from '@/lib/cookie-cutter/pricing'
@@ -638,6 +639,12 @@ export async function POST(request: NextRequest) {
             || workshop.event_time
             || booking.booking_time
 
+          // 参加者ごとの選択（フィギュア等）。予約行の控えから作る（名前と金額は予約時点のもの）
+          const choiceSummary = summarizeParticipantChoices(parseParticipantChoices(booking.participant_choices))
+          const participantChoice = choiceSummary
+            ? { label: parseParticipantOption(workshop.participant_option)?.label ?? '選択', summary: choiceSummary }
+            : null
+
           const emailContent = generateBookingConfirmationEmail(
             workshop.title,
             eventDate ? new Date(`${eventDate}T00:00:00`).toLocaleDateString('ja-JP', {
@@ -655,7 +662,8 @@ export async function POST(request: NextRequest) {
             booking.minor_grades,
             workshop.workshop_categories?.email_production_notes,
             booking.companion_count,
-            booking.consent_agreed_at
+            booking.consent_agreed_at,
+            participantChoice
           )
 
           const emailResult = await sendEmail({

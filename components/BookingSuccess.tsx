@@ -8,6 +8,7 @@ import EnglishFooter from '@/components/en/EnglishFooter'
 import { gaEvent, GA_CURRENCY } from '@/lib/gtag'
 import { formatPrice } from '@/lib/price'
 import { enDateMedium, type Locale } from '@/lib/i18n'
+import { parseParticipantOption, parseParticipantChoices, summarizeParticipantChoices } from '@/lib/participant-option'
 
 // 予約完了ページの本体。/success（日本語）と /en/success（英語）の両方から使う。
 // ⚠ 'ja' の文言は従来の /success と同じに保つ
@@ -76,6 +77,8 @@ interface Workshop {
   price: number
   duration: string
   location?: string
+  // 参加者ごとの選択肢。読むときは parseParticipantOption を通す
+  participant_option?: unknown
 }
 
 interface Booking {
@@ -86,6 +89,8 @@ interface Booking {
   booking_time: string
   participants: number
   companion_count?: number | null
+  // 参加者ごとの選択の控え。読むときは parseParticipantChoices を通す
+  participant_choices?: unknown
   total_amount: number
   discount_amount?: number | null
   status: string
@@ -223,6 +228,17 @@ function SuccessContent({ locale }: { locale: Locale }) {
                 <div className="flex justify-between">
                   <dt className="text-gray-600">{t.companion}</dt>
                   <dd className="font-medium">{t.companionValue(booking.companion_count)}</dd>
+                </div>
+              )}
+              {parseParticipantChoices(booking.participant_choices).length > 0 && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-gray-600 shrink-0">
+                    {/* あとでワークショップ側の選択肢を外しても、見出しが空にならないようにする */}
+                    {parseParticipantOption(booking.workshop?.participant_option)?.label ?? '選択'}
+                  </dt>
+                  <dd className="font-medium text-right">
+                    {summarizeParticipantChoices(parseParticipantChoices(booking.participant_choices))}
+                  </dd>
                 </div>
               )}
               <div className="flex justify-between">
