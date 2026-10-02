@@ -1,3 +1,5 @@
+import type { ParticipantOption, ParticipantOptionChoice } from '@/lib/participant-option'
+
 export interface WorkshopCategory {
   id: string
   name: string
@@ -46,6 +48,8 @@ export interface Workshop {
   title_en?: string | null
   description_en?: string | null
   consent_text_en?: string | null
+  // 参加者ごとの選択肢（例: 塗るフィギュア）。null なら選択肢なし。読むときは lib/participant-option.ts の parseParticipantOption を通す
+  participant_option?: ParticipantOption | null
   // 予約0人のときの締切: (開催日 − days_before 日) の time（JST）。null なら開始時刻でのみ締切
   zero_booking_cutoff_days_before?: number | null
   zero_booking_cutoff_time?: string | null
@@ -150,6 +154,8 @@ export interface Booking {
   minor_grades?: string | null
   // 同伴者（付き添いの保護者）: 親子向け日程で1名まで無料・定員にカウントしない
   companion_count?: number | null
+  // 参加者1人につき1件の選択の控え（名前と金額は予約時点のもの）。書くのはサーバーだけ
+  participant_choices?: ParticipantOptionChoice[] | null
   consent_agreed_at?: string | null
   consent_text_snapshot?: string | null
   // 流入経路と他サイトの販売手数料（円）。手取り = total_amount - commission_amount

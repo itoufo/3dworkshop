@@ -4,6 +4,13 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getConsentTextFor } from '@/lib/consent-default'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 import { toLocale } from '@/lib/i18n'
+import {
+  parseParticipantOption,
+  resolveParticipantChoices,
+  participantChoicesTotal,
+  summarizeParticipantChoices,
+  type ParticipantOptionChoice,
+} from '@/lib/participant-option'
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,14 +67,33 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: 'ページの表示が古いため、参加同意書への同意を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。' }, { status: 400 })
     }
+    // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
+    const qty = participants || 1
+    const base = workshop.price * qty
+
+    // 参加者ごとの選択肢（例: 塗るフィギュア）。ブラウザが送るのは選んだ id だけで、名前と金額は DB から引く。
+    // 人数と数が合わない・知らない id が混じる場合は決済に進めない（選択肢を足す前に開いたままのタブなど）
+    const participantOption = parseParticipantOption(workshop.participant_option)
+    let participantChoices: ParticipantOptionChoice[] = []
+    if (participantOption) {
+      const resolved = resolveParticipantChoices(participantOption, body.participant_choice_ids, qty)
+      if (!resolved) {
+        // 仮予約を残すと席と早割の枠を食うので取り消す
+        if (bookingRow.status === 'pending') {
+          await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
+        }
+        return NextResponse.json({ error: `「${participantOption.label}」の選択を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。` }, { status: 400 })
+      }
+      participantChoices = resolved
+    }
+    const optionTotal = participantChoicesTotal(participantChoices)
+    // 割引前の満額（参加費 ＋ 選んだものの代金）
+    const fullAmount = base + optionTotal
+
     await supabaseAdmin
       .from('bookings')
       .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)) })
       .eq('id', booking_id)
-
-    // 金額はサーバー側でDBの価格から再計算する（クライアント送信値は信用しない）
-    const qty = participants || 1
-    const base = workshop.price * qty
 
     // 早割: 先着 early_bird_slots 組（キャンセル以外の予約行数）以内なら「1名あたり割引」を適用。
     // 現在の予約行（作成済みpending）は除外して数える。
@@ -88,12 +114,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // クーポン割引はクライアント値を上限クランプして使用（既存挙動の踏襲）
+    // クーポン割引はクライアント値を上限クランプして使用（既存挙動の踏襲）。
+    // ⚠ 上限は参加費（base）まで。クーポンと早割は参加費への割引で、選んだもの（フィギュア等）の代金は割り引かない
     const couponDiscount = Math.max(0, Math.min(discount_amount || 0, base))
-    const totalDiscount = couponDiscount + earlyBirdDiscount
+    const totalDiscount = Math.min(couponDiscount + earlyBirdDiscount, base)
     // 全額割引（100%クーポン等）は ¥0 で通す。¥50 に切り上げると無料のはずの予約に請求が立つ。
     // 1〜49円だけは Stripe の最低決済金額(¥50)に切り上げる
-    const remaining = base - totalDiscount
+    const remaining = fullAmount - totalDiscount
     const unitAmount = remaining <= 0 ? 0 : Math.max(50, remaining)
 
     // Stripe Checkout セッションを作成
@@ -107,7 +134,9 @@ export async function POST(request: NextRequest) {
             currency: 'jpy',
             product_data: {
               name: workshop.title,
-              description: `${workshop.description} (${participants}名)`,
+              description: `${workshop.description} (${participants}名)${
+                participantOption ? ` / ${participantOption.label}: ${summarizeParticipantChoices(participantChoices)}` : ''
+              }`,
             },
             unit_amount: unitAmount,
           },
@@ -127,6 +156,7 @@ export async function POST(request: NextRequest) {
         coupon_id: coupon_id || '',
         discount_amount: couponDiscount,
         early_bird_discount: earlyBirdDiscount,
+        option_total: optionTotal,
       },
     })
 
@@ -137,7 +167,10 @@ export async function POST(request: NextRequest) {
         stripe_session_id: session.id,
         coupon_id: coupon_id || null,
         // 実際に請求した額と一致させる（¥50 への切り上げ・満額超えの割引を反映）
-        discount_amount: base - unitAmount
+        discount_amount: fullAmount - unitAmount,
+        // 選択肢のあるワークショップでは、満額と選択の控えをここ（サーバー）で書く。
+        // 予約行はブラウザが作るので、そこにある金額・選択は信用しない
+        ...(participantOption ? { total_amount: fullAmount, participant_choices: participantChoices } : {}),
       })
       .eq('id', booking_id)
 

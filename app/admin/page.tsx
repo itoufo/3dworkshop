@@ -16,6 +16,7 @@ import {
 } from '@/lib/request-statuses'
 import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
+import { parseParticipantOption, parseParticipantChoices, summarizeParticipantChoices } from '@/lib/participant-option'
 import { BOOKING_SOURCES, BOOKING_SOURCE_LABELS, bookingSourceLabel, isBookingSource, type BookingSource } from '@/lib/booking-sources'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { Calendar, Users, CreditCard, Plus, TrendingUp, Clock, Mail, Phone, UserCircle, MapPin, Edit, Tag, Pin, BookOpen, FolderOpen, CalendarPlus, Inbox, Sparkles, RefreshCw, BarChart3, Lock } from 'lucide-react'
@@ -829,6 +830,12 @@ export default function AdminDashboard() {
                       {booking.companion_count != null && booking.companion_count > 0 && (
                         <div className="text-xs text-gray-500 mt-1">
                           + 同伴者{booking.companion_count}名（無料・席数外）
+                        </div>
+                      )}
+                      {parseParticipantChoices(booking.participant_choices).length > 0 && (
+                        <div className="text-xs text-purple-700 mt-1 whitespace-normal">
+                          {parseParticipantOption(booking.workshop?.participant_option)?.label ?? '選択'}:{' '}
+                          {summarizeParticipantChoices(parseParticipantChoices(booking.participant_choices))}
                         </div>
                       )}
                     </td>

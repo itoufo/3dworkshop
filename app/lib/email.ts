@@ -206,7 +206,9 @@ export function generateBookingConfirmationEmail(
   minorGrades?: string | null,
   productionNotes?: string | null,
   companionCount?: number | null,
-  consentAgreedAt?: string | null
+  consentAgreedAt?: string | null,
+  /** 参加者ごとの選択（例: { label: 'フィギュア', summary: 'ぬりっこアニマル 高さ約7cm ×1' }）。選択肢の無いワークショップでは渡さない */
+  participantChoice?: { label: string; summary: string } | null
 ) {
   const subject = `予約確認: ${workshopTitle}`;
 
@@ -251,6 +253,7 @@ export function generateBookingConfirmationEmail(
             ${participants ? `<p><strong>人数:</strong> ${participants}名</p>` : ''}
             ${minorCount ? `<p><strong>高校生以下:</strong> ${minorCount}名${minorGrades ? `（${minorGrades}）` : ''}</p>` : ''}
             ${companionCount ? `<p><strong>同伴者（付き添い）:</strong> ${companionCount}名（無料）</p>` : ''}
+            ${participantChoice?.summary ? `<p><strong>${participantChoice.label}:</strong> ${participantChoice.summary}</p>` : ''}
             ${consentAgreedAt ? `<p><strong>参加同意書:</strong> 同意済み</p>` : ''}
           </div>
           ${hasElementary ? `

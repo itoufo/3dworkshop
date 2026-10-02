@@ -17,6 +17,12 @@ import ZeroBookingCutoffField, {
   zeroBookingCutoffToColumns,
   zeroBookingCutoffError,
 } from '@/components/admin/ZeroBookingCutoffField'
+import ParticipantOptionField, {
+  EMPTY_PARTICIPANT_OPTION,
+  participantOptionFromWorkshop,
+  participantOptionToColumns,
+  participantOptionError,
+} from '@/components/admin/ParticipantOptionField'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -30,6 +36,7 @@ export default function EditWorkshop() {
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
   // 予約0人のときの締切（formData とは別に持つ）
   const [zeroCutoff, setZeroCutoff] = useState(DEFAULT_ZERO_BOOKING_CUTOFF)
+  const [participantOption, setParticipantOption] = useState(EMPTY_PARTICIPANT_OPTION)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -111,6 +118,7 @@ export default function EditWorkshop() {
           consent_text: workshopData.consent_text || ''
         })
         setZeroCutoff(zeroBookingCutoffFromWorkshop(workshopData))
+        setParticipantOption(participantOptionFromWorkshop(workshopData))
         if (workshopData.image_url) {
           setImagePreview(workshopData.image_url)
         }
@@ -139,6 +147,12 @@ export default function EditWorkshop() {
     const cutoffError = zeroBookingCutoffError(zeroCutoff)
     if (cutoffError) {
       alert(cutoffError)
+      return
+    }
+    // 参加者ごとの選択肢も同じ（ON なのに不正なら、黙って「選択肢なし」で保存しない）
+    const optionError = participantOptionError(participantOption)
+    if (optionError) {
+      alert(optionError)
       return
     }
     
@@ -212,6 +226,7 @@ export default function EditWorkshop() {
           early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
           consent_text: formData.consent_text.trim() || null,
           ...zeroBookingCutoffToColumns(zeroCutoff),
+          ...participantOptionToColumns(participantOption),
           updated_at: new Date().toISOString()
         })
         .eq('id', params.id)
@@ -555,6 +570,8 @@ export default function EditWorkshop() {
               />
             </div>
             <ZeroBookingCutoffField value={zeroCutoff} onChange={setZeroCutoff} />
+
+            <ParticipantOptionField value={participantOption} onChange={setParticipantOption} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

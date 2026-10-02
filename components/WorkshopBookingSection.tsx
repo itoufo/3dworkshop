@@ -15,6 +15,7 @@ import { getConsentTextFor } from '@/lib/consent-default'
 import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst, formatCutoffJstEn } from '@/lib/booking-deadline'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import { BOOKING_TEXT, type BookingText, type Locale } from '@/lib/i18n'
+import { parseParticipantOption, participantChoicesTotal, groupParticipantChoices, type ParticipantOptionChoice } from '@/lib/participant-option'
 
 // 開始時刻（JST）を過ぎていない回。端末のタイムゾーンに左右されないよう JST で比べる
 function getUpcomingSessions(w: Workshop): WorkshopSession[] {
@@ -177,8 +178,23 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     return locale === 'en' ? formatCutoffJstEn(cutoff) : formatCutoffJst(cutoff)
   })()
 
-  // 参加費0円の回（無料の特別開催など）。Stripe は最低¥50のため決済自体を通さない
-  const isFree = isFreePrice(workshop.price)
+  // 参加者ごとの選択肢（例: 塗るフィギュア）。1人につき1つ選び、選んだものの代金が参加費に加わる。
+  // ここで出す金額は表示用で、請求額はサーバー（/api/create-checkout-session）が DB の価格から決める
+  const participantOption = useMemo(
+    () => parseParticipantOption(workshop.participant_option),
+    [workshop.participant_option]
+  )
+  /** 参加者1人ずつの選択（選択肢の id）。参加人数を変えても、先に選んだ分は残す */
+  const [choiceIds, setChoiceIds] = useState<string[]>([])
+  const sizedChoiceIds = Array.from({ length: booking.participants }, (_, i) => choiceIds[i] ?? '')
+  const chosenChoices: ParticipantOptionChoice[] = participantOption
+    ? sizedChoiceIds.flatMap((id) => participantOption.choices.filter((c) => c.id === id))
+    : []
+  const optionTotal = participantChoicesTotal(chosenChoices)
+
+  // 参加費0円の回（無料の特別開催など）。Stripe は最低¥50のため決済自体を通さない。
+  // ⚠ 選択肢のあるワークショップは、参加費が0円でも選んだものに代金がありうるので決済の経路に通す
+  const isFree = isFreePrice(workshop.price) && !participantOption
 
   // 早割: 残り組数がある間は「1名あたり割引 × 参加人数」を適用（金額の確定はサーバー側）
   const earlyBird = availability?.early_bird
@@ -414,7 +430,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           booking_date: bookingDate,
           booking_time: bookingTime,
           participants: booking.participants,
-          total_amount: workshop.price * booking.participants,
+          // 選択肢のあるワークショップでは、サーバーが決済セッション作成時に満額を書き直す
+          total_amount: workshop.price * booking.participants + optionTotal,
           status: 'pending',
           payment_status: 'pending',
           minor_count: booking.hasMinors ? booking.minorCount : null,
@@ -478,6 +495,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           discount_amount: couponValidation.discount_amount || 0,
           consent: agreedToConsent,
           locale,
+          // 送るのは選んだ id だけ。名前と金額はサーバーが DB から引く
+          ...(participantOption ? { participant_choice_ids: sizedChoiceIds } : {}),
         }),
       })
 
@@ -908,6 +927,33 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             )}
           </div>
 
+          {/* 参加者ごとの選択肢（例: 塗るフィギュア） */}
+          {participantOption && sizedChoiceIds.map((choiceId, i) => (
+            <div key={i}>
+              <label htmlFor={`booking-choice-${i}`} className="block text-sm font-medium text-gray-700 mb-2">
+                {t.choiceLabel(participantOption.label, i + 1, booking.participants)}
+              </label>
+              <select
+                id={`booking-choice-${i}`}
+                required
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900"
+                value={choiceId}
+                onChange={(e) => {
+                  const next = [...sizedChoiceIds]
+                  next[i] = e.target.value
+                  setChoiceIds(next)
+                }}
+              >
+                <option value="">{t.choicePlaceholder}</option>
+                {participantOption.choices.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}（{c.price > 0 ? `+${formatPrice(c.price)}` : t.choiceNoExtra}）
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+
           {/* Name */}
           <div>
             <label htmlFor="booking-name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -1184,6 +1230,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                   {formatPrice(workshop.price * booking.participants)}
                 </span>
               </div>
+              {groupParticipantChoices(chosenChoices).map(({ choice, count }) => (
+                <div key={choice.id} className="flex justify-between items-center">
+                  <span className="text-gray-600">{t.choiceLine(choice.label, count)}</span>
+                  <span className="text-lg text-gray-900">
+                    {choice.price > 0 ? formatPrice(choice.price * count) : t.choiceNoExtra}
+                  </span>
+                </div>
+              ))}
               {isFamilySession && booking.companionCount > 0 && (
                 <div className="flex justify-between items-center text-purple-700">
                   <span>{t.companionLine(booking.companionCount)}</span>
@@ -1205,7 +1259,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
               <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                 <span className="text-gray-900 font-semibold">{t.total}</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  {formatPrice(Math.max(0, (workshop.price * booking.participants) - earlyBirdDiscount - (couponValidation.discount_amount || 0)))}
+                  {/* 割引（早割・クーポン）は参加費までで、選んだものの代金は割り引かない（サーバーの計算と同じ） */}
+                  {formatPrice(Math.max(0, (workshop.price * booking.participants) - earlyBirdDiscount - (couponValidation.discount_amount || 0)) + optionTotal)}
                 </span>
               </div>
             </div>
