@@ -233,7 +233,8 @@ function SuccessContent({ locale }: { locale: Locale }) {
               {parseParticipantChoices(booking.participant_choices).length > 0 && (
                 <div className="flex justify-between gap-4">
                   <dt className="text-gray-600 shrink-0">
-                    {parseParticipantOption(booking.workshop?.participant_option)?.label ?? ''}
+                    {/* あとでワークショップ側の選択肢を外しても、見出しが空にならないようにする */}
+                    {parseParticipantOption(booking.workshop?.participant_option)?.label ?? '選択'}
                   </dt>
                   <dd className="font-medium text-right">
                     {summarizeParticipantChoices(parseParticipantChoices(booking.participant_choices))}

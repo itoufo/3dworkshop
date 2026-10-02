@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうる
     const { data: bookingRow } = await supabaseAdmin
       .from('bookings')
-      .select('id, status, workshop_id')
+      .select('id, status, workshop_id, stripe_session_id')
       .eq('id', booking_id)
       .single()
 
@@ -76,13 +76,20 @@ export async function POST(request: NextRequest) {
     const participantOption = parseParticipantOption(workshop.participant_option)
     let participantChoices: ParticipantOptionChoice[] = []
     if (participantOption) {
+      // 1つの予約行に決済セッションを作れるのは1回だけ。
+      // 2回目を受けると、予約行の控え（選んだものと満額）が後のセッションの内容で上書きされ、
+      // 先のセッション（安い選択）を支払った人の記録が「高い選択・支払い済み」になる。
+      // 予約フォームは送信のたびに新しい予約行を作るので、正常な操作では1回しか来ない
+      if (bookingRow.status !== 'pending' || bookingRow.stripe_session_id) {
+        return NextResponse.json({ error: 'この予約はすでに決済の手続きに入っています。お手数ですが、ページを再読み込みしてもう一度お申し込みください。', code: 'choices_invalid' }, { status: 409 })
+      }
       const resolved = resolveParticipantChoices(participantOption, body.participant_choice_ids, qty)
       if (!resolved) {
         // 仮予約を残すと席と早割の枠を食うので取り消す
         if (bookingRow.status === 'pending') {
           await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking_id)
         }
-        return NextResponse.json({ error: `「${participantOption.label}」の選択を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。` }, { status: 400 })
+        return NextResponse.json({ error: `「${participantOption.label}」の選択を確認できませんでした。お手数ですが、ページを再読み込みしてもう一度お申し込みください。`, code: 'choices_invalid' }, { status: 400 })
       }
       participantChoices = resolved
     }
@@ -90,10 +97,24 @@ export async function POST(request: NextRequest) {
     // 割引前の満額（参加費 ＋ 選んだものの代金）
     const fullAmount = base + optionTotal
 
-    await supabaseAdmin
+    // 同意の記録と一緒に、満額と選択の控えを書く。
+    // ⚠ 決済セッションを作る前に書くこと。後に書くと、書き込みに失敗しても客は支払えてしまい、
+    //   「何を選んだか」が予約行に残らない（スタッフが用意するものが分からなくなる）
+    // ⚠ 予約行はブラウザが作るので、そこにある金額・選択は信用しない。満額は必ずここで書き直す
+    //   （選択肢の無いワークショップでは 参加費×人数 で、正常なブラウザが書く値と同じ）
+    const { error: recordError } = await supabaseAdmin
       .from('bookings')
-      .update({ consent_agreed_at: new Date().toISOString(), consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)) })
+      .update({
+        consent_agreed_at: new Date().toISOString(),
+        consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)),
+        total_amount: fullAmount,
+        ...(participantOption ? { participant_choices: participantChoices } : {}),
+      })
       .eq('id', booking_id)
+    if (recordError && participantOption) {
+      console.error('Failed to record participant choices:', recordError)
+      return NextResponse.json({ error: 'Error creating checkout session' }, { status: 500 })
+    }
 
     // 早割: 先着 early_bird_slots 組（キャンセル以外の予約行数）以内なら「1名あたり割引」を適用。
     // 現在の予約行（作成済みpending）は除外して数える。
@@ -168,9 +189,6 @@ export async function POST(request: NextRequest) {
         coupon_id: coupon_id || null,
         // 実際に請求した額と一致させる（¥50 への切り上げ・満額超えの割引を反映）
         discount_amount: fullAmount - unitAmount,
-        // 選択肢のあるワークショップでは、満額と選択の控えをここ（サーバー）で書く。
-        // 予約行はブラウザが作るので、そこにある金額・選択は信用しない
-        ...(participantOption ? { total_amount: fullAmount, participant_choices: participantChoices } : {}),
       })
       .eq('id', booking_id)
 

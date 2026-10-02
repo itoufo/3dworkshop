@@ -510,6 +510,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         window.location.reload()
         return
       }
+      // 選択肢がサーバーの持っている内容と合わない（管理画面で選択肢を変えた後、古い表示のまま送った等）。
+      // 読み込み直せば新しい選択肢が出るので、理由を伝えて再読み込みする
+      if (data?.code === 'choices_invalid') {
+        gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'choices' })
+        alert(t.choicesChanged)
+        window.location.reload()
+        return
+      }
       if (!response.ok || !sessionId) {
         throw new Error(data?.error || t.checkoutCreateFailed)
       }
@@ -947,7 +955,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 <option value="">{t.choicePlaceholder}</option>
                 {participantOption.choices.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.label}（{c.price > 0 ? `+${formatPrice(c.price)}` : t.choiceNoExtra}）
+                    {t.choiceOption(c.label, c.price > 0 ? `+${formatPrice(c.price)}` : t.choiceNoExtra)}
                   </option>
                 ))}
               </select>

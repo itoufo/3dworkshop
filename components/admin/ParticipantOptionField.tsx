@@ -1,7 +1,7 @@
 'use client'
 
 import { ListChecks, Plus, Trash2 } from 'lucide-react'
-import { parseParticipantOption, type ParticipantOption } from '@/lib/participant-option'
+import { parseParticipantOption, isValidChoicePrice, MAX_CHOICE_PRICE, type ParticipantOption } from '@/lib/participant-option'
 
 /** フォーム上の1行。金額は入力途中の文字列のまま持つ */
 interface ChoiceRow {
@@ -34,6 +34,15 @@ function newChoiceRow(): ChoiceRow {
   return { id: newChoiceId(), label: '', price: '0' }
 }
 
+/**
+ * DB に値が入っているのに、選択肢として読めないか（DB を直接書き換えて形が壊れた場合）。
+ * ⚠ このとき欄は OFF で出る。そのまま保存すると壊れた値を null で上書きして消してしまうので、
+ *   編集画面は欄を触るまでこの列を保存の対象から外す
+ */
+export function isUnreadableParticipantOption(w: { participant_option?: unknown }): boolean {
+  return w.participant_option != null && parseParticipantOption(w.participant_option) === null
+}
+
 /** DB の値 → フォームの値 */
 export function participantOptionFromWorkshop(w: { participant_option?: unknown }): ParticipantOptionValue {
   const option = parseParticipantOption(w.participant_option)
@@ -47,7 +56,8 @@ export function participantOptionFromWorkshop(w: { participant_option?: unknown 
 
 function parsePrice(price: string): number | null {
   if (!/^\d+$/.test(price.trim())) return null
-  return Number(price.trim())
+  const n = Number(price.trim())
+  return isValidChoicePrice(n) ? n : null
 }
 
 /** ON なのに値が不正なときのエラー文。正しければ null。⚠ 保存前に必ず確かめる（黙って OFF で保存しない） */
@@ -57,7 +67,9 @@ export function participantOptionError(v: ParticipantOptionValue): string | null
   if (v.choices.length === 0) return '参加者ごとの選択肢: 選べるものを1つ以上入れてください'
   for (const c of v.choices) {
     if (c.label.trim() === '') return '参加者ごとの選択肢: 名前が空の行があります'
-    if (parsePrice(c.price) === null) return `参加者ごとの選択肢: 「${c.label}」の金額は 0 以上の整数（円）で入力してください`
+    if (parsePrice(c.price) === null) {
+      return `参加者ごとの選択肢: 「${c.label}」の金額は 0 か、50〜${MAX_CHOICE_PRICE.toLocaleString()} の整数（円）で入力してください`
+    }
   }
   return null
 }
@@ -135,19 +147,19 @@ export default function ParticipantOptionField({
           </div>
 
           <div className="space-y-2">
-            <div className="grid grid-cols-[1fr_8rem_2.5rem] gap-2 text-xs font-medium text-gray-700">
+            <div className="grid grid-cols-[minmax(0,1fr)_8rem_2.5rem] gap-2 text-xs font-medium text-gray-700">
               <span>選べるもの</span>
               <span>加える金額（円）</span>
               <span />
             </div>
             {value.choices.map((c) => (
-              <div key={c.id} className="grid grid-cols-[1fr_8rem_2.5rem] gap-2">
+              <div key={c.id} className="grid grid-cols-[minmax(0,1fr)_8rem_2.5rem] gap-2">
                 <input
                   type="text"
                   value={c.label}
                   onChange={(e) => updateChoice(c.id, { label: e.target.value })}
                   placeholder="持参する"
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
+                  className="min-w-0 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
                 />
                 <input
                   type="number"
@@ -155,7 +167,7 @@ export default function ParticipantOptionField({
                   step="1"
                   value={c.price}
                   onChange={(e) => updateChoice(c.id, { price: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
+                  className="min-w-0 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
                 />
                 <button
                   type="button"
@@ -178,7 +190,7 @@ export default function ParticipantOptionField({
           </div>
 
           <p className="text-xs text-gray-500">
-            金額を 0 にすると「追加料金なし」と出ます。ここを直しても、すでに入っている予約の内容と金額は変わりません。
+            金額を 0 にすると「追加料金なし」と出ます（1〜49円は入れられません）。ここを直しても、すでに入っている予約の内容と金額は変わりません。
           </p>
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>

@@ -24,13 +24,28 @@ export interface ParticipantOption {
   choices: ParticipantOptionChoice[]
 }
 
+/** 1つの選択肢に付けられる金額の上限（円）。桁の打ち間違いで Stripe の上限を超え、予約が通らなくなるのを防ぐ */
+export const MAX_CHOICE_PRICE = 1_000_000
+
+/**
+ * 選択肢の金額として受け付ける値か。0（追加料金なし）か、50円以上・上限以下の整数。
+ * ⚠ 1〜49円は受け付けない。割引で残額がその範囲に入ると Stripe の最低額（¥50）に切り上がり、
+ *   フォームの合計と請求額がずれる
+ */
+export function isValidChoicePrice(price: unknown): price is number {
+  return (
+    typeof price === 'number' && Number.isInteger(price) &&
+    (price === 0 || (price >= 50 && price <= MAX_CHOICE_PRICE))
+  )
+}
+
 function isChoice(raw: unknown): raw is ParticipantOptionChoice {
   if (!raw || typeof raw !== 'object') return false
   const c = raw as Record<string, unknown>
   return (
     typeof c.id === 'string' && c.id !== '' &&
     typeof c.label === 'string' && c.label.trim() !== '' &&
-    typeof c.price === 'number' && Number.isInteger(c.price) && c.price >= 0
+    isValidChoicePrice(c.price)
   )
 }
 

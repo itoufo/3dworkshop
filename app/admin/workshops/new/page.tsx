@@ -22,6 +22,7 @@ import ParticipantOptionField, {
   participantOptionToColumns,
   participantOptionError,
 } from '@/components/admin/ParticipantOptionField'
+import { refreshPublicPages } from '@/lib/admin-api-client'
 
 const LexicalRichTextEditor = dynamic(() => import('@/components/LexicalRichTextEditor'), {
   ssr: false,
@@ -300,6 +301,9 @@ export default function NewWorkshopPage() {
           ? `\n${notifyResult.message}`
           : `\n\n⚠ 通知の送信に失敗しました: ${notifyResult.message}\n編集画面の開催日程一覧から「通知を送る」で再送してください。`
       }
+
+      // 公開ページ（ISR、最大1時間）を作り直す（一覧・カテゴリページに新しい回をすぐ出す）
+      await refreshPublicPages()
 
       alert(`ワークショップを追加しました${notifyNote}`)
       setNavigating(true)
