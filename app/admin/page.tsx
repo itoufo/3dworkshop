@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Cookies from 'js-cookie'
 import { supabase } from '@/lib/supabase'
+import { adminJson } from '@/lib/admin-api-client'
 import { toAdminTab, type AdminTab } from '@/lib/admin-tabs'
 import {
   REQUESTS_CHANGED_EVENT,
@@ -96,6 +97,8 @@ export default function AdminDashboard() {
   const [navigating, setNavigating] = useState(false)
   /** 問い合わせが読めなかったときの表示。⚠ 空一覧と区別するために要る */
   const [requestsError, setRequestsError] = useState<string | null>(null)
+  /** 予約・顧客が読めなかったときの表示。⚠ 空一覧（＝売上0）と区別するために要る */
+  const [bookingsError, setBookingsError] = useState<string | null>(null)
   /** 対応状況を更新中の行。二重送信と、応答の追い越しを防ぐ */
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
   const [showCancelled, setShowCancelled] = useState(false)
@@ -148,23 +151,19 @@ export default function AdminDashboard() {
 
   async function fetchData() {
     try {
-      // 予約情報を取得（クーポン情報も含む）
-      const { data: bookingsData } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          workshop:workshops(*),
-          workshop_session:workshop_sessions(*),
-          customer:customers(*),
-          coupon:coupons(*)
-        `)
-        .order('created_at', { ascending: false })
-
-      // 顧客情報を取得
-      const { data: customersData } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // 予約情報（ワークショップ・開催回・顧客・クーポン付き）と顧客情報を取得。
+      // ⚠ 個人情報なので、管理用の API（service role）経由で読む。supabase 直読みに戻さない
+      const [bookingsResult, customersResult] = await Promise.all([
+        adminJson<{ bookings: Booking[] }>('/api/admin/bookings'),
+        adminJson<{ customers: Customer[] }>('/api/admin/customers'),
+      ])
+      const bookingsData = bookingsResult.ok ? bookingsResult.data.bookings : null
+      const customersData = customersResult.ok ? customersResult.data.customers : null
+      // ⚠ 失敗を黙って空一覧にしない。「0件」と「読めなかった」は画面上で区別できず、
+      //   売上と人数の集計まで 0 に見える
+      setBookingsError(
+        !bookingsResult.ok ? bookingsResult.message : !customersResult.ok ? customersResult.message : null,
+      )
 
       // ワークショップ情報を取得
       const { data: workshopsData, error: workshopsError } = await supabase
@@ -301,20 +300,17 @@ export default function AdminDashboard() {
   }
 
   async function updateBookingStatus(bookingId: string, status: string) {
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status })
-        .eq('id', bookingId)
-
-      if (error) throw error
-
-      // データを再取得
-      fetchData()
-    } catch (error) {
-      console.error('Error updating booking:', error)
+    const result = await adminJson<{ ok: true }>('/api/admin/bookings', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: bookingId, status }),
+    })
+    if (!result.ok) {
+      console.error('Error updating booking:', result.message)
       alert('ステータスの更新に失敗しました')
+      return
     }
+    // データを再取得
+    fetchData()
   }
 
   async function togglePinWorkshop(workshopId: string, currentPinStatus: boolean) {
@@ -471,6 +467,16 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* ⚠ 読めなかったことを必ず出す。黙って空一覧にすると、予約0件・売上0円に見える */}
+        {bookingsError && (activeTab === 'bookings' || activeTab === 'customers') && (
+          <div className="mb-8 rounded-xl border-2 border-red-200 bg-red-50 p-4">
+            <p className="text-base font-bold text-red-800">予約・顧客の情報を読み込めませんでした（{bookingsError}）</p>
+            <p className="mt-1 text-base text-red-700">
+              下の一覧と集計は空に見えていますが、予約が無いという意味ではありません。画面を再読み込みしてください。
+            </p>
+          </div>
+        )}
 
         {showOverview && (
         <>

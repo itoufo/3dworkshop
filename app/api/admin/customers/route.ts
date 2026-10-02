@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
 import { isBookingSource } from '@/lib/booking-sources'
+import { fetchAllRows } from '@/lib/supabase-fetch-all'
+import { ADMIN_CUSTOMER_COLUMNS } from '@/lib/admin-customer-columns'
 
-// 管理画面からの顧客の手動登録。
+// 管理画面の顧客: 一覧（GET）と手動登録（POST）。
 //
-// 電話・対面で申し込みを受けたお客様など、サイトの申込フォームを通っていない人を
+// 手動登録は、電話・対面で申し込みを受けたお客様など、サイトの申込フォームを通っていない人を
 // 管理者が直接 customers に入れるための口。
 //
-// ⚠ 書き込みは anon キーではなくこのルート（service role）経由にする。
-//   管理画面は公開の anon キーで動いており、customers は RLS も切っているので、
-//   ブラウザから直接 INSERT する形にすると誰でも顧客を作れてしまう。
+// ⚠ 読み書きは anon キーではなくこのルート（service role）経由にする。
+//   顧客の個人情報なので、公開の anon キーで動くブラウザから直接 Supabase を叩く形にしない。
 //   ガードは isAdminRequest()（httpOnly の署名付き cookie）。admin_auth cookie は偽造できる。
 
 export const runtime = 'nodejs'
@@ -43,6 +44,31 @@ function optionalText(value: unknown, maxLength: number): string | null {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
   return trimmed ? trimmed.slice(0, maxLength) : null
+}
+
+/** 顧客の一覧。新しい順に全件返す */
+export async function GET() {
+  const denied = await requireAdmin()
+  if (denied) return denied
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'server_misconfigured', message: 'サーバーの設定に問題があります' }, { status: 500 })
+  }
+  const admin = supabaseAdmin
+
+  const { data, error } = await fetchAllRows((from, to) =>
+    admin
+      .from('customers')
+      .select(ADMIN_CUSTOMER_COLUMNS)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, to),
+  )
+  if (error) {
+    console.error('[admin/customers] list', error.code, error.message)
+    return NextResponse.json({ error: 'db_error', message: '顧客の取得に失敗しました' }, { status: 500 })
+  }
+
+  return NextResponse.json({ customers: data })
 }
 
 export async function POST(request: NextRequest) {

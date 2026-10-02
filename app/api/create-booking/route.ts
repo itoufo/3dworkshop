@@ -1,0 +1,145 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { clientIp, tooManyRequests } from '@/lib/rate-limit'
+import { jstToday } from '@/lib/booking-deadline'
+import {
+  parseCustomerContact,
+  parseOptionalAge,
+  parseOptionalGender,
+  upsertCustomerByEmail,
+} from '@/lib/public-customer'
+
+/**
+ * ワークショップの仮予約（status: pending）を作る。予約フォームの送信で最初に呼ばれる。
+ *
+ * ここで作るのは「顧客行」と「未決済の予約行」だけ。確定はこの後の経路が行う:
+ *   有料 … /api/create-checkout-session → Stripe → Webhook
+ *   無料 … /api/create-free-booking
+ * 同意の記録・締切・選択肢（フィギュア等）の代金・早割・クーポンはそちらで扱うので、ここでは触らない。
+ *
+ * ⚠ 開催日時と金額はブラウザから受け取らず、DB のワークショップ・日程から決める。
+ * ⚠ 返すのは予約の id だけ。顧客行・予約行の中身は返さない。
+ */
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+const WINDOW_MS = 10 * 60 * 1000
+/** 同じ接続元から10分に作れる仮予約の数。フォームは送信のたびに1行作るので、やり直しの分の余裕を持たせる */
+const MAX_BOOKINGS = 20
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** フォームで選べる人数の上限より十分大きい値。桁の打ち間違いと悪戯を止めるためのもの */
+const MAX_PARTICIPANTS = 100
+const MINOR_GRADES_MAX = 500
+
+function bad(error: string) {
+  return NextResponse.json({ error }, { status: 400 })
+}
+
+export async function POST(request: NextRequest) {
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  const ip = clientIp(request.headers)
+  if (await tooManyRequests(`create-booking:${ip}`, { windowMs: WINDOW_MS, max: MAX_BOOKINGS })) {
+    return NextResponse.json({ error: '短時間に送信が多すぎます。しばらくしてからお試しください。' }, { status: 429 })
+  }
+
+  let body: Record<string, unknown>
+  try {
+    const parsed: unknown = await request.json()
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return bad('リクエストの形式が不正です')
+    body = parsed as Record<string, unknown>
+  } catch {
+    return bad('リクエストの形式が不正です')
+  }
+
+  const workshopId = typeof body.workshop_id === 'string' ? body.workshop_id : ''
+  if (!UUID.test(workshopId)) return bad('ワークショップの指定が正しくありません')
+  const sessionId = typeof body.session_id === 'string' && body.session_id ? body.session_id : null
+  if (sessionId && !UUID.test(sessionId)) return bad('開催日程の指定が正しくありません')
+
+  const contact = parseCustomerContact(body, { phoneRequired: true })
+  if (!contact.ok) return bad(contact.error)
+  const age = parseOptionalAge(body.age)
+  if (!age.ok) return bad(age.error)
+  const gender = parseOptionalGender(body.gender)
+  if (!gender.ok) return bad(gender.error)
+
+  const participants = Number(body.participants)
+  if (!Number.isInteger(participants) || participants < 1 || participants > MAX_PARTICIPANTS) {
+    return bad('参加人数が正しくありません')
+  }
+
+  // 高校生以下の人数と学年。いない場合は null（フォームの「いる」にチェックが無い状態）
+  let minorCount: number | null = null
+  let minorGrades: string | null = null
+  if (body.minor_count !== undefined && body.minor_count !== null) {
+    const n = Number(body.minor_count)
+    if (!Number.isInteger(n) || n < 1 || n > MAX_PARTICIPANTS) return bad('高校生以下の人数が正しくありません')
+    minorCount = n
+    minorGrades = typeof body.minor_grades === 'string' ? body.minor_grades.trim().slice(0, MINOR_GRADES_MAX) : ''
+  }
+
+  const companionRaw = Number(body.companion_count ?? 0)
+  if (!Number.isInteger(companionRaw) || companionRaw < 0 || companionRaw > 1) {
+    return bad('同伴者の人数が正しくありません')
+  }
+
+  const { data: workshop } = await supabaseAdmin
+    .from('workshops')
+    .select('id, price, event_date, event_time, collect_demographics')
+    .eq('id', workshopId)
+    .maybeSingle()
+  if (!workshop) return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
+
+  let session: { event_date: string | null; event_time: string | null; is_family_friendly: boolean | null } | null = null
+  if (sessionId) {
+    const { data } = await supabaseAdmin
+      .from('workshop_sessions')
+      .select('id, workshop_id, event_date, event_time, is_family_friendly')
+      .eq('id', sessionId)
+      .maybeSingle()
+    // 別のワークショップの日程を付けた予約を作らせない（その回の空席計算に紛れ込む）
+    if (!data || data.workshop_id !== workshop.id) return bad('開催日程がこのワークショップのものではありません')
+    session = data
+  }
+
+  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {
+    // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
+    ...(workshop.collect_demographics && age.value !== null ? { age: age.value } : {}),
+    ...(workshop.collect_demographics && gender.value !== null ? { gender: gender.value } : {}),
+  })
+  if (!customer) return NextResponse.json({ error: '予約の作成に失敗しました' }, { status: 500 })
+
+  const { data: booking, error } = await supabaseAdmin
+    .from('bookings')
+    .insert({
+      workshop_id: workshop.id,
+      session_id: sessionId,
+      customer_id: customer.id,
+      booking_date: session?.event_date || workshop.event_date || jstToday(),
+      booking_time: session?.event_time || workshop.event_time || '10:00',
+      participants,
+      // 参加費×人数。選択肢のあるワークショップでは、決済セッション作成時に選んだものの代金を足して書き直す
+      total_amount: workshop.price * participants,
+      status: 'pending',
+      payment_status: 'pending',
+      minor_count: minorCount,
+      minor_grades: minorGrades,
+      // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
+      companion_count: session?.is_family_friendly ? companionRaw : 0,
+    })
+    .select('id')
+    .single()
+
+  if (error || !booking) {
+    console.error('[create-booking] insert failed:', error?.code, error?.message)
+    return NextResponse.json({ error: '予約の作成に失敗しました' }, { status: 500 })
+  }
+
+  return NextResponse.json({ booking_id: booking.id }, { status: 201 })
+}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Workshop, WorkshopSession } from '@/types'
-import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
@@ -401,48 +400,31 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     setSubmitting(true)
 
     try {
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .upsert({
-          email: booking.email,
-          name: booking.name,
-          phone: booking.phone,
-          // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
-          ...(workshop.collect_demographics && booking.age ? { age: parseInt(booking.age) } : {}),
-          ...(workshop.collect_demographics && booking.gender ? { gender: booking.gender } : {})
-        }, {
-          onConflict: 'email'
-        })
-        .select()
-        .single()
-
-      if (customerError) throw customerError
-
-      const bookingDate = selectedSession?.event_date || workshop.event_date || new Date().toISOString().split('T')[0]
-      const bookingTime = selectedSession?.event_time || workshop.event_time || '10:00'
-
-      const { data: bookingData, error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
+      // 顧客行と仮予約はサーバーが作る。開催日時と金額もサーバーが DB から決めるので送らない
+      const createRes = await fetch('/api/create-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           workshop_id: workshop.id,
           session_id: selectedSession?.id || null,
-          customer_id: customer.id,
-          booking_date: bookingDate,
-          booking_time: bookingTime,
+          name: booking.name,
+          email: booking.email,
+          phone: booking.phone,
+          // 年齢・性別は収集対象のワークショップで入力があった場合のみ送る（未入力は不明のまま）
+          ...(workshop.collect_demographics && booking.age ? { age: parseInt(booking.age) } : {}),
+          ...(workshop.collect_demographics && booking.gender ? { gender: booking.gender } : {}),
           participants: booking.participants,
-          // 選択肢のあるワークショップでは、サーバーが決済セッション作成時に満額を書き直す
-          total_amount: workshop.price * booking.participants + optionTotal,
-          status: 'pending',
-          payment_status: 'pending',
           minor_count: booking.hasMinors ? booking.minorCount : null,
           minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null,
           // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
           companion_count: isFamilySession ? booking.companionCount : 0,
-        })
-        .select()
-        .single()
-
-      if (bookingError) throw bookingError
+        }),
+      })
+      const bookingData: { booking_id?: string; error?: string } = await createRes.json().catch(() => ({}))
+      if (!createRes.ok || !bookingData.booking_id) {
+        throw new Error(bookingData.error || t.bookingFailed)
+      }
+      const bookingId = bookingData.booking_id
 
       // 無料回は Stripe を通さず、その場で予約を確定して完了画面へ送る
       if (isFree) {
@@ -450,7 +432,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // 同意の日時と本文はサーバー側で記録する
-          body: JSON.stringify({ booking_id: bookingData.id, consent: agreedToConsent, locale }),
+          body: JSON.stringify({ booking_id: bookingId, consent: agreedToConsent, locale }),
         })
         const freeData = await freeRes.json()
 
@@ -476,7 +458,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         })
         checkoutStartedRef.current = true
 
-        window.location.href = `${successPath}?booking_id=${bookingData.id}`
+        window.location.href = `${successPath}?booking_id=${bookingId}`
         return
       }
 
@@ -487,7 +469,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         },
         body: JSON.stringify({
           workshop_id: workshop.id,
-          booking_id: bookingData.id,
+          booking_id: bookingId,
           customer_email: booking.email,
           amount: workshop.price * booking.participants,
           participants: booking.participants,

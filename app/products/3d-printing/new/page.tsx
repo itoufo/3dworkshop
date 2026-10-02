@@ -10,41 +10,12 @@ import { Upload, FileUp, Package, Palette, Ruler, Hash, AlertCircle, Truck, Info
 import Footer from '@/components/Footer'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
-
-// サイズ定義
-const sizes = [
-  { value: 'S', label: 'Sサイズ', dimension: '5cm', basePrice1: 5000, basePrice100: 3000, basePrice1000: 2000 },
-  { value: 'M', label: 'Mサイズ', dimension: '10cm', basePrice1: 7500, basePrice100: 4500, basePrice1000: 3000 },
-  { value: 'L', label: 'Lサイズ', dimension: '15cm', basePrice1: 10000, basePrice100: 6000, basePrice1000: 4000 },
-]
-
-// フィラメント定義
-const materials = [
-  { value: 'PLA', label: 'PLA', description: '標準・初心者向け' },
-  { value: 'TPU', label: 'TPU', description: '柔軟性あり' },
-  { value: 'ABS', label: 'ABS', description: '耐熱・耐衝撃' },
-]
-
-// 色定義
-const colors = [
-  { value: 'white', label: 'ホワイト', hex: '#FFFFFF' },
-  { value: 'black', label: 'ブラック', hex: '#1a1a1a' },
-  { value: 'custom', label: 'その他（特注）', hex: null },
-]
-
-// 数量による単価計算（対数スケール）
-function calculateUnitPrice(quantity: number, size: typeof sizes[0]): number {
-  if (quantity <= 1) return size.basePrice1
-  if (quantity >= 1000) return size.basePrice1000
-
-  // 対数補間: price = base1 - (log10(qty) / log10(1000)) * (base1 - base1000)
-  const logQty = Math.log10(quantity)
-  const logMax = Math.log10(1000)
-  const ratio = logQty / logMax
-  const unitPrice = size.basePrice1 - ratio * (size.basePrice1 - size.basePrice1000)
-
-  return Math.round(unitPrice)
-}
+import {
+  PRINT_SIZES as sizes,
+  PRINT_MATERIALS as materials,
+  PRINT_COLORS as colors,
+  calculatePrintingCost,
+} from '@/lib/printing-order'
 
 export default function New3DPrintingOrder() {
   const router = useRouter()
@@ -79,12 +50,8 @@ export default function New3DPrintingOrder() {
   // 選択されたサイズの情報を取得
   const selectedSize = sizes.find(s => s.value === order.size) || sizes[0]
 
-  // 料金計算
-  const unitPrice = calculateUnitPrice(order.quantity, selectedSize)
-  const materialCost = unitPrice * order.quantity
-  const baseCost = 5000
-  const shippingCost = 0 // 送料無料
-  const totalCost = baseCost + materialCost + shippingCost
+  // 料金計算（表示用。依頼行に書く金額はサーバーが同じ関数で計算する）
+  const { unitPrice, materialCost, baseCost, totalCost } = calculatePrintingCost(order.quantity, selectedSize)
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -142,58 +109,34 @@ export default function New3DPrintingOrder() {
     setLoading(true)
 
     try {
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .upsert({
-          email: customerInfo.email,
-          name: customerInfo.name,
-          phone: customerInfo.phone,
-        }, {
-          onConflict: 'email'
-        })
-        .select()
-        .single()
-
-      if (customerError) throw customerError
-
-      const orderNumber = `3DP-${Date.now()}`
-
-      const { data: printingOrder, error: orderError } = await supabase
-        .from('printing_orders')
-        .insert({
-          customer_id: customer.id,
-          order_number: orderNumber,
-          status: 'pending',
-          stl_file_url: order.stl_file_url,
-          stl_file_name: order.stl_file_name,
-          file_size_mb: order.file_size_mb,
-          material_type: order.material_type,
-          material_color: order.material_color === 'custom' ? `特注: ${order.custom_color_request}` : order.material_color,
-          layer_height: 0.4,
-          infill_percentage: 20,
-          notes: order.notes + (order.material_color === 'custom' ? `\n希望フィラメント: ${order.custom_color_request}` : ''),
-          delivery_method: 'shipping',
-          base_cost: baseCost,
-          material_cost: materialCost,
-          total_cost: totalCost,
-          // 新しいフィールド
-          print_size: order.size,
-          print_quantity: order.quantity,
-          unit_price: unitPrice,
-        })
-        .select()
-        .single()
-
-      if (orderError) throw orderError
-
-      await fetch('/api/send-3d-printing-email', {
+      // 顧客行と依頼行はサーバーが作り、確認メールもサーバーが送る。金額はサーバーが計算するので送らない
+      const res = await fetch('/api/create-printing-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order: printingOrder,
-          customer: customer
-        })
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          stl_file_url: order.stl_file_url,
+          stl_file_name: order.stl_file_name,
+          file_size_mb: order.file_size_mb,
+          size: order.size,
+          quantity: order.quantity,
+          material_type: order.material_type,
+          material_color: order.material_color,
+          custom_color_request: order.custom_color_request,
+          notes: order.notes,
+        }),
       })
+      if (!res.ok) {
+        const data: { error?: string } = await res.json().catch(() => ({}))
+        // 入力の不備（400）と回数制限（429）は理由をそのまま伝える。それ以外は下の共通の文言にする
+        if ((res.status === 400 || res.status === 429) && data.error) {
+          alert(data.error)
+          return
+        }
+        throw new Error(data.error || `status ${res.status}`)
+      }
 
       alert('注文を受け付けました。確認メールをお送りしました。')
       router.push('/products')
