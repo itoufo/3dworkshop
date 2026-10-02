@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Menu, X, ChevronDown, User, Globe } from 'lucide-react'
+import { Menu, X, ChevronDown, User, Globe, ArrowRight, LayoutGrid } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { WorkshopCategory } from '@/types'
 import { englishPathFor, japanesePathFor } from '@/lib/i18n'
+import { optimizeImageUrl } from '@/lib/image-optimization'
 import CartLink from '@/components/CartLink'
 
 /**
@@ -78,6 +79,16 @@ const EN_NAV: { href: string; label: string }[] = [
 
 const linkClass =
   'text-gray-700 hover:text-purple-600 font-medium transition-colors whitespace-nowrap'
+
+/**
+ * カテゴリ名の先頭の「【フィギュア】」を、ラベルと残りの名前に分ける。
+ * プルダウンではラベルを小さく上に出す（名前が1行短くなり、種類がひと目で分かる）。
+ * 【】で始まらない名前はそのまま返す。
+ */
+function splitCategoryName(name: string): { tag: string | null; title: string } {
+  const match = name.match(/^【(.+?)】\s*(.+)$/)
+  return match ? { tag: match[1], title: match[2] } : { tag: null, title: name }
+}
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -251,33 +262,66 @@ export default function Header() {
                   />
                 </Link>
                 {workshopDropdownOpen && categories.length > 0 && (
-                  <div className="absolute left-0 top-full pt-2 w-64">
-                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                      <Link
-                        href="/workshops"
-                        className="block px-4 py-3 text-sm font-medium text-purple-700 hover:bg-purple-50 border-b border-gray-100"
-                        onClick={() => setWorkshopDropdownOpen(false)}
-                      >
-                        全てのワークショップ →
-                      </Link>
-                      <Link
-                        href="/workshops/categories"
-                        className="block px-4 py-3 text-sm font-medium text-purple-700 hover:bg-purple-50 border-b border-gray-100"
-                        onClick={() => setWorkshopDropdownOpen(false)}
-                      >
-                        📂 カテゴリ一覧 →
-                      </Link>
-                      <div className="max-h-96 overflow-y-auto">
-                        {categories.map((cat) => (
-                          <Link
-                            key={cat.id}
-                            href={`/workshops/category/${cat.slug}`}
-                            className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
-                            onClick={() => setWorkshopDropdownOpen(false)}
-                          >
-                            {cat.name}
-                          </Link>
-                        ))}
+                  // ⚠ 幅 40rem は lg（1024px）で右端に収まる上限に近い。広げるときは 1024px 幅で確かめること
+                  <div className="absolute left-0 top-full pt-2 w-[40rem]">
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                      {/* カテゴリが増えても画面の下にはみ出さないよう、一覧だけを縦スクロールにする */}
+                      <div className="grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-11rem)] overflow-y-auto">
+                        {categories.map((cat) => {
+                          const { tag, title } = splitCategoryName(cat.name)
+                          return (
+                            <Link
+                              key={cat.id}
+                              href={`/workshops/category/${cat.slug}`}
+                              className="group flex items-center gap-3 rounded-xl p-2 hover:bg-purple-50 transition-colors"
+                              onClick={() => setWorkshopDropdownOpen(false)}
+                            >
+                              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-purple-100 to-pink-100">
+                                {cat.image_url ? (
+                                  // 名前が隣にあるので、画像は飾り扱い（alt は空）
+                                  <Image
+                                    src={optimizeImageUrl(cat.image_url, 75)}
+                                    alt=""
+                                    fill
+                                    sizes="56px"
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <span className="flex h-full w-full items-center justify-center text-sm font-bold text-purple-600">
+                                    3D
+                                  </span>
+                                )}
+                              </span>
+                              <span className="min-w-0">
+                                {tag && (
+                                  <span className="block text-xs font-bold text-purple-600">{tag}</span>
+                                )}
+                                {/* ⚠ ここに block を足さない。line-clamp の display（-webkit-box）を上書きして、3行以上に伸びる */}
+                                <span className="text-sm font-medium leading-snug text-gray-800 line-clamp-2 group-hover:text-purple-700 transition-colors">
+                                  {title}
+                                </span>
+                              </span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                      <div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-4 py-3">
+                        <Link
+                          href="/workshops/categories"
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-purple-700 transition-colors"
+                          onClick={() => setWorkshopDropdownOpen(false)}
+                        >
+                          <LayoutGrid className="w-4 h-4" aria-hidden />
+                          カテゴリ一覧
+                        </Link>
+                        <Link
+                          href="/workshops"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-bold text-white hover:shadow-md transition-shadow"
+                          onClick={() => setWorkshopDropdownOpen(false)}
+                        >
+                          すべてのワークショップを見る
+                          <ArrowRight className="w-4 h-4" aria-hidden />
+                        </Link>
                       </div>
                     </div>
                   </div>
