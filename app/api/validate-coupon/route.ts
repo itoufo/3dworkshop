@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { clientIp, tooManyRequests } from '@/lib/rate-limit'
+
+const WINDOW_MS = 10 * 60 * 1000
+/** 同じ接続元から10分に確かめられる回数。打ち間違いのやり直しには十分で、コードの総当たりには足りない数 */
+const MAX_ATTEMPTS = 20
 
 // ⚠ クーポンは service role で読む。anon にはクーポンの表（コードの一覧）を読ませない。
 //   ここが返すのは、入力されたコードが使えるかどうかと割引額だけ。
@@ -9,6 +14,14 @@ export async function POST(request: NextRequest) {
       throw new Error('Supabase admin client not available')
     }
     const supabase = supabaseAdmin
+
+    // クーポンのコードを確かめられる口はここだけ。回数を限って総当たりを止める
+    if (await tooManyRequests(`validate-coupon:${clientIp(request.headers)}`, { windowMs: WINDOW_MS, max: MAX_ATTEMPTS })) {
+      return NextResponse.json(
+        { error: '短時間に試行が多すぎます。しばらくしてからお試しください。' },
+        { status: 429 }
+      )
+    }
     const { code, workshopId, amount, customerId, type = 'workshop' } = await request.json()
 
     // スクール用クーポンの場合はworkshopId不要

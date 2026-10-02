@@ -152,8 +152,8 @@ export interface WorkshopActivityStats {
 // 取得行数は現在114行。PostgREST の行数上限に届くようになったら、
 // 集計を RPC (SECURITY DEFINER) に移すこと。
 //
-// ⚠ bookings / customers は個人情報なので service role で読む（このファイルの他の取得は
-//   公開情報なので anon のまま）。返すのは集計値だけで、行の中身はページへ渡さない。
+// ⚠ bookings / customers は個人情報なので service role で読む。返すのは集計値だけで、行の中身はページへ渡さない。
+//   （このファイルで service role を使うのは、これと getWorkshop だけ。一覧系は公開中の行を anon で読む）
 export const getWorkshopActivityStats = cache(async (): Promise<WorkshopActivityStats> => {
   if (!supabaseAdmin) return { heldDays: 0, participants: 0, firstHeldDate: null }
   const { data } = await supabaseAdmin

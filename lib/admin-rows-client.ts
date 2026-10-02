@@ -39,7 +39,8 @@ export type AdminRow = Record<string, any>
 
 /**
  * supabase-js と同じ形（data か error のどちらか）で返す。
- * 401（管理 API 用の署名付き cookie が無い/切れた）は adminJson がログイン画面へ戻す。
+ * 401（管理 API 用の署名付き cookie が無い/切れた）は、読み取りなら adminJson がログイン画面へ戻し、
+ * 保存なら案内を出して error を返す。
  */
 export type AdminResult<T> = { data: T; error: null } | { data: null; error: { message: string } }
 
@@ -48,7 +49,8 @@ async function call<TBody, T>(
   init: RequestInit | undefined,
   pick: (body: TBody) => T,
 ): Promise<AdminResult<T>> {
-  const result = await adminJson<TBody>(url, init)
+  // 保存（POST / PATCH）でログインが切れていたときは、再読み込みせず案内を出す（入力中の内容を残す）
+  const result = await adminJson<TBody>(url, init, { keepPageOn401: Boolean(init?.method) })
   if (!result.ok) return { data: null, error: { message: result.message } }
   return { data: pick(result.data), error: null }
 }

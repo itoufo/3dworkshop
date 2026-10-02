@@ -58,6 +58,32 @@ async function guard(table: AdminRowsTable): Promise<Response | null> {
   return null
 }
 
+/**
+ * 書き込み（POST / PATCH）を、この管理画面自身からの JSON リクエストに限る。
+ *
+ * 管理者の cookie は SameSite=Lax なので、別サイトからの POST には付かない。ただし同じサイトの
+ * 別オリジン（*.3dlab.jp）からのリクエストには付く。`Content-Type: text/plain` の POST は
+ * 事前確認（preflight）なしで送れるので、そこでスクリプトを動かせる人がいると、ログイン中の管理者の
+ * ブラウザを使って行を追加できてしまう（クーポンや公開記事）。
+ * JSON 以外を断れば preflight が必須になり、別オリジンからは届かない。
+ */
+function rejectForeignWrite(req: Request): Response | null {
+  const contentType = (req.headers.get('content-type') ?? '').toLowerCase()
+  if (!contentType.startsWith('application/json')) {
+    return Response.json(
+      { error: 'unsupported_media_type', message: 'リクエストの形式が不正です' },
+      { status: 415 },
+    )
+  }
+  // ブラウザが付ける「どこから来たリクエストか」。付いていて同一オリジンでなければ断る
+  // （none = アドレスバーや拡張機能など、ページ以外から。ヘッダが無い = ブラウザ以外）
+  const site = req.headers.get('sec-fetch-site')
+  if (site && site !== 'same-origin' && site !== 'none') {
+    return Response.json({ error: 'forbidden', message: 'この画面以外からは操作できません' }, { status: 403 })
+  }
+  return null
+}
+
 /** `a,b,c` → ['a','b','c']。識別子でないものが混じっていたら null */
 function parseColumns(raw: string | null): string[] | null {
   if (!raw) return []
@@ -171,7 +197,7 @@ export async function handleAdminGet(table: AdminRowsTable, id: string): Promise
 
 /** 1件追加。追加した行を返す */
 export async function handleAdminInsert(table: AdminRowsTable, req: Request): Promise<Response> {
-  const blocked = await guard(table)
+  const blocked = (await guard(table)) ?? rejectForeignWrite(req)
   if (blocked) return blocked
 
   const body = await readObjectBody(req)
@@ -185,7 +211,7 @@ export async function handleAdminInsert(table: AdminRowsTable, req: Request): Pr
 
 /** 1件更新。更新後の行を返す */
 export async function handleAdminUpdate(table: AdminRowsTable, id: string, req: Request): Promise<Response> {
-  const blocked = await guard(table)
+  const blocked = (await guard(table)) ?? rejectForeignWrite(req)
   if (blocked) return blocked
   if (!UUID.test(id)) return badRequest('対象の指定が正しくありません')
 

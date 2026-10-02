@@ -21,6 +21,8 @@ export async function GET(
       .from('workshops')
       .select('*, category:workshop_categories(*), sessions:workshop_sessions(*)')
       .eq('id', id)
+      // 限定公開は返さない（パスワードを確かめる経路は /workshops/preview/[id] だけ）。DB の権限任せにしない
+      .eq('is_private', false)
       .single()
 
     if (error || !data) {

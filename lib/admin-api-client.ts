@@ -2,16 +2,23 @@
 
 import Cookies from 'js-cookie'
 
+/** 保存しようとしたときにログインが切れていた場合の案内 */
+export const ADMIN_SESSION_EXPIRED_MESSAGE =
+  'ログインの有効期限が切れています。入力中の内容を残すため、この画面は開いたままにしています。別のタブで管理画面にログインし直してから、もう一度保存してください。'
+
 /**
  * 管理 API（service role で動くサーバー経路）を呼ぶ。
  *
  * ⚠ 401 は文字で出さずにログイン画面へ戻す。画面側の `admin_auth` cookie は残っているのに
  *   署名付きの `admin_session` だけ切れている状態があり、そのままだと
  *   「ログインしているのに何も読めない」で詰む（app/admin/chat-logs/page.tsx と同じ扱い）。
+ * ⚠ 入力フォームの保存では `keepPageOn401` を付ける。再読み込みすると、書きかけの本文が消える。
+ *   その場合は案内を出して、画面はそのままにする。
  */
 export async function adminJson<T>(
   url: string,
   init?: RequestInit,
+  options: { keepPageOn401?: boolean } = {},
 ): Promise<{ ok: true; data: T } | { ok: false; message: string }> {
   let res: Response
   try {
@@ -25,6 +32,10 @@ export async function adminJson<T>(
   }
 
   if (res.status === 401) {
+    if (options.keepPageOn401) {
+      alert(ADMIN_SESSION_EXPIRED_MESSAGE)
+      return { ok: false, message: ADMIN_SESSION_EXPIRED_MESSAGE }
+    }
     Cookies.remove('admin_auth')
     location.reload()
     return { ok: false, message: 'ログインし直してください' }
