@@ -27,6 +27,8 @@ export const metadata: Metadata = {
     type: 'website',
     images: [{ url: `${MAIN_SITE_URL}/og-image.jpg`, width: 1200, height: 630 }],
   },
+  // ⚠ 書かないと app/layout.tsx の日本語の twitter:title / description がそのまま出る
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: [`${MAIN_SITE_URL}/og-image.jpg`] },
 }
 
 export default async function StoreEnglishTopPage() {

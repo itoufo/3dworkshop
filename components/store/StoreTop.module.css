@@ -66,6 +66,10 @@
 .tileOnly {
   grid-column: span 2;
 }
+/* 写真が2枚だけのとき、右の1枚を縦いっぱいにする（右下のマスを空けない） */
+.tileTall {
+  grid-row: span 2;
+}
 .caption {
   position: absolute;
   inset: auto 0 0 0;

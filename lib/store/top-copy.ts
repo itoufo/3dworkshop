@@ -1,11 +1,14 @@
-import { SHIPPING_FEE, SHIPPING_LEAD_TIME_DAYS, SHIPPING_LEAD_TIME_TEXT, shippingFeeLabel } from '@/lib/shipping'
+import { SHIPPING_LEAD_TIME_DAYS, SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from './download-limits'
 import { SELLER_MIN_ENROLLED_MONTHS } from './urls'
 
 /**
  * ストアのトップページ（/ と /en）の文言。
- * ⚠ 期限・回数・発送の目安・送料・出品に要る在籍期間は、ここに数字を直接書かない。
- *   作品ページ・決済・メールと同じ定数から組み立てる（片方だけ変わって食い違うのを防ぐ）。
+ * ⚠ 期限・回数・発送の目安・出品に要る在籍期間は、ここに数字を直接書かない。
+ *   作品ページ・決済と同じ定数から組み立てる（片方だけ変わって食い違うのを防ぐ）。
+ * ⚠ 送料だけは定数から作らない。ストアの完成品は送料無料で固定（StoreBuyForm・StoreCartClient・
+ *   app/api/store/cart/checkout が送料を足さない）。lib/shipping.ts の SHIPPING_FEE は本サイトの
+ *   物販のもので、ストアの決済には効かない。ストアの送料を変えるときは、それらとここを一緒に直す。
  */
 export type StoreLocale = 'ja' | 'en'
 
@@ -30,7 +33,7 @@ const ja: StoreTopCopy = {
   hero: {
     title: '3Dプリントの作品を、データでも、完成品でも。',
     lead:
-      '3DLab Store は、3DLab とスクール生がつくった3D作品のストアです。3Dデータを買って自分のプリンターで印刷するか、3DLab が印刷した完成品を受け取るかを、作品ごとに選べます。',
+      '3DLab Store は、3DLab とスクール生がつくった3D作品のストアです。3Dデータを買って自分のプリンターで印刷する買い方と、3DLab が印刷した完成品を受け取る買い方があります。どちらで買えるかは作品によって異なります。',
     browse: '作品を見る',
     how: '買い方を見る',
   },
@@ -51,7 +54,7 @@ const ja: StoreTopCopy = {
     print: {
       title: '完成品',
       summary: '3DLab が印刷してお届けします',
-      points: [`${SHIPPING_LEAD_TIME_TEXT}します`, shippingFeeLabel(), 'サイズや色を選べる作品もあります'],
+      points: [`${SHIPPING_LEAD_TIME_TEXT}します`, '送料無料（全国一律）', 'サイズや色を選べる作品もあります'],
     },
   },
   works: {
@@ -98,7 +101,7 @@ const en: StoreTopCopy = {
   hero: {
     title: '3D-printed works, as data or as finished prints.',
     lead:
-      '3DLab Store sells 3D works made by 3DLab and by the students of its school in Tokyo. For each work you choose how to buy: download the 3D data and print it on your own printer, or have 3DLab print it and send you the finished piece.',
+      '3DLab Store sells 3D works made by 3DLab and by the students of its school in Tokyo. There are two ways to buy: download the 3D data and print it on your own printer, or have 3DLab print it and send you the finished piece. Which of the two is offered depends on the work.',
     browse: 'Browse the works',
     how: 'How buying works',
   },
@@ -121,7 +124,7 @@ const en: StoreTopCopy = {
       summary: '3DLab prints it and ships it to you',
       points: [
         `Ships within ${SHIPPING_LEAD_TIME_DAYS} days of your order`,
-        SHIPPING_FEE > 0 ? `Shipping ¥${SHIPPING_FEE.toLocaleString('en-US')} (flat rate, Japan only)` : 'Free shipping (Japan only)',
+        'Free shipping (Japan only)',
         'Some works come in a choice of sizes or colours',
       ],
     },
@@ -154,7 +157,7 @@ const en: StoreTopCopy = {
       '3DLab is a 3D printing school in Yushima, Tokyo. It runs hands-on workshops and a school.',
       'This store lists works by 3DLab and its students. 3DLab reviews every listing before it goes up.',
     ],
-    workshops: 'Workshops in English',
+    workshops: 'Workshops with English support',
     school: 'School (Japanese)',
     imageAlt: 'A workshop at 3DLab',
   },

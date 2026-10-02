@@ -35,6 +35,16 @@ const printPriceOf = (p: StoreTopProduct) => (p.sell_print && p.print_price != n
 const printPriceVaries = (p: StoreTopProduct) =>
   p.print_variants.length > 1 && new Set(p.print_variants.map((v) => v.price)).size > 1
 
+/**
+ * 最初の画面の写真の置き方（左に大きく1枚、右に2枚を積む枠）。
+ * 1点だけなら枠いっぱい、2点なら右の1枚も縦いっぱいにして、空いたマスを作らない。
+ */
+function heroTileShape(index: number, count: number): string {
+  if (count === 1) return `${styles.tileMain} ${styles.tileOnly}`
+  if (index === 0) return styles.tileMain
+  return count === 2 ? styles.tileTall : ''
+}
+
 const minOf = (values: (number | null)[]) => {
   const numbers = values.filter((v): v is number => v != null)
   return numbers.length > 0 ? Math.min(...numbers) : null
@@ -90,17 +100,22 @@ export default function StoreTop({ locale, products }: { locale: StoreLocale; pr
                 <Link
                   key={p.id}
                   href={`/p/${p.id}`}
-                  className={`${styles.tile} ${styles.printing} ${index === 0 ? styles.tileMain : ''} ${
-                    heroProducts.length === 1 ? styles.tileOnly : ''
-                  }`}
+                  className={`${styles.tile} ${styles.printing} ${heroTileShape(index, heroProducts.length)}`}
                   style={{ '--delay': `${index * 0.25}s` } as React.CSSProperties}
                 >
+                  {/* 作品名はすぐ下に文字で出るので、画像の alt は空にする（同じ名前を2回読み上げさせない） */}
                   <Image
                     src={p.image_urls[0]}
-                    alt={p.title}
+                    alt=""
                     fill
                     priority={index === 0}
-                    sizes={index === 0 ? '(min-width: 768px) 320px, 60vw' : '(min-width: 768px) 210px, 40vw'}
+                    sizes={
+                      heroProducts.length === 1
+                        ? '(min-width: 768px) 500px, 100vw'
+                        : index === 0
+                          ? '(min-width: 768px) 320px, 60vw'
+                          : '(min-width: 768px) 210px, 40vw'
+                    }
                     className="object-cover"
                   />
                   {/* 右の2枚は幅が狭いので、スマホでは作品名を1行に切り詰める */}
@@ -168,7 +183,7 @@ export default function StoreTop({ locale, products }: { locale: StoreLocale; pr
                         {p.image_urls[0] && (
                           <Image
                             src={p.image_urls[0]}
-                            alt={p.title}
+                            alt=""
                             fill
                             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
                             className="object-cover"

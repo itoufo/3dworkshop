@@ -16,6 +16,20 @@ export function useStoreLocale(): StoreLocale {
   return /^\/(store\/)?en(\/|$)/.test(pathname) ? 'en' : 'ja'
 }
 
+/**
+ * ストアのヘッダーの外枠。英語のページでは lang="en" を付ける。
+ * ⚠ <html lang="ja"> はルートレイアウトで固定で、ページ本文の lang="en" はヘッダーを包まない。
+ *   付けないと、英語の文言が日本語として読み上げられる。
+ */
+export function StoreHeaderFrame({ className, children }: { className?: string; children: ReactNode }) {
+  const locale = useStoreLocale()
+  return (
+    <header className={className} lang={locale === 'en' ? 'en' : undefined}>
+      {children}
+    </header>
+  )
+}
+
 /** 言語ごとの文言・部品のうち、いまの言語のほうだけを出す */
 export function ByStoreLocale({ ja, en }: { ja: ReactNode; en: ReactNode }) {
   return <>{useStoreLocale() === 'en' ? en : ja}</>

@@ -3,7 +3,7 @@ import { currentStoreUser } from '@/lib/store/session'
 import { MAIN_SITE_URL } from '@/lib/store/urls'
 import StoreLogoutButton from './StoreLogoutButton'
 import StoreCartLink from './StoreCartLink'
-import { ByStoreLocale, StoreHomeLink, StoreLanguageSwitch } from './StoreLocale'
+import { ByStoreLocale, StoreHeaderFrame, StoreHomeLink, StoreLanguageSwitch } from './StoreLocale'
 
 /**
  * stores.3dlab.jp 共通のヘッダー。3dlab.jp のワークショップ・スクールへの入口も置く。
@@ -13,7 +13,7 @@ export default async function StoreHeader() {
   const user = await currentStoreUser()
 
   return (
-    <header className="bg-white border-b border-gray-200">
+    <StoreHeaderFrame className="bg-white border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
         <StoreHomeLink className="flex items-center gap-2.5 shrink-0">
           <span className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold">
@@ -50,8 +50,9 @@ export default async function StoreHeader() {
                   en={user.seller?.status === 'approved' ? 'Seller menu' : 'Sell'}
                 />
               </Link>
+              {/* 名前は本人が入れた文字なので、英語のヘッダーの中でも lang="ja" を付ける */}
               <span className="text-gray-500 hidden sm:inline">
-                <ByStoreLocale ja={`${user.name} さん`} en={user.name} />
+                <ByStoreLocale ja={`${user.name} さん`} en={<span lang="ja">{user.name}</span>} />
               </span>
               <StoreLogoutButton className="text-gray-500 hover:text-purple-600" />
             </>
@@ -65,6 +66,6 @@ export default async function StoreHeader() {
           )}
         </div>
       </div>
-    </header>
+    </StoreHeaderFrame>
   )
 }
