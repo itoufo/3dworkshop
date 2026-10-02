@@ -358,7 +358,14 @@ export default function AdminDashboard() {
   // 売上集計（キャンセル + 内部/テストは除外）
   const validBookings = realBookings.filter((b) => b.status !== 'cancelled')
 
-  const totalSales = validBookings.reduce((sum, b) => sum + b.total_amount, 0)
+  /**
+   * 実際に請求した額。売上の集計と一覧の金額はこれを使う。
+   * ⚠ total_amount は割引前の満額。クーポン・早割の割引は discount_amount に入っている
+   *   （create-checkout-session が書く）。total_amount をそのまま足すと割引のぶん売上が過大になる
+   */
+  const chargedAmount = (b: Booking) => Math.max(0, b.total_amount - (b.discount_amount ?? 0))
+
+  const totalSales = validBookings.reduce((sum, b) => sum + chargedAmount(b), 0)
   const totalCommission = validBookings.reduce((sum, b) => sum + (b.commission_amount || 0), 0)
 
   // 予約管理タブの表示対象（キャンセルはデフォルト非表示・ワークショップ絞り込み対応）
@@ -406,7 +413,7 @@ export default function AdminDashboard() {
   for (const b of validBookings) {
     const key = salesMonthKey(b)
     const cur = monthlySalesMap.get(key) || { amount: 0, commission: 0 }
-    cur.amount += b.total_amount
+    cur.amount += chargedAmount(b)
     cur.commission += b.commission_amount || 0
     monthlySalesMap.set(key, cur)
   }
@@ -432,7 +439,7 @@ export default function AdminDashboard() {
     const source: BookingSource = isBookingSource(b.source) ? b.source : 'website'
     const cur = salesBySource.get(source) || { count: 0, amount: 0, commission: 0 }
     cur.count += 1
-    cur.amount += b.total_amount
+    cur.amount += chargedAmount(b)
     cur.commission += b.commission_amount || 0
     salesBySource.set(source, cur)
   }
@@ -841,16 +848,16 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-gray-900">
-                        ¥{booking.total_amount.toLocaleString()}
+                        ¥{chargedAmount(booking).toLocaleString()}
                       </div>
-                      {booking.discount_amount && booking.discount_amount > 0 && (
+                      {(booking.discount_amount ?? 0) > 0 && (
                         <div className="text-xs text-gray-500">
-                          (割引前: ¥{(booking.total_amount + booking.discount_amount).toLocaleString()})
+                          (割引前: ¥{booking.total_amount.toLocaleString()})
                         </div>
                       )}
                       {booking.commission_amount != null && booking.commission_amount > 0 && (
                         <div className="text-xs text-gray-500">
-                          手数料 ¥{booking.commission_amount.toLocaleString()} ／ 手取り ¥{(booking.total_amount - booking.commission_amount).toLocaleString()}
+                          手数料 ¥{booking.commission_amount.toLocaleString()} ／ 手取り ¥{(chargedAmount(booking) - booking.commission_amount).toLocaleString()}
                         </div>
                       )}
                     </td>
