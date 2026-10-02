@@ -66,16 +66,31 @@ export default function New3DPrintingOrder() {
 
     try {
       const fileSizeMB = file.size / (1024 * 1024)
-      const fileName = `${Date.now()}_${file.name}`
+
+      // ブラウザから Storage へ直接送る。その許可証（署名付きURL）だけをサーバーから受け取る
+      const signRes = await fetch('/api/printing-upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, size: file.size }),
+      })
+      const signed: { bucket?: string; path?: string; token?: string; publicUrl?: string; error?: string } =
+        await signRes.json().catch(() => ({}))
+      if (!signRes.ok || !signed.bucket || !signed.path || !signed.token || !signed.publicUrl) {
+        // 入力の不備（400）と回数制限（429）は理由をそのまま伝える
+        if ((signRes.status === 400 || signRes.status === 429) && signed.error) {
+          alert(signed.error)
+          return
+        }
+        throw new Error(signed.error || `status ${signRes.status}`)
+      }
+
       const { error } = await supabase.storage
-        .from('stl-files')
-        .upload(fileName, file)
+        .from(signed.bucket)
+        .uploadToSignedUrl(signed.path, signed.token, file, { contentType: 'model/stl' })
 
       if (error) throw error
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('stl-files')
-        .getPublicUrl(fileName)
+      const publicUrl = signed.publicUrl
 
       setOrder(prev => ({
         ...prev,
