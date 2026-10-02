@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
@@ -90,9 +90,28 @@ function splitCategoryName(name: string): { tag: string | null; title: string } 
   return match ? { tag: match[1], title: match[2] } : { tag: null, title: name }
 }
 
+/**
+ * next/image に渡せる画像 URL か。
+ * 管理画面の画像 URL は自由入力で、next.config.js の remotePatterns に無いホストを渡すと
+ * 本番は 400（空の枠）、開発は例外になる。ヘッダーは全ページにあるので、渡す前にここで弾く。
+ */
+function isOptimizableImageUrl(url: string): boolean {
+  // サイト内のパス。`//host/...`（プロトコル相対）は外部ホストなので通さない
+  if (url.startsWith('/')) return !url.startsWith('//')
+  try {
+    const { protocol, hostname } = new URL(url)
+    // ⚠ next.config.js の images.remotePatterns と同じホストにそろえること
+    return protocol === 'https:' && (hostname === 'images.unsplash.com' || hostname.endsWith('.supabase.co'))
+  } catch {
+    return false
+  }
+}
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [workshopDropdownOpen, setWorkshopDropdownOpen] = useState(false)
+  /** プルダウンを閉じる予約。少し待ってから閉じる（理由は closeWorkshopDropdownSoon） */
+  const workshopCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   /** いま開いているまとまりの名前。同時に開くのは1つだけ */
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [mobileWorkshopExpanded, setMobileWorkshopExpanded] = useState(false)
@@ -116,6 +135,27 @@ export default function Header() {
     setIsMenuOpen(false)
     setMobileWorkshopExpanded(false)
   }
+
+  const cancelWorkshopClose = () => {
+    if (workshopCloseTimer.current) clearTimeout(workshopCloseTimer.current)
+    workshopCloseTimer.current = null
+  }
+
+  const openWorkshopDropdown = () => {
+    cancelWorkshopClose()
+    setWorkshopDropdownOpen(true)
+  }
+
+  /**
+   * カーソルが外れてもすぐには閉じない。パネルが「ワークショップ」の文字よりずっと広いので、
+   * 右の列へ斜めに動かすと、いったん文字の右へ出てからパネルに入る。その間に閉じないようにする。
+   */
+  const closeWorkshopDropdownSoon = () => {
+    cancelWorkshopClose()
+    workshopCloseTimer.current = setTimeout(() => setWorkshopDropdownOpen(false), 150)
+  }
+
+  useEffect(() => cancelWorkshopClose, [])
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -250,8 +290,8 @@ export default function Header() {
               {/* ワークショップ ドロップダウン */}
               <div
                 className="relative"
-                onMouseEnter={() => setWorkshopDropdownOpen(true)}
-                onMouseLeave={() => setWorkshopDropdownOpen(false)}
+                onMouseEnter={openWorkshopDropdown}
+                onMouseLeave={closeWorkshopDropdownSoon}
               >
                 <Link href="/workshops" className={`${linkClass} flex items-center`}>
                   ワークショップ
@@ -262,25 +302,28 @@ export default function Header() {
                   />
                 </Link>
                 {workshopDropdownOpen && categories.length > 0 && (
-                  // ⚠ 幅 40rem は lg（1024px）で右端に収まる上限に近い。広げるときは 1024px 幅で確かめること
+                  // 1024px 幅での実測（2026-10-02）: パネルの右端は 789px。広げるときは 1024px 幅で確かめること
                   <div className="absolute left-0 top-full pt-2 w-[40rem]">
                     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                       {/* カテゴリが増えても画面の下にはみ出さないよう、一覧だけを縦スクロールにする */}
                       <div className="grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-11rem)] overflow-y-auto">
                         {categories.map((cat) => {
                           const { tag, title } = splitCategoryName(cat.name)
+                          const imageUrl = cat.image_url?.trim() ?? ''
                           return (
                             <Link
                               key={cat.id}
                               href={`/workshops/category/${cat.slug}`}
+                              // 名前は2行で切るので、切れた分は title で読めるようにする
+                              title={cat.name}
                               className="group flex items-center gap-3 rounded-xl p-2 hover:bg-purple-50 transition-colors"
                               onClick={() => setWorkshopDropdownOpen(false)}
                             >
                               <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-purple-100 to-pink-100">
-                                {cat.image_url ? (
+                                {imageUrl && isOptimizableImageUrl(imageUrl) ? (
                                   // 名前が隣にあるので、画像は飾り扱い（alt は空）
                                   <Image
-                                    src={optimizeImageUrl(cat.image_url, 75)}
+                                    src={optimizeImageUrl(imageUrl, 75)}
                                     alt=""
                                     fill
                                     sizes="56px"
@@ -333,7 +376,12 @@ export default function Header() {
                   <div
                     key={entry.label}
                     className="relative"
-                    onMouseEnter={() => setOpenGroup(entry.label)}
+                    onMouseEnter={() => {
+                      // ワークショップのパネルは遅れて閉じるので、ここで閉じておく（2枚重なって出ないように）
+                      cancelWorkshopClose()
+                      setWorkshopDropdownOpen(false)
+                      setOpenGroup(entry.label)
+                    }}
                     onMouseLeave={() => setOpenGroup(null)}
                   >
                     {/* まとまり自体は行き先を持たないのでボタン。押すと開閉する（キーボード操作用） */}
