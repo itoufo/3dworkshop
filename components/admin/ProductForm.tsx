@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import MediaListEditor from '@/components/admin/MediaListEditor'
 import { adminJson, refreshPublicPages } from '@/lib/admin-api-client'
@@ -98,10 +98,12 @@ export default function ProductForm({ product }: Props) {
 
     // 同じシリーズに同じ組み合わせがあると、お客さまはどちらか一方しか選べなくなる
     if (seriesId) {
-      const { data: siblings } = await supabase
-        .from('products')
-        .select('id, name, variant_options')
-        .eq('series_id', seriesId)
+      // 非公開の商品とも突き合わせるので、管理用の API 経由で読む
+      const { data: siblings } = await adminRows.list<{
+        id: string
+        name: string
+        variant_options: Record<string, string> | null
+      }>('products', { columns: 'id,name,variant_options', filter: { series_id: seriesId } })
       const twin = (siblings ?? []).find(
         (s) =>
           s.id !== product?.id &&
@@ -132,8 +134,8 @@ export default function ProductForm({ product }: Props) {
     setSaving(true)
     try {
       const { error } = isEdit
-        ? await supabase.from('products').update(payload).eq('id', product!.id)
-        : await supabase.from('products').insert(payload)
+        ? await adminRows.update('products', product!.id, payload)
+        : await adminRows.insert('products', payload)
 
       if (error) throw error
       // 価格・公開状態の変更を、商品ページとシリーズのページにすぐ出す

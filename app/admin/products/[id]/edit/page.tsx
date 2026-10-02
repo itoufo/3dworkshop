@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import ProductForm from '@/components/admin/ProductForm'
 import type { Product } from '@/lib/products'
 
@@ -13,7 +13,7 @@ export default function EditProductPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('products').select('*').eq('id', params.id).single()
+      const { data } = await adminRows.get('products', params.id as string)
       setProduct((data as Product) ?? null)
       setLoading(false)
     }

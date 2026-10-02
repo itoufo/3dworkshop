@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
+// ⚠ クーポンは service role で読む。anon にはクーポンの表（コードの一覧）を読ませない。
+//   ここが返すのは、入力されたコードが使えるかどうかと割引額だけ。
 export async function POST(request: NextRequest) {
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not available')
+    }
+    const supabase = supabaseAdmin
     const { code, workshopId, amount, customerId, type = 'workshop' } = await request.json()
 
     // スクール用クーポンの場合はworkshopId不要

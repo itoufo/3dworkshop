@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { DEFAULT_PRODUCTION_NOTES } from '@/lib/email-templates'
 import { ArrowLeft, Save, Type, Link, FileText, Image as ImageIcon, Hash, Mail } from 'lucide-react'
@@ -31,16 +31,14 @@ export default function NewCategoryPage() {
     setSaving(true)
 
     try {
-      const { error } = await supabase
-        .from('workshop_categories')
-        .insert({
-          name: formData.name,
-          slug: formData.slug,
-          description: formData.description || null,
-          image_url: formData.image_url || null,
-          sort_order: parseInt(formData.sort_order) || 0,
-          email_production_notes: formData.email_production_notes.trim() || null
-        })
+      const { error } = await adminRows.insert('workshop-categories', {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description || null,
+        image_url: formData.image_url || null,
+        sort_order: parseInt(formData.sort_order) || 0,
+        email_production_notes: formData.email_production_notes.trim() || null
+      })
 
       if (error) throw error
 

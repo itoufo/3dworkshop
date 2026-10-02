@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Tag, CreditCard, Calendar, Users, Save, Sparkles, AlertCircle } from 'lucide-react'
 
@@ -39,12 +39,13 @@ export default function NewCouponPage() {
   // ワークショップ一覧を取得
   useState(() => {
     async function fetchWorkshops() {
-      const { data } = await supabase
-        .from('workshops')
-        .select('id, title')
-        .eq('is_service', false)
-        .order('created_at', { ascending: false })
-      
+      // 非公開のワークショップも選べるよう、管理用の API 経由で読む
+      const { data } = await adminRows.list<{ id: string; title: string }>('workshops', {
+        columns: 'id,title',
+        filter: { is_service: false },
+        order: 'created_at.desc',
+      })
+
       if (data) {
         setWorkshops(data)
       }
@@ -58,21 +59,19 @@ export default function NewCouponPage() {
     setCreating(true)
 
     try {
-      const { error } = await supabase
-        .from('coupons')
-        .insert({
-          code: coupon.code.toUpperCase(),
-          description: coupon.description || null,
-          discount_type: coupon.discount_type,
-          discount_value: parseInt(coupon.discount_value),
-          minimum_amount: coupon.minimum_amount ? parseInt(coupon.minimum_amount) : null,
-          usage_limit: coupon.usage_limit ? parseInt(coupon.usage_limit) : null,
-          user_limit: parseInt(coupon.user_limit),
-          valid_from: coupon.valid_from,
-          valid_until: coupon.valid_until || null,
-          is_active: coupon.is_active,
-          workshop_ids: selectedWorkshops.size > 0 ? Array.from(selectedWorkshops) : null
-        })
+      const { error } = await adminRows.insert('coupons', {
+        code: coupon.code.toUpperCase(),
+        description: coupon.description || null,
+        discount_type: coupon.discount_type,
+        discount_value: parseInt(coupon.discount_value),
+        minimum_amount: coupon.minimum_amount ? parseInt(coupon.minimum_amount) : null,
+        usage_limit: coupon.usage_limit ? parseInt(coupon.usage_limit) : null,
+        user_limit: parseInt(coupon.user_limit),
+        valid_from: coupon.valid_from,
+        valid_until: coupon.valid_until || null,
+        is_active: coupon.is_active,
+        workshop_ids: selectedWorkshops.size > 0 ? Array.from(selectedWorkshops) : null
+      })
 
       if (error) throw error
 

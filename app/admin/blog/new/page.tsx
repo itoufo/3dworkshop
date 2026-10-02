@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Upload, Save, BookOpen, Type, Tag, User, Calendar } from 'lucide-react'
@@ -95,22 +95,20 @@ export default function NewBlogPostPage() {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0)
 
-      const { error } = await supabase
-        .from('blog_posts')
-        .insert({
-          title: blogPost.title,
-          slug: blogPost.slug || generateSlug(blogPost.title),
-          content: blogPost.content,
-          excerpt: blogPost.excerpt || null,
-          featured_image_url: imageUrl || null,
-          category: blogPost.category || null,
-          tags: tagsArray.length > 0 ? tagsArray : null,
-          author_name: blogPost.author_name || null,
-          is_published: blogPost.is_published,
-          published_at: blogPost.is_published ? new Date().toISOString() : null
-        })
+      const { error } = await adminRows.insert('blog-posts', {
+        title: blogPost.title,
+        slug: blogPost.slug || generateSlug(blogPost.title),
+        content: blogPost.content,
+        excerpt: blogPost.excerpt || null,
+        featured_image_url: imageUrl || null,
+        category: blogPost.category || null,
+        tags: tagsArray.length > 0 ? tagsArray : null,
+        author_name: blogPost.author_name || null,
+        is_published: blogPost.is_published,
+        published_at: blogPost.is_published ? new Date().toISOString() : null
+      })
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
       alert('ブログ記事を作成しました')
       setNavigating(true)

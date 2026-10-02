@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { WorkshopSession } from '@/types'
 import { Plus, Trash2, Calendar, Clock, Save, X, BellRing, BellOff, Loader2 } from 'lucide-react'
@@ -43,16 +43,14 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
 
   const fetchSessions = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('workshop_sessions')
-      .select('*')
-      .eq('workshop_id', workshopId)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true })
+    const { data, error } = await adminRows.list<WorkshopSession>('workshop-sessions', {
+      filter: { workshop_id: workshopId },
+      order: 'event_date.asc,event_time.asc',
+    })
     if (error) {
       console.error('fetch sessions failed:', error)
     } else {
-      setSessions((data as WorkshopSession[]) || [])
+      setSessions(data || [])
     }
     setLoading(false)
   }, [workshopId])
@@ -94,7 +92,7 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
       return
     }
     setSavingId('new')
-    const { error } = await supabase.from('workshop_sessions').insert({
+    const { error } = await adminRows.insert('workshop-sessions', {
       workshop_id: workshopId,
       event_date: draft.event_date,
       event_time: draft.event_time || null,
@@ -124,7 +122,7 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
 
   async function handleUpdate(s: WorkshopSession, patch: Partial<WorkshopSession>) {
     setSavingId(s.id)
-    const { error } = await supabase.from('workshop_sessions').update(patch).eq('id', s.id)
+    const { error } = await adminRows.update('workshop-sessions', s.id, patch)
     setSavingId(null)
     if (error) {
       console.error('update session failed:', error)

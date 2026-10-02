@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { notifyWorkshopSchedule } from '@/lib/notify-schedule'
-import { WorkshopCategory } from '@/types'
+import type { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -93,11 +93,7 @@ export default function NewWorkshopPage() {
 
     setCopying(true)
     try {
-      const { data: src } = await supabase
-        .from('workshops')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle()
+      const { data: src } = await adminRows.get<Workshop>('workshops', id)
 
       if (!src) return
 
@@ -139,21 +135,18 @@ export default function NewWorkshopPage() {
   useEffect(() => {
     async function init() {
       // カテゴリ一覧を取得
-      const { data: cats } = await supabase
-        .from('workshop_categories')
-        .select('*')
-        .order('sort_order', { ascending: true })
+      const { data: cats } = await adminRows.list<WorkshopCategory>('workshop-categories', { order: 'sort_order.asc' })
 
       if (cats) setCategories(cats)
 
       // コピー元として選べるイベント一覧（サービスは除外）
-      const { data: list } = await supabase
-        .from('workshops')
-        .select('id, title, event_date, event_time, category_id')
-        .eq('is_service', false)
-        .order('event_date', { ascending: false, nullsFirst: false })
+      const { data: list } = await adminRows.list<SourceWorkshop>('workshops', {
+        columns: 'id,title,event_date,event_time,category_id',
+        filter: { is_service: false },
+        order: 'event_date.desc.nullslast',
+      })
 
-      const options = (list || []) as SourceWorkshop[]
+      const options = list || []
       setSourceWorkshops(options)
 
       if (fromCategory) {
@@ -234,50 +227,44 @@ export default function NewWorkshopPage() {
         imageUrl = data.imageUrl
       }
 
-      const { data: insertedWorkshop, error } = await supabase
-        .from('workshops')
-        .insert({
-          title: workshop.title,
-          description: workshop.description,
-          rich_description: workshop.rich_description || null,
-          price: parseInt(workshop.price),
-          duration: parseInt(workshop.duration),
-          max_participants: parseInt(workshop.max_participants),
-          location: workshop.location || null,
-          image_url: imageUrl || null,
-          event_date: workshop.event_date || null,
-          event_time: workshop.event_time || null,
-          category_id: workshop.category_id || null,
-          show_features: workshop.show_features,
-          is_private: workshop.is_private,
-          preview_password: workshop.preview_password.trim() || null,
-          collect_demographics: workshop.collect_demographics,
-          show_on_english_site: workshop.show_on_english_site,
-          title_en: workshop.title_en.trim() || null,
-          description_en: workshop.description_en.trim() || null,
-          consent_text_en: workshop.consent_text_en.trim() || null,
-          early_bird_enabled: workshop.early_bird_enabled,
-          early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
-          early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
-          consent_text: workshop.consent_text.trim() || null,
-          ...zeroBookingCutoffToColumns(zeroCutoff),
-          ...participantOptionToColumns(participantOption)
-        })
-        .select()
-        .single()
+      const { data: insertedWorkshop, error } = await adminRows.insert('workshops', {
+        title: workshop.title,
+        description: workshop.description,
+        rich_description: workshop.rich_description || null,
+        price: parseInt(workshop.price),
+        duration: parseInt(workshop.duration),
+        max_participants: parseInt(workshop.max_participants),
+        location: workshop.location || null,
+        image_url: imageUrl || null,
+        event_date: workshop.event_date || null,
+        event_time: workshop.event_time || null,
+        category_id: workshop.category_id || null,
+        show_features: workshop.show_features,
+        is_private: workshop.is_private,
+        preview_password: workshop.preview_password.trim() || null,
+        collect_demographics: workshop.collect_demographics,
+        show_on_english_site: workshop.show_on_english_site,
+        title_en: workshop.title_en.trim() || null,
+        description_en: workshop.description_en.trim() || null,
+        consent_text_en: workshop.consent_text_en.trim() || null,
+        early_bird_enabled: workshop.early_bird_enabled,
+        early_bird_discount: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_discount) || null) : null,
+        early_bird_slots: workshop.early_bird_enabled ? (parseInt(workshop.early_bird_slots) || null) : null,
+        consent_text: workshop.consent_text.trim() || null,
+        ...zeroBookingCutoffToColumns(zeroCutoff),
+        ...participantOptionToColumns(participantOption)
+      })
 
       if (error) throw error
 
       // 開催日が入力されている場合、workshop_sessions にも1件作成
       if (insertedWorkshop && workshop.event_date) {
-        const { error: sessionError } = await supabase
-          .from('workshop_sessions')
-          .insert({
-            workshop_id: insertedWorkshop.id,
-            event_date: workshop.event_date,
-            event_time: workshop.event_time || null,
-            status: 'scheduled',
-          })
+        const { error: sessionError } = await adminRows.insert('workshop-sessions', {
+          workshop_id: insertedWorkshop.id,
+          event_date: workshop.event_date,
+          event_time: workshop.event_time || null,
+          status: 'scheduled',
+        })
         if (sessionError) {
           console.error('Failed to create initial session:', sessionError)
           // ワークショップは作成済みなので、警告のみ出して続行

@@ -53,8 +53,11 @@ function normalizeSessions(w: Workshop): Workshop {
   return { ...w, sessions: sorted }
 }
 
+// ⚠ 限定公開（is_private）のワークショップも返す。anon は公開中の行しか読めないので service role で読む。
+//   限定公開かどうかの出し分け（/workshops/[id] → /workshops/preview/[id] への転送、パスワードの確認）は
+//   呼び出し側の責任。一覧系の取得（下の getAllWorkshops など）は公開中だけを anon で読む。
 export const getWorkshop = cache(async (id: string): Promise<Workshop | null> => {
-  const { data } = await supabase
+  const { data } = await (supabaseAdmin ?? supabase)
     .from('workshops')
     .select(SELECT_WITH_RELATIONS)
     .eq('id', id)

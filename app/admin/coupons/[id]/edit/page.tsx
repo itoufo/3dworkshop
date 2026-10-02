@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { Coupon } from '@/types'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Tag, CreditCard, Calendar, Save, Shield, AlertCircle } from 'lucide-react'
@@ -32,11 +32,7 @@ export default function EditCouponPage() {
   useEffect(() => {
     async function fetchCoupon() {
       try {
-        const { data, error } = await supabase
-          .from('coupons')
-          .select('*')
-          .eq('id', params.id)
-          .single()
+        const { data, error } = await adminRows.get('coupons', params.id as string)
 
         if (error) throw error
 
@@ -76,22 +72,19 @@ export default function EditCouponPage() {
     setUpdating(true)
 
     try {
-      const { error } = await supabase
-        .from('coupons')
-        .update({
-          code: formData.code.toUpperCase(),
-          description: formData.description || null,
-          discount_type: formData.discount_type,
-          discount_value: parseInt(formData.discount_value),
-          minimum_amount: formData.minimum_amount ? parseInt(formData.minimum_amount) : null,
-          usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : null,
-          user_limit: parseInt(formData.user_limit),
-          valid_from: formData.valid_from,
-          valid_until: formData.valid_until || null,
-          is_active: formData.is_active,
-          workshop_ids: selectedWorkshops.size > 0 ? Array.from(selectedWorkshops) : null
-        })
-        .eq('id', params.id)
+      const { error } = await adminRows.update('coupons', params.id as string, {
+        code: formData.code.toUpperCase(),
+        description: formData.description || null,
+        discount_type: formData.discount_type,
+        discount_value: parseInt(formData.discount_value),
+        minimum_amount: formData.minimum_amount ? parseInt(formData.minimum_amount) : null,
+        usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : null,
+        user_limit: parseInt(formData.user_limit),
+        valid_from: formData.valid_from,
+        valid_until: formData.valid_until || null,
+        is_active: formData.is_active,
+        workshop_ids: selectedWorkshops.size > 0 ? Array.from(selectedWorkshops) : null
+      })
 
       if (error) throw error
 

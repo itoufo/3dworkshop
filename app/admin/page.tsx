@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Cookies from 'js-cookie'
-import { supabase } from '@/lib/supabase'
 import { adminJson } from '@/lib/admin-api-client'
+import { adminRows } from '@/lib/admin-rows-client'
 import { toAdminTab, type AdminTab } from '@/lib/admin-tabs'
 import {
   REQUESTS_CHANGED_EVENT,
@@ -28,7 +28,6 @@ interface BlogPost {
   id: string
   title: string
   slug: string
-  content: string
   excerpt: string
   featured_image_url: string
   category: string
@@ -69,6 +68,14 @@ interface ServiceRequestRow {
   service?: { title: string; type: string } | null
 }
 
+/** ワークショップ一覧で読む列（本文の rich_description などは読まない） */
+const WORKSHOP_LIST_COLUMNS =
+  'id,title,description,image_url,price,duration,max_participants,manual_participants,location,event_date,event_time,category_id,is_pinned,pin_order,is_private,created_at'
+
+/** ブログ一覧で読む列（本文の content は読まない） */
+const BLOG_POST_LIST_COLUMNS =
+  'id,title,slug,excerpt,featured_image_url,category,tags,author_name,is_published,published_at,view_count,created_at'
+
 /** 区画ごとの見出し。⚠ 左メニューの項目名と揃える（違う名前だと今どこにいるか分からなくなる） */
 const TAB_TITLES: Record<AdminTab, { title: string; description: string }> = {
   bookings: { title: '3DLab 管理ダッシュボード', description: '3Dプリンタ教室の予約と顧客情報を管理' },
@@ -99,6 +106,8 @@ export default function AdminDashboard() {
   const [requestsError, setRequestsError] = useState<string | null>(null)
   /** 予約・顧客が読めなかったときの表示。⚠ 空一覧（＝売上0）と区別するために要る */
   const [bookingsError, setBookingsError] = useState<string | null>(null)
+  /** ワークショップ・クーポン・ブログ・カテゴリが読めなかったときの表示 */
+  const [contentError, setContentError] = useState<string | null>(null)
   /** 対応状況を更新中の行。二重送信と、応答の追い越しを防ぐ */
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
   const [showCancelled, setShowCancelled] = useState(false)
@@ -165,49 +174,29 @@ export default function AdminDashboard() {
         !bookingsResult.ok ? bookingsResult.message : !customersResult.ok ? customersResult.message : null,
       )
 
-      // ワークショップ情報を取得
-      const { data: workshopsData, error: workshopsError } = await supabase
-        .from('workshops')
-        .select('*')
-        .order('is_pinned', { ascending: false })
-        .order('pin_order', { ascending: true })
-        .order('created_at', { ascending: false })
-      
-      if (workshopsError) {
-        console.error('Error fetching workshops:', workshopsError)
-      }
-      console.log('Fetched workshops:', workshopsData)
-
-      // クーポン情報を取得
-      const { data: couponsData, error: couponsError } = await supabase
-        .from('coupons')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (couponsError) {
-        console.error('Error fetching coupons:', couponsError)
-      }
-
-      // ブログ投稿を取得
-      const { data: blogPostsData, error: blogPostsError } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (blogPostsError) {
-        console.error('Error fetching blog posts:', blogPostsError)
-      }
-
-      // カテゴリ情報を取得
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('workshop_categories')
-        .select('*')
-        .order('sort_order', { ascending: true })
-        .order('name', { ascending: true })
-
-      if (categoriesError) {
-        console.error('Error fetching categories:', categoriesError)
-      }
+      // ワークショップ・クーポン・ブログ・カテゴリを取得。
+      // ⚠ 非公開のワークショップ・下書きの記事・クーポンは anon では読めない。管理用の API 経由で読む
+      const [workshopsResult, couponsResult, blogPostsResult, categoriesResult, sessionRowsResult] = await Promise.all([
+        // ⚠ 一覧は画面が使う列だけ読む。本文（ワークショップの rich_description・記事の content）まで
+        //   全件ぶん取ると応答が数MBになり、Vercel の応答サイズ上限（4.5MB）で一覧ごと読めなくなる
+        //   （2026-10 時点で記事243件の全列は 3.1MB）。画面に項目を足すときは、ここに列を足す
+        adminRows.list<Workshop>('workshops', {
+          columns: WORKSHOP_LIST_COLUMNS,
+          order: 'is_pinned.desc,pin_order.asc,created_at.desc',
+        }),
+        adminRows.list<Coupon>('coupons', { order: 'created_at.desc' }),
+        adminRows.list<BlogPost>('blog-posts', { columns: BLOG_POST_LIST_COLUMNS, order: 'created_at.desc' }),
+        adminRows.list<WorkshopCategory>('workshop-categories', { order: 'sort_order.asc,name.asc' }),
+        // 日程を持つワークショップの一覧（オーダーメイド等の「日程のない商品」と区別する）
+        adminRows.list<{ workshop_id: string }>('workshop-sessions', { columns: 'workshop_id' }),
+      ])
+      const workshopsData = workshopsResult.data
+      const couponsData = couponsResult.data
+      const blogPostsData = blogPostsResult.data
+      const categoriesData = categoriesResult.data
+      // ⚠ 失敗を黙って空一覧にしない。「0件」と「読めなかった」は画面上で区別できない
+      const failed = [workshopsResult, couponsResult, blogPostsResult, categoriesResult, sessionRowsResult].find((r) => r.error)
+      setContentError(failed?.error ? failed.error.message : null)
 
       // カテゴリごとのWS数を計算
       const categoriesWithCount = (categoriesData || []).map(cat => ({
@@ -229,13 +218,9 @@ export default function AdminDashboard() {
       setCoupons(couponsData || [])
       setBlogPosts(blogPostsData || [])
       setCategories(categoriesWithCount)
-
-      // 日程を持つワークショップの一覧（オーダーメイド等の「日程のない商品」と区別する）
-      const { data: sessionRows, error: sessionRowsError } = await supabase
-        .from('workshop_sessions')
-        .select('workshop_id')
-      if (sessionRowsError) console.error('Error fetching workshop sessions:', sessionRowsError)
-      setWorkshopIdsWithSessions(new Set((sessionRows || []).map((r) => r.workshop_id as string)))
+      setWorkshopIdsWithSessions(
+        new Set((sessionRowsResult.data ?? []).map((r) => r.workshop_id)),
+      )
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -314,23 +299,17 @@ export default function AdminDashboard() {
   }
 
   async function togglePinWorkshop(workshopId: string, currentPinStatus: boolean) {
-    try {
-      const { error } = await supabase
-        .from('workshops')
-        .update({ 
-          is_pinned: !currentPinStatus,
-          pin_order: !currentPinStatus ? Date.now() : 0
-        })
-        .eq('id', workshopId)
-
-      if (error) throw error
-
-      // データを再取得
-      fetchData()
-    } catch (error) {
-      console.error('Error updating workshop pin status:', error)
+    const { error } = await adminRows.update('workshops', workshopId, {
+      is_pinned: !currentPinStatus,
+      pin_order: !currentPinStatus ? Date.now() : 0,
+    })
+    if (error) {
+      console.error('Error updating workshop pin status:', error.message)
       alert('ピン留めの更新に失敗しました')
+      return
     }
+    // データを再取得
+    fetchData()
   }
 
   if (loading) {
@@ -475,6 +454,15 @@ export default function AdminDashboard() {
             <p className="text-base font-bold text-red-800">予約・顧客の情報を読み込めませんでした（{bookingsError}）</p>
             <p className="mt-1 text-base text-red-700">
               下の一覧と集計は空に見えていますが、予約が無いという意味ではありません。画面を再読み込みしてください。
+            </p>
+          </div>
+        )}
+
+        {contentError && (
+          <div className="mb-8 rounded-xl border-2 border-red-200 bg-red-50 p-4">
+            <p className="text-base font-bold text-red-800">一部の情報を読み込めませんでした（{contentError}）</p>
+            <p className="mt-1 text-base text-red-700">
+              空に見えている一覧は、登録が無いという意味ではありません。画面を再読み込みしてください。
             </p>
           </div>
         )}
