@@ -142,6 +142,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const checkoutStartedRef = useRef(false)
   // GA4: フォームに一度でも触れたか。「開いただけ」と「入力したが送信手前で離脱」を分離する。
   const formStartedRef = useRef(false)
+  // この画面が直前に作った仮予約の id。決済画面の作成に失敗した後のやり直しで、サーバーに取り消してもらう
+  const lastBookingIdRef = useRef<string | null>(null)
   const closeMethodRef = useRef<string>('unknown')
   const prevModalOpenRef = useRef(false)
   // モーダルを閉じる唯一の入口。閉じ方(× / 背景 / Esc)を記録してから閉じる。
@@ -419,6 +421,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null,
           // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
           companion_count: isFamilySession ? booking.companionCount : 0,
+          // やり直しのとき、この画面が直前に作った仮予約をサーバーが取り消せるように伝える
+          ...(lastBookingIdRef.current ? { previous_booking_id: lastBookingIdRef.current } : {}),
         }),
       })
       const bookingData: { booking_id?: string; error?: string } = await createRes.json().catch(() => ({}))
@@ -440,6 +444,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         throw new Error(bookingData.error || t.bookingFailed)
       }
       const bookingId = bookingData.booking_id
+      lastBookingIdRef.current = bookingId
 
       // 無料回は Stripe を通さず、その場で予約を確定して完了画面へ送る
       if (isFree) {

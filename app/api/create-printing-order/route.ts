@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { currentCustomer } from '@/lib/customer-auth'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { parseCustomerContact, upsertCustomerByEmail } from '@/lib/public-customer'
 import {
@@ -65,7 +64,17 @@ export async function POST(request: NextRequest) {
   // STL はフォームが先に stl-files バケットへ上げている。そこ以外の URL は受け付けない
   const stlFileUrl = typeof body.stl_file_url === 'string' ? body.stl_file_url : ''
   // 環境変数の末尾に / が付いていても合うようにする（supabase-js は公開 URL を作るときに取り除く）
-  if (!stlFileUrl.startsWith(`${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/stl-files/`)) {
+  const stlPrefix = `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/stl-files/`
+  // ⚠ 前方一致だけで通さない。`…/stl-files/../<別のバケット>/…` のように書くと、開いた先はこのバケットの外になる。
+  //   接頭辞の後ろは「1つのファイル名」だけを通す（区切り・..・クエリを含まない）
+  const stlKey = stlFileUrl.startsWith(stlPrefix) ? stlFileUrl.slice(stlPrefix.length) : ''
+  let stlKeyDecoded = ''
+  try {
+    stlKeyDecoded = decodeURIComponent(stlKey)
+  } catch {
+    stlKeyDecoded = ''
+  }
+  if (!stlKeyDecoded || /[\/\\?#]/.test(stlKeyDecoded) || stlKeyDecoded.includes('..')) {
     return bad('STLファイルをアップロードしてください')
   }
   const stlFileName = typeof body.stl_file_name === 'string' ? body.stl_file_name.trim() : ''
@@ -104,8 +113,7 @@ export async function POST(request: NextRequest) {
 
   const cost = calculatePrintingCost(quantity, size)
 
-  const member = await currentCustomer()
-  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {}, member?.id ?? null)
+  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value)
   if (!customer) return NextResponse.json({ error: '注文の作成に失敗しました' }, { status: 500 })
 
   const orderNumber = `3DP-${Date.now()}`

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { currentCustomer } from '@/lib/customer-auth'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { jstToday } from '@/lib/booking-deadline'
 import { MAX_PARTICIPANTS_PER_BOOKING } from '@/lib/booking-limits'
@@ -66,6 +65,9 @@ export async function POST(request: NextRequest) {
   if (!UUID.test(workshopId)) return bad('ワークショップの指定が正しくありません')
   const sessionId = typeof body.session_id === 'string' && body.session_id ? body.session_id : null
   if (sessionId && !UUID.test(sessionId)) return bad('開催日程の指定が正しくありません')
+  // 同じ画面が直前に作った仮予約の id（やり直しのときだけ付く）。形が違えば無視する
+  const previousBookingId =
+    typeof body.previous_booking_id === 'string' && UUID.test(body.previous_booking_id) ? body.previous_booking_id : null
 
   const contact = parseCustomerContact(body, { phoneRequired: true })
   if (!contact.ok) return bad(contact.error)
@@ -125,29 +127,26 @@ export async function POST(request: NextRequest) {
     session = data
   }
 
-  const member = await currentCustomer()
-
-  // 同じ人がこの回に作りかけた仮予約（決済画面まで進まなかったもの）を取り消してから数える。
-  // ⚠ 決済画面の作成（/api/create-checkout-session）が通信断などで失敗すると、仮予約だけが残る。
-  //   Stripe のセッションが無いので失効の Webhook も来ず、そのままだと本人のやり直しが
-  //   「自分の仮予約のせいで満席」で通らなくなる
-  const { data: sameCustomer } = await supabaseAdmin
-    .from('customers')
-    .select('id')
-    .eq('email', contact.value.email)
-    .maybeSingle()
-  if (sameCustomer) {
-    let stale = supabaseAdmin
+  // 同じ画面からのやり直し。直前に作った仮予約（決済画面まで進まなかったもの）を取り消してから数える。
+  // 決済画面の作成（/api/create-checkout-session）が通信断などで失敗すると仮予約だけが残り、
+  // Stripe のセッションが無いので失効の Webhook も来ない。そのままだと本人のやり直しが
+  // 「自分の仮予約のせいで満席」で通らなくなる。
+  // ⚠ 取り消すのは、画面が送ってきた id の予約1件だけ。メールアドレスや回で探さない
+  //   （管理者が手で入れた「保留・未払い」の予約や、別の端末で決済に進んでいる予約を巻き込む）。
+  //   id は作った画面しか知らない。さらに、このフォームが作った未決済の仮予約であることを条件で確かめる
+  if (previousBookingId) {
+    const { error: previousError } = await supabaseAdmin
       .from('bookings')
       .update({ status: 'cancelled' })
-      .eq('customer_id', sameCustomer.id)
+      .eq('id', previousBookingId)
       .eq('workshop_id', workshop.id)
+      .eq('source', 'website')
       .eq('status', 'pending')
       .eq('payment_status', 'pending')
       .is('stripe_session_id', null)
-    stale = sessionId ? stale.eq('session_id', sessionId) : stale.is('session_id', null)
-    const { error: staleError } = await stale
-    if (staleError) console.error('[create-booking] stale pending cleanup failed:', staleError.code, staleError.message)
+    if (previousError) {
+      console.error('[create-booking] previous pending cleanup failed:', previousError.code, previousError.message)
+    }
   }
 
   // 残席の確認。数え方は空席表示（/api/check-availability）と同じ関数を使う
@@ -174,16 +173,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const customer = await upsertCustomerByEmail(
-    supabaseAdmin,
-    contact.value,
-    {
-      // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
-      ...(workshop.collect_demographics && age.value !== null ? { age: age.value } : {}),
-      ...(workshop.collect_demographics && gender.value !== null ? { gender: gender.value } : {}),
-    },
-    member?.id ?? null,
-  )
+  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {
+    // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
+    ...(workshop.collect_demographics && age.value !== null ? { age: age.value } : {}),
+    ...(workshop.collect_demographics && gender.value !== null ? { gender: gender.value } : {}),
+  })
   if (!customer) return NextResponse.json({ error: '予約の作成に失敗しました' }, { status: 500 })
 
   const { data: booking, error } = await supabaseAdmin

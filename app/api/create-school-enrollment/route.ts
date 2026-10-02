@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { currentCustomer } from '@/lib/customer-auth'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 import { getSchoolClass } from '@/lib/school-classes'
 import { parseCustomerContact, upsertCustomerByEmail } from '@/lib/public-customer'
@@ -82,16 +81,10 @@ export async function POST(request: NextRequest) {
   if (notes === null) return bad(`備考は${NOTES_MAX}文字以内で入力してください`)
   const selectedClass = getSchoolClass(typeof body.class_type === 'string' ? body.class_type : null)
 
-  const member = await currentCustomer()
-  const customer = await upsertCustomerByEmail(
-    supabaseAdmin,
-    contact.value,
-    {
-      // 住所は入力があったときだけ更新する（空欄で既存の住所を消さない）
-      ...(address ? { address } : {}),
-    },
-    member?.id ?? null,
-  )
+  const customer = await upsertCustomerByEmail(supabaseAdmin, contact.value, {
+    // 住所は入力があったときだけ更新する（空欄で既存の住所を消さない）
+    ...(address ? { address } : {}),
+  })
   if (!customer) return NextResponse.json({ error: '申込の保存に失敗しました' }, { status: 500 })
 
   const { data: enrollment, error } = await supabaseAdmin
