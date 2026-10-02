@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
 
@@ -23,7 +24,11 @@ const WINDOW_MS = 10 * 60 * 1000
 /** 同じ接続元から10分に発行できる数。選び直しの分の余裕を持たせる */
 const MAX_URLS = 20
 
-/** 1ファイルの上限（50MB） */
+/**
+ * 1ファイルの上限（50MB）。バケット stl-files の file_size_limit と同じ値。
+ * ⚠ ここで見ている size は申告値で、署名付きURLへの実際のアップロードには効かない。
+ *   実際の上限と種別（model/stl のみ）はバケットの設定が強制する。こちらは先に理由を伝えるためのもの
+ */
 const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 export async function POST(request: NextRequest) {
@@ -59,7 +64,9 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const path = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}.stl`
+  // ⚠ 推測できない名前にする。バケットは公開（URL を知っていれば読める）で、一覧は取れないようにするので、
+  //   お客さまの設計データを守っているのは「URL を知らないこと」だけになる。Math.random() は出力から次を予測できる
+  const path = `${randomUUID()}.stl`
 
   const { data, error } = await supabaseAdmin.storage.from(BUCKET).createSignedUploadUrl(path)
   if (error || !data) {

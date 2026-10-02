@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { adminRows } from '@/lib/admin-rows-client'
+import { uploadAdminImage } from '@/lib/admin-api-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
@@ -179,20 +180,7 @@ export default function EditWorkshop() {
 
       // 新しい画像がアップロードされた場合
       if (imageFile) {
-        const formDataUpload = new FormData()
-        formDataUpload.append('file', imageFile)
-
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: formDataUpload
-        })
-
-        if (!response.ok) {
-          throw new Error('画像のアップロードに失敗しました')
-        }
-
-        const data = await response.json()
-        imageUrl = data.imageUrl
+        imageUrl = await uploadAdminImage(imageFile)
       }
 
       const { error } = await adminRows.update('workshops', params.id as string, {

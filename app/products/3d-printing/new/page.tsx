@@ -84,9 +84,12 @@ export default function New3DPrintingOrder() {
         throw new Error(signed.error || `status ${signRes.status}`)
       }
 
+      // ⚠ 種別を model/stl に固定した Blob で送る。File のまま渡すとブラウザが付けた種別（空や OS 依存の値）で
+      //   保存され、uploadToSignedUrl の contentType 指定は File / Blob には効かない。
+      //   バケットは model/stl 以外を受け付けない
       const { error } = await supabase.storage
         .from(signed.bucket)
-        .uploadToSignedUrl(signed.path, signed.token, file, { contentType: 'model/stl' })
+        .uploadToSignedUrl(signed.path, signed.token, new Blob([file], { type: 'model/stl' }))
 
       if (error) throw error
 
@@ -104,6 +107,8 @@ export default function New3DPrintingOrder() {
       alert('ファイルのアップロードに失敗しました')
     } finally {
       setUploading(false)
+      // 同じファイルを選び直しても反応するように戻す（失敗後のやり直し、書き出し直した同名のファイル）
+      e.target.value = ''
     }
   }
 

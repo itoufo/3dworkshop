@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { adminRows } from '@/lib/admin-rows-client'
+import { uploadAdminImage } from '@/lib/admin-api-client'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { ArrowLeft, Upload, Save, BookOpen, Type, Tag, User, Calendar } from 'lucide-react'
@@ -73,20 +74,7 @@ export default function NewBlogPostPage() {
 
       // 画像ファイルがある場合はアップロード
       if (imageFile) {
-        const formData = new FormData()
-        formData.append('file', imageFile)
-
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: formData
-        })
-
-        if (!response.ok) {
-          throw new Error('画像のアップロードに失敗しました')
-        }
-
-        const data = await response.json()
-        imageUrl = data.imageUrl
+        imageUrl = await uploadAdminImage(imageFile)
       }
 
       // タグを配列に変換
