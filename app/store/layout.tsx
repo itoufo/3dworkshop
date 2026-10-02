@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import StoreHeader from '@/components/store/StoreHeader'
+import { ByStoreLocale } from '@/components/store/StoreLocale'
 import Footer from '@/components/Footer'
+import EnglishFooter from '@/components/en/EnglishFooter'
 import { MAIN_SITE_URL, STORE_URL } from '@/lib/store/urls'
 
 /**
@@ -38,7 +40,8 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen flex flex-col bg-white">
       <StoreHeader />
       <main className="flex-1">{children}</main>
-      <Footer siteBase={MAIN_SITE_URL} />
+      {/* 英語のページ（/en）だけ英語のフッターにする */}
+      <ByStoreLocale ja={<Footer siteBase={MAIN_SITE_URL} />} en={<EnglishFooter siteBase={MAIN_SITE_URL} />} />
     </div>
   )
 }

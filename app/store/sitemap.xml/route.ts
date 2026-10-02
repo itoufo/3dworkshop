@@ -5,7 +5,7 @@ import { STORE_URL } from '@/lib/store/urls'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const urls: { loc: string; lastmod?: string }[] = [{ loc: `${STORE_URL}/` }]
+  const urls: { loc: string; lastmod?: string }[] = [{ loc: `${STORE_URL}/` }, { loc: `${STORE_URL}/en` }]
 
   if (supabaseAdmin) {
     const { data } = await supabaseAdmin
