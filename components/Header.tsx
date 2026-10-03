@@ -10,6 +10,7 @@ import type { WorkshopCategory } from '@/types'
 import { englishPathFor, japanesePathFor } from '@/lib/i18n'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import CartLink from '@/components/CartLink'
+import { jstToday, sessionStartJst } from '@/lib/booking-deadline'
 
 /**
  * ヘッダー。
@@ -116,11 +117,18 @@ export default function Header() {
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [mobileWorkshopExpanded, setMobileWorkshopExpanded] = useState(false)
   const [categories, setCategories] = useState<WorkshopCategory[]>([])
+  /** カテゴリごとの開催予定の日程数（開始前の回）。読み込み前は null */
+  const [upcomingCounts, setUpcomingCounts] = useState<Map<string, number> | null>(null)
   const pathname = usePathname() || '/'
   const isEnglish = pathname === '/en' || pathname.startsWith('/en/')
   /** 英語版のあるワークショップ。日本語の詳細ページから英語へ切り替える先を決めるのに使う */
   const [englishWorkshopIds, setEnglishWorkshopIds] = useState<Set<string> | null>(null)
   const isWorkshopDetail = /^\/workshops\/[0-9a-f-]{36}$/.test(pathname)
+
+  // 開催予定の日程が多い順。同数（0件どうし等）は管理画面の並び順のまま
+  const sortedCategories = upcomingCounts
+    ? [...categories].sort((a, b) => (upcomingCounts.get(b.id) ?? 0) - (upcomingCounts.get(a.id) ?? 0))
+    : categories
 
   // 言語の切り替え先。英語版のないページからは /en のトップへ
   const switchHref = isEnglish
@@ -177,8 +185,32 @@ export default function Header() {
         .order('sort_order', { ascending: true })
       if (data) setCategories(data as WorkshopCategory[])
     }
+    // 開催予定の日程数。プルダウンの並び順（多い順）と「リクエスト受付中」の表示に使う。
+    // 数え方はカテゴリページの「予約可能な日程」と同じ（予約0人締切は見ない）
+    async function loadUpcomingCounts() {
+      const { data } = await supabase
+        .from('workshops')
+        .select('category_id, sessions:workshop_sessions(event_date, event_time, status)')
+        .eq('is_service', false)
+        .eq('is_private', false)
+        .not('category_id', 'is', null)
+        .gte('sessions.event_date', jstToday())
+        .eq('sessions.status', 'scheduled')
+      if (!data) return
+      const now = Date.now()
+      const counts = new Map<string, number>()
+      for (const w of data) {
+        const sessions = (w.sessions ?? []) as { event_date: string; event_time: string | null }[]
+        const n = sessions.filter(s => sessionStartJst(s).getTime() > now).length
+        counts.set(w.category_id as string, (counts.get(w.category_id as string) ?? 0) + n)
+      }
+      setUpcomingCounts(counts)
+    }
     // 英語ページのヘッダーはカテゴリ（日本語）を出さないので読まない
-    if (!isEnglish) loadCategories()
+    if (!isEnglish) {
+      loadCategories()
+      loadUpcomingCounts()
+    }
   }, [isEnglish])
 
   useEffect(() => {
@@ -307,8 +339,9 @@ export default function Header() {
                     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                       {/* カテゴリが増えても画面の下にはみ出さないよう、一覧だけを縦スクロールにする */}
                       <div className="grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-11rem)] overflow-y-auto">
-                        {categories.map((cat) => {
+                        {sortedCategories.map((cat) => {
                           const { tag, title } = splitCategoryName(cat.name)
+                          const isRequestOnly = upcomingCounts !== null && (upcomingCounts.get(cat.id) ?? 0) === 0
                           const imageUrl = cat.image_url?.trim() ?? ''
                           return (
                             <Link
@@ -336,8 +369,15 @@ export default function Header() {
                                 )}
                               </span>
                               <span className="min-w-0">
-                                {tag && (
-                                  <span className="block text-xs font-bold text-purple-600">{tag}</span>
+                                {(tag || isRequestOnly) && (
+                                  <span className="flex items-center gap-1.5 text-xs font-bold">
+                                    {tag && <span className="text-purple-600">{tag}</span>}
+                                    {isRequestOnly && (
+                                      <span className="rounded-full bg-amber-100 px-1.5 py-px font-medium text-amber-700">
+                                        リクエスト受付中
+                                      </span>
+                                    )}
+                                  </span>
                                 )}
                                 {/* ⚠ ここに block を足さない。line-clamp の display（-webkit-box）を上書きして、3行以上に伸びる */}
                                 <span className="text-sm font-medium leading-snug text-gray-800 line-clamp-2 group-hover:text-purple-700 transition-colors">
@@ -526,7 +566,7 @@ export default function Header() {
                 >
                   📂 カテゴリ一覧を見る
                 </Link>
-                {categories.map((cat) => (
+                {sortedCategories.map((cat) => (
                   <Link
                     key={cat.id}
                     href={`/workshops/category/${cat.slug}`}
@@ -534,6 +574,11 @@ export default function Header() {
                     onClick={closeMenu}
                   >
                     {cat.name}
+                    {upcomingCounts !== null && (upcomingCounts.get(cat.id) ?? 0) === 0 && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-1.5 py-px text-xs font-medium text-amber-700">
+                        リクエスト受付中
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
