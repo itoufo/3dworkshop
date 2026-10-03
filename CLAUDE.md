@@ -1,186 +1,53 @@
-# 3dworkshop - Claude Code Context
+# 3dworkshop（3DLab / 3dlab.jp）
 
-## プロジェクト概要
+3Dプリンター教室 3DLab の公式サイト。ワークショップ予約・スクール申込・物販・制作依頼・ブログ・管理画面を1つの Next.js アプリで持つ。
 
-**3dworkshop** - Miyabiフレームワークで構築された自律型開発プロジェクト
+- Next.js 15（App Router）+ TypeScript + Tailwind CSS 4
+- Supabase（DB / Storage。**別アプリと相乗りのプロジェクト**。public スキーマにも他アプリのテーブルがある）
+- Stripe（決済・サブスクリプション）、SMTP（確認メール）
+- デプロイは Vercel。**`main` への push がそのまま本番**。DNS は Cloudflare
+- **このリポジトリは公開（PUBLIC）**。鍵・秘密・未修正の脆弱性の詳細をファイル・issue・PR・コミット文に書かない
 
-このプロジェクトは識学理論(Shikigaku Theory)とAI Agentsを組み合わせた自律型開発環境で運用されています。
-
-## 🌸 Miyabi Framework
-
-### 7つの自律エージェント
-
-1. **CoordinatorAgent** - タスク統括・並列実行制御
-   - DAG（Directed Acyclic Graph）ベースのタスク分解
-   - Critical Path特定と並列実行最適化
-
-2. **IssueAgent** - Issue分析・ラベル管理
-   - 識学理論65ラベル体系による自動分類
-   - タスク複雑度推定（小/中/大/特大）
-
-3. **CodeGenAgent** - AI駆動コード生成
-   - Claude Sonnet 4による高品質コード生成
-   - TypeScript strict mode完全対応
-
-4. **ReviewAgent** - コード品質判定
-   - 静的解析・セキュリティスキャン
-   - 品質スコアリング（100点満点、80点以上で合格）
-
-5. **PRAgent** - Pull Request自動作成
-   - Conventional Commits準拠
-   - Draft PR自動生成
-
-6. **DeploymentAgent** - CI/CDデプロイ自動化
-   - 自動デプロイ・ヘルスチェック
-   - 自動Rollback機能
-
-7. **TestAgent** - テスト自動実行
-   - テスト実行・カバレッジレポート
-   - 80%+カバレッジ目標
-
-## GitHub OS Integration
-
-このプロジェクトは「GitHubをOSとして扱う」設計思想で構築されています:
-
-### 自動化されたワークフロー
-
-1. **Issue作成** → IssueAgentが自動ラベル分類
-2. **CoordinatorAgent** → タスクをDAG分解、並列実行プラン作成
-3. **CodeGenAgent** → コード実装、テスト生成
-4. **ReviewAgent** → 品質チェック（80点以上で次へ）
-5. **TestAgent** → テスト実行（カバレッジ確認）
-6. **PRAgent** → Draft PR作成
-7. **DeploymentAgent** → マージ後に自動デプロイ
-
-**全工程が自律実行、人間の介入は最小限。**
-
-## ラベル体系（識学理論準拠）
-
-### 10カテゴリー、53ラベル
-
-- **type:** bug, feature, refactor, docs, test, chore, security
-- **priority:** P0-Critical, P1-High, P2-Medium, P3-Low
-- **state:** pending, analyzing, implementing, reviewing, testing, deploying, done
-- **agent:** codegen, review, deployment, test, coordinator, issue, pr
-- **complexity:** small, medium, large, xlarge
-- **phase:** planning, design, implementation, testing, deployment
-- **impact:** breaking, major, minor, patch
-- **category:** frontend, backend, infra, dx, security
-- **effort:** 1h, 4h, 1d, 3d, 1w, 2w
-- **blocked:** waiting-review, waiting-deployment, waiting-feedback
-
-## 開発ガイドライン
-
-### TypeScript設定
-
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "module": "ESNext",
-    "target": "ES2022"
-  }
-}
-```
-
-### セキュリティ
-
-- **機密情報は環境変数で管理**: `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
-- **.env を .gitignore に含める**
-- **Webhook検証**: HMAC-SHA256署名検証
-
-### テスト
+## コマンド
 
 ```bash
-npm test                    # 全テスト実行
-npm run test:watch          # Watch mode
-npm run test:coverage       # カバレッジレポート
+npm ci                     # 依存の導入（worktree ごとに要る）
+npx tsc --noEmit -p .      # 型チェック
+npm run lint               # ESLint（next lint）
+npx next dev -p 3010       # 開発サーバー。3000 は他プロジェクトが使うので空きポートを指定する
 ```
 
-目標: 80%+ カバレッジ
+テストスイートは無い。ゲートは「型チェック・lint（CI）」と「Vercel のプレビュービルド」。
 
-## 使用方法
+ローカルの `.env` は本番そのもの（本番 DB、`sk_live_` の Stripe、実送信の SMTP）。動作確認でサーバーを立てるときは
+`SMTP_HOST= STRIPE_SECRET_KEY=sk_test_invalid npx next dev -p 3010` のように止めて起動し、作ったテスト行は必ず消す。
 
-### Issue作成（Claude Code推奨）
+## 変更の流れ
 
-```bash
-# Claude Code から直接実行
-gh issue create --title "機能追加: ユーザー認証" --body "JWT認証を実装"
-```
+1. `origin/main` から worktree を切って作業する（`.git-worktrees/<slug>`）。main の作業ツリーは触らない
+2. 型チェックと lint を通してから push し、PR を作る
+3. PR には CI（`.github/workflows/ci.yml`）と Claude のレビュー（`claude-pr-review.yml`）が付く。指摘は直してから、マージはユーザーが判断する
+4. マージ＝本番デプロイ。デプロイ後に本番で確認する
 
-または Claude Code のスラッシュコマンド:
+DB の変更は `supabase/migrations/` に idempotent な SQL を置き、psql で直接当てる（`supabase db push` は使わない。未適用の他のファイルを巻き込む）。
+権限・RLS を締める変更は、それに依存しないコードを先にデプロイしてから当て、当てた後にコミットする。
 
-```
-/create-issue
-```
+## 守ること（コード）
 
-### 状態確認
+- **ブラウザ（client component）は公開の anon キーしか持てない。** 個人情報のテーブル（customers / bookings / school_enrollments / printing_orders など）の読み書きと、すべての書き込みはサーバー側のルート（service role、`@/lib/supabase-admin`）を通す
+- 管理画面は `/api/admin/*` を使い、各ハンドラの先頭で `requireAdmin()`（`lib/admin-auth.ts`）を通す。公開コンテンツの読み書きは `lib/admin-rows.ts` / `lib/admin-rows-client.ts`、個人情報は返す列を絞った専用ルート
+- 一覧をサーバー経由で返すときは画面が使う列だけにする（Vercel の応答は 4.5MB まで）
+- メール本文に利用者の入力を埋め込むときは `escapeHtml()` を通す
+- 電話番号 080-9453-0911 はサイト・メール・JSON-LD に出さない。連絡先は 3dlab@sunu25.com
+- 公開ページの一覧は ISR。ISR のルートで `cookies()` を呼ばない（本番で 500 になる）
 
-```bash
-npx miyabi status          # 現在の状態
-npx miyabi status --watch  # リアルタイム監視
-```
+## 自動実行（GitHub Actions）
 
-### Agent実行
+| ワークフロー | 役割 |
+|---|---|
+| `ci.yml` | PR と main への push で型チェックと lint |
+| `claude-pr-review.yml` | PR が開かれた・更新されたときに Claude がレビューしてコメントする |
+| `claude.yml` | PR / issue のコメントで `@claude` と呼ぶと、その場で答える・直す |
+| `daily-survey.yml` | 毎日のアンケート公開（`/api/cron/daily-survey` を叩く） |
 
-```bash
-/agent-run                 # Claude Code から実行
-```
-
-## プロジェクト構造
-
-```
-3dworkshop/
-├── .claude/               # Claude Code設定
-│   ├── agents/           # Agent定義
-│   ├── commands/         # カスタムコマンド
-│   └── settings.json     # Claude設定
-├── .github/
-│   └── workflows/        # 26+ GitHub Actions
-├── src/                  # ソースコード
-├── tests/                # テストコード
-├── CLAUDE.md             # このファイル
-└── package.json
-```
-
-## カスタムスラッシュコマンド
-
-Claude Code で以下のコマンドが使用可能:
-
-- `/test` - プロジェクト全体のテストを実行
-- `/generate-docs` - コードからドキュメント自動生成
-- `/create-issue` - Agent実行用Issueを対話的に作成
-- `/deploy` - デプロイ実行
-- `/verify` - システム動作確認（環境・コンパイル・テスト）
-- `/security-scan` - セキュリティ脆弱性スキャン実行
-- `/agent-run` - Autonomous Agent実行（Issue自動処理パイプライン）
-
-## 識学理論（Shikigaku Theory）5原則
-
-1. **責任の明確化** - 各AgentがIssueに対する責任を負う
-2. **権限の委譲** - Agentは自律的に判断・実行可能
-3. **階層の設計** - CoordinatorAgent → 各専門Agent
-4. **結果の評価** - 品質スコア、カバレッジ、実行時間で評価
-5. **曖昧性の排除** - DAGによる依存関係明示、状態ラベルで進捗可視化
-
-## 環境変数
-
-```bash
-# GitHub Personal Access Token（必須）
-GITHUB_TOKEN=ghp_xxxxx
-
-# Anthropic API Key（必須 - Agent実行時）
-ANTHROPIC_API_KEY=sk-ant-xxxxx
-```
-
-## サポート
-
-- **Framework**: [Miyabi](https://github.com/ShunsukeHayashi/Autonomous-Operations)
-- **Documentation**: README.md
-- **Issues**: GitHub Issues で管理
-
----
-
-🌸 **Miyabi** - Beauty in Autonomous Development
-
-*このファイルは Claude Code が自動的に参照します。プロジェクトの変更に応じて更新してください。*
+Claude のワークフローは、Claude の GitHub App のインストールと Secrets の `CLAUDE_CODE_OAUTH_TOKEN` が要る（各ファイル冒頭のコメント参照）。

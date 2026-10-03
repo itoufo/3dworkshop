@@ -1,0 +1,75 @@
+name: PR Review
+
+# PR が開かれた・更新されたときに、Claude がコードレビューを行い、PR にコメントする。
+#
+# 準備（リポジトリの設定。一度だけ）:
+#   1. Claude の GitHub App をこのリポジトリにインストールする  https://github.com/apps/claude
+#   2. Secrets に CLAUDE_CODE_OAUTH_TOKEN を登録する（Claude のサブスクリプションで動かす。
+#      手元の Claude Code で `claude setup-token` を実行すると値が出る）。
+#      API キーで動かすなら、代わりに ANTHROPIC_API_KEY を登録して下の with: を差し替える。
+#   どちらも Claude Code の /install-github-app で案内どおりに進めてもよい。
+#
+# ⚠ フォークからの PR では secrets が渡らないので、このジョブは走らない（下の if）。
+# ⚠ レビューの観点: 褒めない・具体箇所つき・欠陥か設計判断かを分ける（下の prompt）。
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # 1つのコメントを更新し続ける（push のたびにコメントが増えない）
+          use_sticky_comment: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            この PR をレビューしてください。対象は `gh pr diff ${{ github.event.pull_request.number }}` の差分と、
+            その差分が影響する周辺コードです。PR の本文に書かれた「確認済み」「対応済み」の主張は信用せず、コードで確かめてください。
+
+            このアプリの前提:
+            - Next.js 15 App Router + Supabase + Stripe。Vercel にデプロイ（main への push が本番に出る）。
+            - ブラウザ側（client component）は公開の anon キーしか持てない。顧客・予約・申込など個人情報のテーブルと、
+              すべての書き込みは、サーバー側のルート（service role）を通す。管理画面は `/api/admin/*` を使い、
+              先頭で `requireAdmin()` を通す。
+            - 日本語のメール本文に利用者の入力を埋め込むときは `escapeHtml()` を通す。
+
+            観点（それぞれ独立に見る）:
+            1. 正しさ・退行: 変更前と変更後を突き合わせて、挙動が変わってしまった箇所、壊れる入力、境界条件。
+               insert / update の列と値、0件のときの扱い、非同期のエラー処理。
+            2. セキュリティ: 認証・認可の抜け、入力検証、インジェクション、個人情報や秘密情報がレスポンス・ログ・
+               クライアントのバンドルに出ないか。未認証の第三者がこの変更で新しく出来るようになること。
+            3. 影響範囲: diff の外で壊れる場所（呼び出し元、同じ処理のもう片方、英語ページ `app/en/**`、scripts、
+               型定義 `types.ts` と `types/index.ts` の二重管理）。grep で実際に確かめる。
+
+            出し方:
+            - 甘く採点しない。褒めるためではなく、実際に壊れる・成立するシナリオを見つけるためのレビュー。
+            - 各指摘に「ファイル:行 / 何が起きるか（具体的な入力→結果）/ 修正案 / severity(high|med|low) /
+              分類（欠陥 or 設計判断）/ この PR で生じたか・以前からか」を付ける。曖昧な感想は書かない。
+            - 具体的で修正可能な欠陥がゼロなら、ゼロと報告する。欠陥が無いのに指摘を作らない。件数のノルマは無い。
+            - 行に紐づく指摘はインラインコメントで、全体のまとめ（結論・確かめた箇所の箇条書き）は PR のコメントで。
+            - 日本語で書く。
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(grep:*),Bash(rg:*)"

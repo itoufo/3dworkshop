@@ -1,0 +1,39 @@
+name: CI
+
+# PR と main への push で、型チェックと lint を通す。
+# ビルドは Vercel のプレビュー／本番デプロイが行う（環境変数が要るので、ここでは回さない）。
+# main のブランチ保護で、この "check" を必須にする。
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# 同じブランチで続けて push されたら、古い実行は止める
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: 型チェック
+        run: npx tsc --noEmit -p .
+
+      - name: lint
+        run: npm run lint
