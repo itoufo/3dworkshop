@@ -77,9 +77,16 @@
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 0.9rem 0.7rem;
-  /* 作品写真は白っぽいものが多い。文字の1行目の高さまでに十分暗くして、白文字が読めるようにする */
-  background: linear-gradient(180deg, transparent, rgb(25 13 42 / 0.88) 42%);
+  /* 作品写真は白っぽいものが多い。文字が始まる高さ（上の余白の終わり）までに十分暗くして、
+     白文字が読めるようにする。暗くなる位置は余白の長さで決める（帯の高さの割合で決めると、
+     行数で文字の位置がずれる） */
+  background: linear-gradient(180deg, transparent, rgb(25 13 42 / 0.88) 2.2rem);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+}
+/* 右の2枚は写真が小さい。帯を低くして、写真が隠れすぎないようにする */
+.captionSmall {
+  padding-top: 1.4rem;
+  background: linear-gradient(180deg, transparent, rgb(25 13 42 / 0.88) 1.2rem);
 }
 
 /* ページを開いたときの1回だけの動き: 写真が下から積層されるように現れる。

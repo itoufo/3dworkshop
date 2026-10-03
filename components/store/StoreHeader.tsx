@@ -15,13 +15,17 @@ export default async function StoreHeader() {
   return (
     <StoreHeaderFrame className="bg-white border-b border-gray-200">
       {/*
-        並べ方:
-          640px 以上 … 1行（ロゴ / ナビ / 右端に 言語・カート・ログイン）
-          それ未満   … 1行目にロゴと言語の切り替え、2行目にナビと右側（カート・ログイン）
+        並べ方（2026-10 に Chromium で測った値。フォントで数 px ずれる）:
+          未ログイン・日本語     … 610px 以上は1行、337〜609px は2行、336px 以下は3行
+          カートに品物があるとき … 683px 以上は1行、395〜682px は2行、394px 以下は3行
+          英語（/en）            … 610px 以上は1行、それ未満は2行
+          ログイン中は項目が増えるので、もっと広い幅まで2〜3行になる
+        610px 未満では、1行目にロゴと言語の切り替え、その下にナビと右側（カート・ログイン）を置く。
         ⚠ 言語の切り替えは幅ごとに置き場所が違うので、2か所に書いて片方だけ表示している
           （order で並べ替えると、Tab キーで進む順が見た目と食い違う）。
-        ⚠ 2行目が入りきらない幅（未ログインの日本語で 320px、カートに品物があると 390px 以下）では
-          右側が3行目に折れる。これは言語の切り替えを足す前と同じ。
+        ⚠ 切り替えの幅を 610px にしているのは、未ログインの日本語が1行に収まる最小の幅だから。
+          言語の切り替えを足す前のヘッダーも 610px から1行だった。640px（sm）にすると、
+          610〜639px で以前より1行増える。
       */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2">
         <StoreHomeLink className="flex items-center gap-2.5 shrink-0">
@@ -34,10 +38,10 @@ export default async function StoreHeader() {
           </span>
         </StoreHomeLink>
 
-        <StoreLanguageSwitch className="ml-auto sm:hidden text-base text-gray-500 hover:text-purple-600" />
+        <StoreLanguageSwitch className="ml-auto min-[610px]:hidden text-base text-gray-500 hover:text-purple-600" />
 
-        {/* 640px 未満では2行目のひとかたまり。640px 以上では枠を消して（contents）、中身を上の行に並べる */}
-        <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-2 sm:contents">
+        {/* 610px 未満では2行目のひとかたまり。610px 以上では枠を消して（contents）、中身を上の行に並べる */}
+        <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-2 min-[610px]:contents">
           <nav className="flex items-center gap-5 text-base text-gray-700">
             <ByStoreLocale
               ja={
@@ -53,7 +57,7 @@ export default async function StoreHeader() {
           </nav>
 
           <div className="ml-auto flex items-center gap-4 text-base">
-            <StoreLanguageSwitch className="hidden sm:inline text-gray-500 hover:text-purple-600" />
+            <StoreLanguageSwitch className="hidden min-[610px]:inline text-gray-500 hover:text-purple-600" />
             <StoreCartLink />
             {user ? (
               <>

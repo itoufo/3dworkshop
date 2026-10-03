@@ -72,7 +72,8 @@ export default function StoreTop({
   return (
     <div className={`${styles.top} ${display.variable}`}>
       <section className={styles.plate}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20 grid gap-10 md:grid-cols-[6fr_5fr] items-center">
+        {/* 2列にするのは lg から。md（768px〜）で2列にすると右の写真が小さくなりすぎ、作品名の帯で隠れる */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20 grid gap-10 lg:grid-cols-[6fr_5fr] items-center">
           <div>
             <h1 className={`${styles.display} ${styles.layered} text-3xl sm:text-4xl md:text-5xl leading-tight md:leading-[1.25]`}>
               {t.hero.title}
@@ -122,8 +123,17 @@ export default function StoreTop({
                   />
                   {/* 行数の切り詰めは内側の span に付ける。余白のある外側に付けると、
                       切り詰めた次の行の上半分が下の余白にはみ出して見える */}
-                  <span className={`${styles.caption} font-bold text-white`} {...userText}>
-                    <span className={index === 0 ? 'text-base line-clamp-2' : 'text-sm sm:text-base line-clamp-1 sm:line-clamp-2'}>
+                  <span
+                    className={`${styles.caption} ${index === 0 ? '' : styles.captionSmall} font-bold text-white`}
+                    {...userText}
+                  >
+                    {/* 右の2枚は小さいので、写真が十分大きくなる幅（xl）までは1行に切り詰める。
+                        区切りの無い長い英数字の題名も、枠からはみ出さないよう途中で折る */}
+                    <span
+                      className={`[overflow-wrap:anywhere] ${
+                        index === 0 ? 'text-base line-clamp-2' : 'text-sm sm:text-base line-clamp-1 xl:line-clamp-2'
+                      }`}
+                    >
                       {p.title}
                     </span>
                   </span>
