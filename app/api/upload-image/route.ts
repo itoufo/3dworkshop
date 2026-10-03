@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadWorkshopImage } from '@/lib/supabase-storage'
+import { requireAdmin } from '@/lib/admin-auth'
 
+/**
+ * 管理画面からの画像アップロード（ワークショップ・ブログの画像、本文に貼る画像）。
+ * ⚠ 先頭で requireAdmin() を通す。ここを叩けると誰でも公開バケットにファイルを置ける。
+ */
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
   try {
     console.log('Upload image API called')
     

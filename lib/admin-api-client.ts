@@ -47,6 +47,32 @@ export async function adminJson<T>(
 }
 
 /**
+ * 管理画面からの画像アップロード（/api/upload-image）。画像の公開 URL を返す。失敗したら例外を投げる。
+ *
+ * ⚠ ログインが切れていた（401）ときは、再読み込みせず案内を出す。呼ぶのは入力フォームの保存中と
+ *   本文エディタの画像挿入で、再読み込みすると書きかけの内容が消える。
+ * ⚠ adminJson は使えない（Content-Type を JSON に固定するので、ファイルを送る形式が壊れる）。
+ */
+export async function uploadAdminImage(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch('/api/upload-image', { method: 'POST', body: formData })
+
+  if (response.status === 401) {
+    alert(ADMIN_SESSION_EXPIRED_MESSAGE)
+    throw new Error(ADMIN_SESSION_EXPIRED_MESSAGE)
+  }
+  if (!response.ok) {
+    throw new Error('画像のアップロードに失敗しました')
+  }
+
+  const data: { imageUrl?: string } = await response.json()
+  if (!data.imageUrl) throw new Error('画像のアップロードに失敗しました')
+  return data.imageUrl
+}
+
+/**
  * 公開ページのキャッシュ（ISR、最大1時間）をすぐ作り直す。商品・シリーズを保存した後に呼ぶ。
  * 失敗しても保存自体は済んでいるので、画面は止めない（1時間以内には反映される）。
  */

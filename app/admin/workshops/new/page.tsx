@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { adminRows } from '@/lib/admin-rows-client'
+import { uploadAdminImage } from '@/lib/admin-api-client'
 import { notifyWorkshopSchedule } from '@/lib/notify-schedule'
 import type { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
@@ -211,20 +212,7 @@ export default function NewWorkshopPage() {
       let imageUrl = workshop.image_url
 
       if (imageFile) {
-        const formData = new FormData()
-        formData.append('file', imageFile)
-
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: formData
-        })
-
-        if (!response.ok) {
-          throw new Error('画像のアップロードに失敗しました')
-        }
-
-        const data = await response.json()
-        imageUrl = data.imageUrl
+        imageUrl = await uploadAdminImage(imageFile)
       }
 
       const { data: insertedWorkshop, error } = await adminRows.insert('workshops', {

@@ -34,6 +34,7 @@ import {
   Code
 } from 'lucide-react'
 import styles from '@/app/workshops/[id]/workshop.module.css'
+import { uploadAdminImage } from '@/lib/admin-api-client'
 
 const theme = {
   ltr: 'ltr',
@@ -131,23 +132,8 @@ const HtmlPlugin = React.memo(({ html }: { html: string }) => {
 })
 HtmlPlugin.displayName = 'HtmlPlugin'
 
-// 画像アップロードハンドラー
-async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData()
-  formData.append('file', file)
-
-  const response = await fetch('/api/upload-image', {
-    method: 'POST',
-    body: formData
-  })
-
-  if (!response.ok) {
-    throw new Error('画像のアップロードに失敗しました')
-  }
-
-  const data = await response.json()
-  return data.imageUrl
-}
+// 画像アップロードハンドラー（ログインが切れていたときの案内は uploadAdminImage が出す）
+const uploadImage = uploadAdminImage
 
 export default function LexicalRichTextEditor({
   initialContent = '',
