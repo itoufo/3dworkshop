@@ -4,12 +4,15 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Check, Download, Package, ShieldCheck, ShoppingCart } from 'lucide-react'
-import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
+import { SHIPPING_LEAD_TIME_DAYS, SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/download-limits'
 import { findItem, selectValue, selectionOf, type Selection } from '@/lib/product-variants'
 import { asVariantItems, variantName, type StoreVariant } from '@/lib/store/variants'
 import { addToStoreCart } from '@/lib/store/cart'
-import { STORE_CART_MAX_QUANTITY } from '@/lib/store/cart-limits'
+import { STORE_CART_MAX_LINES, STORE_CART_MAX_QUANTITY } from '@/lib/store/cart-limits'
+import { storePath } from '@/lib/store/locale'
+import { STORE_UI, shippingLeadTimeText } from '@/lib/store/ui-copy'
+import { useStoreLocale } from './StoreLocale'
 import VariantPicker from './VariantPicker'
 
 interface Props {
@@ -29,9 +32,13 @@ const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`
  * 作品ページの購入ボックス（本サイトの ProductBuyBox と同じ「カートに入れる / 今すぐ買う」）。
  * 買い方（データ / 完成品）と、完成品なら組み合わせ・数量を選ぶ。お名前・メールはカートの画面で入れる。
  * 価格はここでは表示だけ。決済の金額は API が作品の値から決める。
+ * 文言とカートへのリンクは、開いているページの言語（/en なら英語）に合わせる。
  */
 export default function StoreBuyForm({ productId, title, dataPrice, printPrice, printSpec, axes, variants }: Props) {
   const router = useRouter()
+  const locale = useStoreLocale()
+  const t = STORE_UI[locale]
+  const cartPath = storePath(locale, '/cart')
   const items = useMemo(() => asVariantItems(variants), [variants])
   const withVariants = axes.length > 0 && items.length > 0
   const [selection, setSelection] = useState<Selection>(() => (withVariants ? selectionOf(items[0], axes) : {}))
@@ -58,18 +65,20 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
         { productId, kind, variantId: kind === 'print' ? (variant?.id ?? null) : null },
         kind === 'print' ? quantity : 1,
       )
-      const label = `${title}（${kind === 'data' ? '3D データ' : variant ? `完成品・${variantName(variant, axes)}` : '完成品'}）`
-      setAdded(kind === 'data' ? label : `${label}（カートに ${inCart.quantity} 個）`)
+      const label = t.lineName(title, kind, kind === 'print' && variant ? variantName(variant, axes) : null)
+      setAdded(kind === 'data' ? label : t.buy.inCart(label, inCart.quantity))
       setError(
         inCart.capped
           ? kind === 'data'
-            ? '3D データはすでにカートに入っています（1つで十分です）'
-            : `1つの組み合わせは ${STORE_CART_MAX_QUANTITY} 個までのため、カートには ${inCart.quantity} 個まで入れています`
+            ? t.buy.dataAlreadyInCart
+            : t.buy.cappedAt(STORE_CART_MAX_QUANTITY, inCart.quantity)
           : null,
       )
       return true
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'カートに入れられませんでした')
+      // カートがいっぱいのとき（lib/store/cart.ts が code を付けて投げる）だけ理由を出す
+      const full = (e as { code?: string } | null)?.code === 'cart_full'
+      setError(full ? t.buy.cartFull(STORE_CART_MAX_LINES) : t.buy.addFailed)
       return false
     }
   }
@@ -77,7 +86,7 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
       <fieldset className="space-y-2">
-        <legend className="text-base font-medium text-gray-900 mb-1">買い方を選ぶ</legend>
+        <legend className="text-base font-medium text-gray-900 mb-1">{t.buy.legend}</legend>
         {options.map((o) => (
           <label
             key={o.kind}
@@ -100,16 +109,16 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
               <span className="flex items-center justify-between">
                 <span className="flex items-center font-medium text-gray-900">
                   {o.kind === 'data' ? <Download className="w-4 h-4 mr-1.5" /> : <Package className="w-4 h-4 mr-1.5" />}
-                  {o.kind === 'data' ? '3D データ' : '完成品（3DLab が印刷してお届け）'}
+                  {o.kind === 'data' ? t.kind.data : t.buy.printOption}
                 </span>
                 <span className="font-bold text-gray-900">
-                  {o.kind === 'print' && withVariants && kind !== 'print' && minVariantPrice != null ? `${yen(minVariantPrice)}〜` : yen(o.price)}
+                  {o.kind === 'print' && withVariants && kind !== 'print' && minVariantPrice != null ? t.priceFrom(yen(minVariantPrice)) : yen(o.price)}
                 </span>
               </span>
               <span className="block text-sm text-gray-600 mt-0.5">
                 {o.kind === 'data'
-                  ? `お支払い後すぐにダウンロードできます（${STORE_DOWNLOAD_VALID_DAYS}日間・${STORE_DOWNLOAD_MAX_COUNT}回まで）。ご自分の3Dプリンターで印刷できます。`
-                  : `${SHIPPING_LEAD_TIME_TEXT}・送料無料（全国一律）${printSpec ? `。${printSpec}` : ''}`}
+                  ? t.buy.dataNote(STORE_DOWNLOAD_VALID_DAYS, STORE_DOWNLOAD_MAX_COUNT)
+                  : t.buy.printNote(shippingLeadTimeText(locale, SHIPPING_LEAD_TIME_TEXT, SHIPPING_LEAD_TIME_DAYS), printSpec)}
               </span>
             </span>
           </label>
@@ -130,7 +139,7 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
 
       {kind === 'print' && (
         <label className="flex items-center gap-3 text-base text-gray-700">
-          数量
+          {t.buy.quantity}
           <select
             value={quantity}
             onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
@@ -147,7 +156,7 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
 
       <p className="text-3xl font-bold text-gray-900">
         {yen(selected.price * (kind === 'print' ? quantity : 1))}
-        <span className="ml-2 text-sm font-normal text-gray-600">税込・送料無料</span>
+        <span className="ml-2 text-sm font-normal text-gray-600">{t.buy.taxNote}</span>
       </p>
 
       <button
@@ -157,7 +166,7 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
         className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors inline-flex items-center justify-center disabled:opacity-60"
       >
         <ShoppingCart className="w-5 h-5 mr-2" />
-        カートに入れる
+        {t.buy.addToCart}
       </button>
       <button
         type="button"
@@ -165,22 +174,22 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
         onClick={() => {
           if (!add()) return
           setGoing(true)
-          router.push('/cart')
+          router.push(cartPath)
         }}
         className="w-full py-3 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors disabled:opacity-60"
       >
-        今すぐ買う
+        {t.buy.buyNow}
       </button>
 
       {added && (
         <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-base text-green-800">
           <p className="flex items-center font-medium">
             <Check className="w-4 h-4 mr-1" />
-            カートに入れました
+            {t.buy.added}
           </p>
           <p className="text-sm text-green-700 mt-0.5">{added}</p>
-          <Link href="/cart" className="inline-block mt-2 text-purple-700 font-medium underline underline-offset-2">
-            カートを見る →
+          <Link href={cartPath} className="inline-block mt-2 text-purple-700 font-medium underline underline-offset-2">
+            {t.buy.viewCart}
           </Link>
         </div>
       )}
@@ -188,8 +197,8 @@ export default function StoreBuyForm({ productId, title, dataPrice, printPrice, 
 
       <p className="flex items-start text-sm text-gray-500">
         <ShieldCheck className="w-4 h-4 mr-1.5 mt-0.5 shrink-0 text-purple-600" />
-        お支払いは Stripe の安全な決済画面で。カード情報は当社に保存されません。
-        {kind === 'print' && ' お届け先も決済画面でご入力いただきます。'}
+        {t.buy.secure}
+        {kind === 'print' && t.buy.secureAddress}
       </p>
     </div>
   )

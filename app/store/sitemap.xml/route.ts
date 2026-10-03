@@ -15,6 +15,8 @@ export async function GET() {
       .eq('store_sellers.status', 'approved')
     for (const p of data ?? []) {
       urls.push({ loc: `${STORE_URL}/p/${p.id}`, lastmod: p.updated_at })
+      // 英語の作品ページ（app/store/en/p/[id]）
+      urls.push({ loc: `${STORE_URL}/en/p/${p.id}`, lastmod: p.updated_at })
     }
     const { data: sellers } = await supabaseAdmin
       .from('store_sellers')

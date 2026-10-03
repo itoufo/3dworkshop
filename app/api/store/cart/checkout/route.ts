@@ -2,13 +2,13 @@ import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { publishedDataFiles, resolveCart } from '@/lib/store/cart-server'
+import { storeCheckoutSessionParams } from '@/lib/store/checkout-session'
+import { storeLocaleOf } from '@/lib/store/locale'
+import { STORE_MESSAGES } from '@/lib/store/messages'
 import { splitPrice } from '@/lib/store/pricing'
 import { isSameOriginJson } from '@/lib/store/request'
 import { currentStoreUser } from '@/lib/store/session'
-import { STORE_DOWNLOAD_VALID_DAYS } from '@/lib/store/orders'
-import { STORE_URL } from '@/lib/store/urls'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,23 +25,36 @@ function emailValid(email: string): boolean {
  * ⚠ 買えるのは「公開中」かつ「出品者が承認済み」の作品だけ。
  * ⚠ customers 行は作らない・書き換えない。購入者の名前とメールは注文の行にだけ持つ。
  * ⚠ 完成品が1つでもあれば住所を Stripe で受け取る。データだけなら聞かない。
+ *
+ * 本文の locale が 'en' なら、返す文言・決済画面・戻る先・購入後のメールを英語にする
+ * （Stripe に渡す内容は lib/store/checkout-session.ts）。
  */
 export async function POST(request: NextRequest) {
-  if (!isSameOriginJson(request)) return NextResponse.json({ message: '不正なリクエストです' }, { status: 403 })
+  // ⚠ 本文を読む前に弾く。このときは言語が分からないので日本語で返す
+  if (!isSameOriginJson(request)) return NextResponse.json({ message: STORE_MESSAGES.ja.badRequest }, { status: 403 })
   if (!supabaseAdmin) return NextResponse.json({ message: 'Server misconfigured' }, { status: 500 })
 
+  // ⚠ try の外で決める。途中で失敗したときの文言（catch）にも使う
+  let m = STORE_MESSAGES.ja
   try {
-    const body = (await request.json().catch(() => ({}))) as { name?: unknown; email?: unknown; items?: unknown }
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: unknown
+      email?: unknown
+      items?: unknown
+      locale?: unknown
+    }
+    const locale = storeLocaleOf(body.locale)
+    m = STORE_MESSAGES[locale]
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     const email = typeof body.email === 'string' ? body.email.trim() : ''
-    if (!name || name.length > 100) return NextResponse.json({ message: 'お名前を入力してください' }, { status: 400 })
-    if (!emailValid(email)) return NextResponse.json({ message: 'メールアドレスを正しく入力してください' }, { status: 400 })
+    if (!name || name.length > 100) return NextResponse.json({ message: m.nameRequired }, { status: 400 })
+    if (!emailValid(email)) return NextResponse.json({ message: m.emailInvalid }, { status: 400 })
 
-    const resolved = await resolveCart(body.items)
+    const resolved = await resolveCart(body.items, locale)
     if ('error' in resolved) return NextResponse.json({ message: resolved.error }, { status: 400 })
     const problem = resolved.lines.find((l) => l.problem)
     if (problem) {
-      return NextResponse.json({ message: `「${problem.title}」: ${problem.problem}`, key: problem.key }, { status: 409 })
+      return NextResponse.json({ message: m.lineProblem(problem.title, problem.problem!), key: problem.key }, { status: 409 })
     }
 
     // ⚠ データが無いと、払ってもらってから渡せない・印刷できない。決済の前に確かめ、注文に写す
@@ -49,46 +62,17 @@ export async function POST(request: NextRequest) {
     const missing = resolved.lines.find((l) => !files.has(l.productId))
     if (missing) {
       console.error('[store-cart] product has no data file or was unpublished', missing.productId)
-      return NextResponse.json({ message: `「${missing.title}」はいま購入できません。カートから外してください`, key: missing.key }, { status: 409 })
+      return NextResponse.json({ message: m.lineUnavailable(missing.title), key: missing.key }, { status: 409 })
     }
 
     const user = await currentStoreUser()
     const checkoutId = randomUUID()
-    const hasPrint = resolved.lines.some((l) => l.kind === 'print')
 
     // ⚠ 決済画面を先に作り、注文の行はそのあとに入れる（行には必ず決済画面の ID が付く）。
     //   行を先に入れると、決済画面を作る前に止まったとき、期限切れで消すこともできない決済待ちの行が残る
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: resolved.lines.map((l) => ({
-        price_data: {
-          currency: 'jpy' as const,
-          product_data: {
-            name: `${l.title}（${l.kind === 'data' ? '3D データ' : l.variantLabel ? `完成品・${l.variantLabel}` : '完成品'}）`,
-            description:
-              l.kind === 'data'
-                ? `3Dプリント用データ／ダウンロード期限 ${STORE_DOWNLOAD_VALID_DAYS}日`
-                : `${SHIPPING_LEAD_TIME_TEXT}・送料無料`,
-            ...(l.imageUrl ? { images: [l.imageUrl] } : {}),
-          },
-          unit_amount: l.unitPrice,
-        },
-        quantity: l.quantity,
-      })),
-      customer_email: email,
-      locale: 'ja',
-      expires_at: checkoutExpiresAt(),
-      ...(hasPrint
-        ? {
-            shipping_address_collection: { allowed_countries: ['JP' as const] },
-            phone_number_collection: { enabled: true },
-          }
-        : {}),
-      success_url: `${STORE_URL}/thanks?checkout=${checkoutId}`,
-      cancel_url: `${STORE_URL}/cart`,
-      metadata: { type: 'store_cart', checkout_id: checkoutId },
-    })
+    const session = await stripe.checkout.sessions.create(
+      storeCheckoutSessionParams({ lines: resolved.lines, email, checkoutId, locale, expiresAt: checkoutExpiresAt() }),
+    )
 
     // まとめて入れると created_at が全行同じになる。カートの順に並べられるよう1ミリ秒ずつずらす
     const insertedAt = Date.now()
@@ -122,12 +106,12 @@ export async function POST(request: NextRequest) {
       console.error('[store-cart] insert failed:', insertError)
       // 注文の無い決済画面で払えないよう、すぐ失効させる
       await stripe.checkout.sessions.expire(session.id).catch((e) => console.error('[store-cart] expire failed:', e))
-      return NextResponse.json({ message: '注文の作成に失敗しました' }, { status: 500 })
+      return NextResponse.json({ message: m.orderCreateFailed }, { status: 500 })
     }
 
     return NextResponse.json({ url: session.url, checkoutId })
   } catch (err) {
     console.error('[store-cart] checkout failed:', err)
-    return NextResponse.json({ message: '決済の準備に失敗しました' }, { status: 500 })
+    return NextResponse.json({ message: m.checkoutFailed }, { status: 500 })
   }
 }

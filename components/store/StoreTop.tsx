@@ -2,7 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { M_PLUS_Rounded_1c } from 'next/font/google'
 import { Check, Download, Package } from 'lucide-react'
-import { STORE_TOP_COPY, type StoreLocale } from '@/lib/store/top-copy'
+import { storePath, type StoreLocale } from '@/lib/store/locale'
+import { STORE_TOP_COPY } from '@/lib/store/top-copy'
 import { MAIN_SITE_URL } from '@/lib/store/urls'
 import styles from './StoreTop.module.css'
 
@@ -47,7 +48,7 @@ function heroTileShape(index: number, count: number): string {
 
 /**
  * ストアのトップページ本体（日本語 / と英語 /en で共通）。
- * ⚠ 作品へのリンクは言語に関係なく /p/<id>。英語の作品ページは無い。
+ * 作品へのリンクは、その言語の作品ページ（/p/<id> または /en/p/<id>）。
  * ⚠ 作品名・出品者名は出品者が日本語で入れたものなので、英語版でも訳さず lang="ja" を付けて出す。
  */
 export default function StoreTop({
@@ -102,7 +103,7 @@ export default function StoreTop({
               {heroProducts.map((p, index) => (
                 <Link
                   key={p.id}
-                  href={`/p/${p.id}`}
+                  href={storePath(locale, `/p/${p.id}`)}
                   className={`${styles.tile} ${styles.printing} ${heroTileShape(index, heroProducts.length)}`}
                   style={{ '--delay': `${index * 0.25}s` } as React.CSSProperties}
                 >
@@ -190,7 +191,7 @@ export default function StoreTop({
                 const printPrice = printPriceOf(p)
                 return (
                   <li key={p.id}>
-                    <Link href={`/p/${p.id}`} className="group block">
+                    <Link href={storePath(locale, `/p/${p.id}`)} className="group block">
                       <div className="relative aspect-square rounded-lg overflow-hidden" style={{ background: 'var(--paper)' }}>
                         {p.image_urls[0] && (
                           <Image

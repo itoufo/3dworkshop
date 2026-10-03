@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getPublicProducts } from './catalog'
 import { resolveOffer } from './variants'
 import { STORE_CART_MAX_LINES, STORE_CART_MAX_QUANTITY } from './cart-limits'
+import type { StoreLocale } from './locale'
+import { STORE_MESSAGES } from './messages'
 
 /**
  * カートの明細を、作品の今の値で確かめて価格を決める。カートの表示（preview）と決済の両方がここを通る。
@@ -29,9 +31,12 @@ export type CartInput = { productId?: unknown; kind?: unknown; variantId?: unkno
 
 export async function resolveCart(
   items: unknown,
+  /** 買えない理由などの文言の言語。省くと日本語 */
+  locale: StoreLocale = 'ja',
 ): Promise<{ lines: ResolvedLine[] } | { error: string }> {
-  if (!Array.isArray(items) || items.length === 0) return { error: 'カートが空です' }
-  if (items.length > STORE_CART_MAX_LINES) return { error: `一度に購入できるのは ${STORE_CART_MAX_LINES} 種類までです` }
+  const m = STORE_MESSAGES[locale]
+  if (!Array.isArray(items) || items.length === 0) return { error: m.cartEmpty }
+  if (items.length > STORE_CART_MAX_LINES) return { error: m.cartTooManyLines(STORE_CART_MAX_LINES) }
 
   // 同じ明細が2行に分かれて届いても1行にまとめる
   const wanted = new Map<string, { productId: string; kind: 'data' | 'print'; variantId: string | null; quantity: number }>()
@@ -39,7 +44,7 @@ export async function resolveCart(
     const productId = typeof raw?.productId === 'string' ? raw.productId : ''
     const kind = raw?.kind === 'data' || raw?.kind === 'print' ? raw.kind : null
     const variantId = typeof raw?.variantId === 'string' ? raw.variantId.slice(0, 32) : null
-    if (!/^[0-9a-f-]{36}$/i.test(productId) || !kind) return { error: 'カートの内容が正しくありません' }
+    if (!/^[0-9a-f-]{36}$/i.test(productId) || !kind) return { error: m.cartInvalid }
     const q = Math.floor(Number(raw?.quantity) || 0)
     if (q < 1) continue
     const key = `${productId}:${kind}:${kind === 'print' ? (variantId ?? '') : ''}`
@@ -47,7 +52,7 @@ export async function resolveCart(
     const quantity = kind === 'data' ? 1 : Math.min(STORE_CART_MAX_QUANTITY, prev + q)
     wanted.set(key, { productId, kind, variantId: kind === 'print' ? variantId : null, quantity })
   }
-  if (wanted.size === 0) return { error: 'カートが空です' }
+  if (wanted.size === 0) return { error: m.cartEmpty }
 
   const products = await getPublicProducts([...new Set([...wanted.values()].map((w) => w.productId))])
   const lines: ResolvedLine[] = []
@@ -55,12 +60,12 @@ export async function resolveCart(
     const product = products.find((p) => p.id === w.productId)
     if (!product) {
       lines.push({
-        key, ...w, variantLabel: null, unitPrice: 0, title: '（いまは販売していない作品）', imageUrl: null,
-        sellerId: '', sellerName: '', problem: 'いまは販売していません。カートから外してください',
+        key, ...w, variantLabel: null, unitPrice: 0, title: m.notForSaleTitle, imageUrl: null,
+        sellerId: '', sellerName: '', problem: m.notForSale,
       })
       continue
     }
-    const offer = resolveOffer(product, w.kind, w.variantId)
+    const offer = resolveOffer(product, w.kind, w.variantId, locale)
     lines.push({
       key,
       productId: product.id,
@@ -73,7 +78,7 @@ export async function resolveCart(
       imageUrl: product.image_urls[0] ?? null,
       sellerId: product.seller.id,
       sellerName: product.seller.display_name,
-      problem: 'error' in offer ? `${offer.error}。カートから外して選び直してください` : null,
+      problem: 'error' in offer ? m.offerProblem(offer.error) : null,
     })
   }
   return { lines }

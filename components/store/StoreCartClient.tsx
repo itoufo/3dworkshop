@@ -13,7 +13,10 @@ import {
   type StoreCartLine,
 } from '@/lib/store/cart'
 import { STORE_CART_MAX_QUANTITY } from '@/lib/store/cart-limits'
-import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
+import { storePath } from '@/lib/store/locale'
+import { STORE_UI, shippingLeadTimeText } from '@/lib/store/ui-copy'
+import { SHIPPING_LEAD_TIME_DAYS, SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
+import { useStoreLocale } from './StoreLocale'
 
 interface PreviewLine {
   key: string
@@ -34,9 +37,18 @@ const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`
 /**
  * ストアのカートの画面（本サイトの CartClient と同じ2列: 左に中身、右に合計とお客さま情報）。
  * 表示用の価格は /api/store/cart/preview から読むが、決済の金額は決済 API が作品の値から決め直す。
+ *
+ * 文言は開いているページの言語（/en/cart なら英語）。API にも言語を送り、買えない理由などを同じ言語で
+ * 返してもらう。英語のカートから決済すると、決済画面・戻り先・購入後のメールも英語になる。
+ * ⚠ 作品名・組み合わせ・出品者名は出品者が入れた文字なので、訳さず lang="ja" を付けて出す。
  */
 export default function StoreCartClient({ defaultName, defaultEmail }: { defaultName: string; defaultEmail: string }) {
   const { lines, ready } = useStoreCart()
+  const locale = useStoreLocale()
+  const t = STORE_UI[locale].cart
+  const kindName = STORE_UI[locale].kind
+  /** 出品者が入れた文字に付ける。英語のページの中の日本語を、日本語として読み上げさせる */
+  const userText = locale === 'en' ? { lang: 'ja' } : {}
   const [preview, setPreview] = useState<Record<string, PreviewLine>>({})
   /** どのカートの中身まで読み込み済みか。入れたばかりの明細を「販売していません」と見せないため */
   const [previewOf, setPreviewOf] = useState<string | null>(null)
@@ -54,13 +66,13 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
     fetch('/api/store/cart/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: lines }),
+      body: JSON.stringify({ items: lines, locale }),
     })
       .then((r) => r.json())
       .then((body: { lines?: PreviewLine[]; error?: string }) => {
         if (cancelled) return
         if (!body.lines) {
-          setLoadError(body.error || '作品の情報を読み込めませんでした。ページを開き直してください。')
+          setLoadError(body.error || t.loadFailed)
           return
         }
         setLoadError(null)
@@ -68,12 +80,12 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
         setPreviewOf(signature)
       })
       .catch(() => {
-        if (!cancelled) setLoadError('作品の情報を読み込めませんでした。ページを開き直してください。')
+        if (!cancelled) setLoadError(t.loadFailed)
       })
     return () => {
       cancelled = true
     }
-    // signature が中身の変化を表す
+    // signature が中身の変化を表す。言語はページを開いているあいだ変わらない（言語を替えるとページごと替わる）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, ready])
 
@@ -99,11 +111,11 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
       const res = await fetch('/api/store/cart/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, items: submitted }),
+        body: JSON.stringify({ ...form, items: submitted, locale }),
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok || !body.url) {
-        setErrorMsg(body.message || '決済の準備に失敗しました')
+        setErrorMsg(body.message || t.checkoutFailed)
         if (body.key) setProblemKey(body.key)
         setSubmitting(false)
         return
@@ -112,20 +124,20 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
       rememberStoreCheckout(body.checkoutId, submitted)
       window.location.href = body.url
     } catch {
-      setErrorMsg('通信エラーが発生しました。時間をおいて再度お試しください。')
+      setErrorMsg(t.networkError)
       setSubmitting(false)
     }
   }
 
-  if (!ready) return <p className="text-base text-gray-600">読み込み中…</p>
+  if (!ready) return <p className="text-base text-gray-600">{t.loading}</p>
 
   if (lines.length === 0) {
     return (
       <div className="text-center py-16">
         <ShoppingCart className="w-14 h-14 mx-auto text-gray-300" />
-        <h1 className="mt-4 text-3xl font-bold text-gray-900">カートは空です</h1>
-        <Link href="/" className="mt-6 inline-block px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold">
-          作品を見る
+        <h1 className="mt-4 text-3xl font-bold text-gray-900">{t.empty}</h1>
+        <Link href={storePath(locale, '/')} className="mt-6 inline-block px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold">
+          {t.browse}
         </Link>
       </div>
     )
@@ -136,14 +148,14 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
 
   return (
     <div>
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">カート</h1>
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">{t.title}</h1>
       <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
         <ul className="divide-y divide-gray-200 bg-white rounded-2xl border border-gray-200">
           {rows.map(({ line, p, loading, blocked: lineBlocked }) => {
             const key = lineKey(line)
             return (
               <li key={key} className={`flex gap-4 p-4 ${problemKey === key ? 'bg-red-50' : ''}`}>
-                <Link href={`/p/${line.productId}`} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                <Link href={storePath(locale, `/p/${line.productId}`)} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100">
                   {p?.imageUrl ? (
                     <Image src={p.imageUrl} alt="" fill sizes="96px" className="object-cover" />
                   ) : (
@@ -151,21 +163,31 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
                   )}
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/p/${line.productId}`} className="text-base font-bold text-gray-900 hover:text-purple-700">
-                    {loading ? '読み込み中…' : p?.title}
+                  <Link href={storePath(locale, `/p/${line.productId}`)} className="text-base font-bold text-gray-900 hover:text-purple-700">
+                    {loading ? t.loading : <span {...userText}>{p?.title}</span>}
                   </Link>
                   {!loading && (
                     <p className="text-base text-gray-700">
-                      {line.kind === 'data' ? '3D データ' : '完成品'}
-                      {p?.variantLabel && ` ・ ${p.variantLabel}`}
-                      {p?.sellerName && <span className="text-gray-500"> ／ {p.sellerName}</span>}
+                      {line.kind === 'data' ? kindName.data : kindName.print}
+                      {p?.variantLabel && (
+                        <>
+                          {t.variantSeparator}
+                          <span {...userText}>{p.variantLabel}</span>
+                        </>
+                      )}
+                      {p?.sellerName && (
+                        <span className="text-gray-500">
+                          {t.sellerSeparator}
+                          <span {...userText}>{p.sellerName}</span>
+                        </span>
+                      )}
                     </p>
                   )}
                   {lineBlocked && <p className="text-base text-red-600">{p?.problem}</p>}
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     {line.kind === 'print' ? (
                       <label className="flex items-center gap-2 text-base text-gray-700">
-                        数量
+                        {t.quantity}
                         <select
                           value={line.quantity}
                           onChange={(e) => setStoreCartQuantity(key, parseInt(e.target.value) || 1)}
@@ -179,7 +201,7 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
                         </select>
                       </label>
                     ) : (
-                      <span className="text-base text-gray-600">ダウンロード（1つ）</span>
+                      <span className="text-base text-gray-600">{t.dataQuantity}</span>
                     )}
                     <button
                       type="button"
@@ -187,7 +209,7 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
                       className="inline-flex items-center text-base text-gray-500 hover:text-red-600"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
-                      削除
+                      {t.remove}
                     </button>
                   </div>
                 </div>
@@ -201,36 +223,40 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4 lg:sticky lg:top-6">
           <p className="text-base text-gray-700">
-            小計（{itemCount} 点）
+            {t.subtotal(itemCount)}
             <span className="block text-3xl font-bold text-gray-900">{yen(total)}</span>
-            <span className="text-sm text-gray-500">税込・送料無料</span>
+            <span className="text-sm text-gray-500">{t.taxNote}</span>
           </p>
-          {hasPrint && <p className="text-sm text-gray-600">完成品は{SHIPPING_LEAD_TIME_TEXT}します。</p>}
+          {hasPrint && (
+            <p className="text-sm text-gray-600">
+              {t.printLeadTime(shippingLeadTimeText(locale, SHIPPING_LEAD_TIME_TEXT, SHIPPING_LEAD_TIME_DAYS))}
+            </p>
+          )}
           <label className="block text-sm font-medium text-gray-700">
-            お名前 <span className="text-red-500">*</span>
+            {t.name} <span className="text-red-500">*</span>
             <input type="text" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} autoComplete="name" />
           </label>
           <label className="block text-sm font-medium text-gray-700">
-            メールアドレス <span className="text-red-500">*</span>
+            {t.email} <span className="text-red-500">*</span>
             <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} placeholder="you@example.com" autoComplete="email" />
             <span className="block mt-1 text-sm font-normal text-gray-500">
-              ご注文の確認{buyable.some((r) => r.line.kind === 'data') && 'とデータのダウンロード用リンク'}をこのアドレスにお送りします。
+              {t.emailNote(buyable.some((r) => r.line.kind === 'data'))}
             </span>
           </label>
           {loadError && <p className="text-base text-red-600">{loadError}</p>}
-          {blocked && <p className="text-base text-red-600">買えない作品がカートに入っています。カートから外してください。</p>}
+          {blocked && <p className="text-base text-red-600">{t.blocked}</p>}
           {errorMsg && <p className="text-base text-red-600">{errorMsg}</p>}
           <button
             type="submit"
             disabled={submitting || anyLoading || blocked || buyable.length === 0 || Boolean(loadError)}
             className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors disabled:opacity-60"
           >
-            {submitting ? '決済画面へ移動しています...' : 'レジに進む'}
+            {submitting ? t.submitting : t.submit}
           </button>
           <p className="flex items-start text-sm text-gray-500">
             <ShieldCheck className="w-4 h-4 mr-1.5 mt-0.5 shrink-0 text-purple-600" />
-            お支払いは Stripe の安全な決済画面で。カード情報は当社に保存されません。
-            {hasPrint && ' お届け先も決済画面でご入力いただきます。'}
+            {t.secure}
+            {hasPrint && t.secureAddress}
           </p>
         </form>
       </div>

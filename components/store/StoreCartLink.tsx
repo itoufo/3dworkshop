@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ShoppingCart } from 'lucide-react'
 import { useStoreCart } from '@/lib/store/cart'
+import { storePath } from '@/lib/store/locale'
 import { useStoreLocale } from './StoreLocale'
 
 /** ストアのヘッダーのカート（本サイトの CartLink と同じ。中身があるときだけ出す） */
@@ -12,7 +13,7 @@ export default function StoreCartLink() {
   if (!ready || count === 0) return null
   return (
     <Link
-      href="/cart"
+      href={storePath(locale, '/cart')}
       aria-label={locale === 'en' ? `Cart (${count} ${count === 1 ? 'item' : 'items'})` : `カート（${count} 点）`}
       className="relative flex items-center rounded-full border border-gray-200 px-3 py-1.5 text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors"
     >

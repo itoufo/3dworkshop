@@ -2,17 +2,23 @@
 
 import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
+import { useStoreLocale } from '@/components/store/StoreLocale'
+import { STORE_UI } from '@/lib/store/ui-copy'
 
 type Status = { available: boolean; reason: string | null; title?: string; remaining?: number }
+type Reason = 'invalid' | 'not_paid' | 'expired' | 'used_up'
 
-const REASON_TEXT: Record<string, string> = {
-  invalid: 'リンクが正しくありません。',
-  not_paid: 'このご注文はダウンロードできません。',
-  expired: 'ダウンロード期限が過ぎています。',
-  used_up: 'ダウンロード回数の上限に達しました。',
-}
+/** ダウンロード API（POST）が断ったときの HTTP ステータス → 理由（app/api/store/download/[token]/route.ts） */
+const REASON_BY_STATUS: Record<number, Reason> = { 404: 'invalid', 403: 'not_paid', 410: 'expired', 429: 'used_up' }
 
+/**
+ * 購入メールのリンクの行き先。英語のメールのリンクは /en/download に来るので、文言は開いているページの言語に合わせる。
+ * ⚠ API が返す文言は日本語なので、英語のページでは使わない。断られた理由は HTTP ステータスで見分ける。
+ */
 export default function DownloadClient() {
+  const locale = useStoreLocale()
+  const t = STORE_UI[locale].download
+  const reasonText = (reason: string | null | undefined) => t.reasons[(reason as Reason) in t.reasons ? (reason as Reason) : 'invalid']
   const [token, setToken] = useState<string | null>(null)
   const [status, setStatus] = useState<Status | null>(null)
   const [busy, setBusy] = useState(false)
@@ -27,13 +33,20 @@ export default function DownloadClient() {
       const res = await fetch(`/api/store/download/${token}`, { method: 'POST' })
       const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string }
       if (!res.ok || !body.url) {
-        setError(body.error || 'ダウンロードに失敗しました。時間をおいて再度お試しください。')
+        const reason = REASON_BY_STATUS[res.status]
+        setError(
+          locale === 'en'
+            ? reason
+              ? `${t.reasons[reason]}${t.contact}`
+              : t.failed
+            : body.error || t.failed,
+        )
         return
       }
       setStatus((s) => (s && s.remaining != null ? { ...s, remaining: Math.max(0, s.remaining - 1) } : s))
       window.location.href = body.url
     } catch {
-      setError('通信エラーが発生しました。時間をおいて再度お試しください。')
+      setError(t.networkError)
     } finally {
       setBusy(false)
     }
@@ -54,16 +67,19 @@ export default function DownloadClient() {
 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 py-16 text-center">
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-900">データのダウンロード</h1>
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t.title}</h1>
       {!status ? (
-        <p className="mt-6 text-base text-gray-600">確認しています…</p>
+        <p className="mt-6 text-base text-gray-600">{t.checking}</p>
       ) : !status.available || !token ? (
         <p className="mt-6 text-base text-red-600">
-          {REASON_TEXT[status.reason ?? 'invalid'] ?? REASON_TEXT.invalid} お手数ですが 3dlab@sunu25.com までお問い合わせください。
+          {reasonText(status.reason)}
+          {t.contact}
         </p>
       ) : (
         <>
-          <p className="mt-4 text-xl text-gray-800">{status.title}</p>
+          <p className="mt-4 text-xl text-gray-800" lang={locale === 'en' ? 'ja' : undefined}>
+            {status.title}
+          </p>
           <div className="mt-8">
             <button
               type="button"
@@ -72,10 +88,10 @@ export default function DownloadClient() {
               className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold disabled:opacity-60"
             >
               <Download className="w-5 h-5" />
-              {busy ? '準備しています…' : 'ダウンロードする'}
+              {busy ? t.preparing : t.button}
             </button>
             {error && <p className="mt-4 text-base text-red-600">{error}</p>}
-            <p className="mt-4 text-base text-gray-600">あと {status.remaining} 回ダウンロードできます。</p>
+            <p className="mt-4 text-base text-gray-600">{t.remaining(status.remaining ?? 0)}</p>
           </div>
         </>
       )}

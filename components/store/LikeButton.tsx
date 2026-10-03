@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Heart } from 'lucide-react'
+import { STORE_UI } from '@/lib/store/ui-copy'
+import { useStoreLocale } from './StoreLocale'
 
 interface Props {
   productId: string
@@ -15,6 +17,7 @@ export default function LikeButton({ productId, initialCount, initialLiked, logg
   const [liked, setLiked] = useState(initialLiked)
   const [count, setCount] = useState(initialCount)
   const [busy, setBusy] = useState(false)
+  const t = STORE_UI[useStoreLocale()].like
 
   async function toggle() {
     if (!loggedIn) {
@@ -53,13 +56,13 @@ export default function LikeButton({ productId, initialCount, initialLiked, logg
       type="button"
       onClick={toggle}
       aria-pressed={liked}
-      aria-label={liked ? 'いいねを取り消す' : 'いいねする'}
+      aria-label={liked ? t.unlike : t.like}
       className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-base transition-colors ${
         liked ? 'border-pink-300 bg-pink-50 text-pink-700' : 'border-gray-200 text-gray-700 hover:border-pink-300'
       }`}
     >
       <Heart className="w-5 h-5" fill={liked ? 'currentColor' : 'none'} />
-      いいね {count > 0 && <span className="font-medium">{count}</span>}
+      {t.label} {count > 0 && <span className="font-medium">{count}</span>}
     </button>
   )
 }
