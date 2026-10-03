@@ -56,7 +56,7 @@ export default function Footer({ siteBase = '' }: { siteBase?: string } = {}) {
             </Link>
             <span className="text-gray-600">|</span>
             <a href="https://stores.3dlab.jp" className="text-gray-400 hover:text-purple-400 transition-colors">
-              みんなの作品ストア
+              3DLab Store
             </a>
             <span className="text-gray-600">|</span>
             <Link href={`${siteBase}/team`} className="text-gray-400 hover:text-purple-400 transition-colors">

@@ -17,25 +17,23 @@ export default async function StoreHeader() {
       {/*
         並べ方（2026-10 に Chromium で測った値。フォントで数 px ずれる）:
           未ログイン・日本語     … 610px 以上は1行、337〜609px は2行、336px 以下は3行
-          カートに品物があるとき … 683px 以上は1行、395〜682px は2行、394px 以下は3行
+          カートに品物があるとき … 664px 以上は1行、395〜663px は2行、394px 以下は3行
           英語（/en）            … 610px 以上は1行、それ未満は2行
           ログイン中は項目が増えるので、もっと広い幅まで2〜3行になる
         610px 未満では、1行目にロゴと言語の切り替え、その下にナビと右側（カート・ログイン）を置く。
         ⚠ 言語の切り替えは幅ごとに置き場所が違うので、2か所に書いて片方だけ表示している
           （order で並べ替えると、Tab キーで進む順が見た目と食い違う）。
-        ⚠ 切り替えの幅を 610px にしているのは、未ログインの日本語が1行に収まる最小の幅だから。
-          言語の切り替えを足す前のヘッダーも 610px から1行だった。640px（sm）にすると、
-          610〜639px で以前より1行増える。
+        ⚠ 切り替えの幅を 610px にしているのは、言語の切り替えを足す前のヘッダーが 610px から
+          1行だったから。640px（sm）にすると、610〜639px で以前より1行増える。
+        ⚠ 項目の間隔（gap-x）を広げるのも同じ 610px にしている。640px（sm）で広げると、カートに
+          品物があるとき 632〜639px は1行、640〜663px は2行、と幅を広げたのに行が増える。
       */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-4 min-[610px]:gap-x-6 gap-y-2">
         <StoreHomeLink className="flex items-center gap-2.5 shrink-0">
           <span className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold">
             3D
           </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-lg font-bold text-gray-900">3DLab Store</span>
-            <ByStoreLocale ja={<span className="text-sm text-gray-500">みんなの作品ストア</span>} en={null} />
-          </span>
+          <span className="text-lg font-bold text-gray-900">3DLab Store</span>
         </StoreHomeLink>
 
         <StoreLanguageSwitch className="ml-auto min-[610px]:hidden text-base text-gray-500 hover:text-purple-600" />

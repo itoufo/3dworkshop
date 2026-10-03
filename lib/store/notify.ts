@@ -21,7 +21,7 @@ function layout(title: string, body: string): string {
   return `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111827;line-height:1.7;">
   <h2 style="color:#7c3aed;">${esc(title)}</h2>
   ${body}
-  <p style="color:#6b7280;font-size:13px;margin-top:32px;">3DLab みんなの作品ストア<br>${STORE_URL}</p>
+  <p style="color:#6b7280;font-size:13px;margin-top:32px;">3DLab Store<br>${STORE_URL}</p>
 </div>`
 }
 
