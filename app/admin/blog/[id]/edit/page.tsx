@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import dynamic from 'next/dynamic'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -34,13 +34,10 @@ export default function EditBlogPostPage() {
 
   const fetchBlogPost = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('id', params.id)
-        .single()
+      // 下書きも開けるよう、管理用の API 経由で読む
+      const { data, error } = await adminRows.get('blog-posts', params.id as string)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
       if (data) {
         setBlogPost({
@@ -158,12 +155,9 @@ export default function EditBlogPostPage() {
         updateData.published_at = new Date().toISOString()
       }
 
-      const { error } = await supabase
-        .from('blog_posts')
-        .update(updateData)
-        .eq('id', params.id)
+      const { error } = await adminRows.update('blog-posts', params.id as string, updateData)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
       alert('ブログ記事を更新しました')
       setNavigating(true)

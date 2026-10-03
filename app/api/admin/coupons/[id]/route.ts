@@ -1,4 +1,3 @@
-import { handleAdminDelete } from '@/lib/admin-delete'
 import { handleAdminGet, handleAdminUpdate } from '@/lib/admin-rows'
 
 export const runtime = 'nodejs'
@@ -8,15 +7,10 @@ type Context = { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Context) {
   const { id } = await params
-  return handleAdminGet('blog_posts', id)
+  return handleAdminGet('coupons', id)
 }
 
 export async function PATCH(req: Request, { params }: Context) {
   const { id } = await params
-  return handleAdminUpdate('blog_posts', id, req)
-}
-
-export async function DELETE(_req: Request, { params }: Context) {
-  const { id } = await params
-  return handleAdminDelete('blog_posts', id)
+  return handleAdminUpdate('coupons', id, req)
 }

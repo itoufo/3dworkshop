@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { WorkshopCategory } from '@/types'
 import { DEFAULT_PRODUCTION_NOTES } from '@/lib/email-templates'
@@ -27,11 +27,7 @@ export default function EditCategoryPage() {
 
   useEffect(() => {
     async function fetchCategory() {
-      const { data, error } = await supabase
-        .from('workshop_categories')
-        .select('*')
-        .eq('id', params.id)
-        .single()
+      const { data, error } = await adminRows.get('workshop-categories', params.id as string)
 
       if (error) {
         console.error('Error fetching category:', error)
@@ -64,18 +60,15 @@ export default function EditCategoryPage() {
     setSaving(true)
 
     try {
-      const { error } = await supabase
-        .from('workshop_categories')
-        .update({
-          name: formData.name,
-          slug: formData.slug,
-          description: formData.description || null,
-          image_url: formData.image_url || null,
-          sort_order: parseInt(formData.sort_order) || 0,
-          email_production_notes: formData.email_production_notes.trim() || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', params.id)
+      const { error } = await adminRows.update('workshop-categories', params.id as string, {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description || null,
+        image_url: formData.image_url || null,
+        sort_order: parseInt(formData.sort_order) || 0,
+        email_production_notes: formData.email_production_notes.trim() || null,
+        updated_at: new Date().toISOString()
+      })
 
       if (error) throw error
 

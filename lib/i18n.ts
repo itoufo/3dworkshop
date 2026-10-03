@@ -80,6 +80,7 @@ export const GRADE_LABELS_EN: Record<string, string> = {
 export const BOOKING_TEXT = {
   ja: {
     couponCheckError: 'クーポンの検証中にエラーが発生しました',
+    couponTooManyAttempts: '短時間に試行が多すぎます。しばらくしてからお試しください。',
     closedAlert: (serverMessage: string) => `${serverMessage}。ほかの日程をお選びください。`,
     seatsUnavailable: (serverMessage?: string) =>
       `${serverMessage || '満席のためお申し込みいただけません'}。ページを再読み込みしますので、空席をご確認ください。`,
@@ -200,6 +201,7 @@ export const BOOKING_TEXT = {
   },
   en: {
     couponCheckError: 'Something went wrong while checking the coupon.',
+    couponTooManyAttempts: 'Too many attempts. Please wait a few minutes and try again.',
     closedAlert: () => 'Booking for this date has closed. Please choose another date.',
     seatsUnavailable: () => 'There are not enough seats left for this date. The page will reload so you can check availability.',
     freeConfirmFailed: 'We could not confirm your booking. Please wait a moment and try again.',

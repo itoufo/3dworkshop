@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { Workshop, WorkshopCategory } from '@/types'
 import Image from 'next/image'
@@ -76,18 +76,11 @@ export default function EditWorkshop() {
   useEffect(() => {
     async function fetchData() {
       // カテゴリ一覧を取得
-      const { data: cats } = await supabase
-        .from('workshop_categories')
-        .select('*')
-        .order('sort_order', { ascending: true })
+      const { data: cats } = await adminRows.list<WorkshopCategory>('workshop-categories', { order: 'sort_order.asc' })
 
       if (cats) setCategories(cats)
 
-      const { data, error } = await supabase
-        .from('workshops')
-        .select('*')
-        .eq('id', params.id)
-        .single()
+      const { data, error } = await adminRows.get<Workshop>('workshops', params.id as string)
 
       if (error) {
         console.error('Error fetching workshop:', error)
@@ -202,39 +195,36 @@ export default function EditWorkshop() {
         imageUrl = data.imageUrl
       }
 
-      const { error } = await supabase
-        .from('workshops')
-        .update({
-          title: formData.title,
-          description: formData.description,
-          rich_description: formData.rich_description || null,
-          price: parseInt(formData.price),
-          duration: parseInt(formData.duration),
-          max_participants: parseInt(formData.max_participants),
-          location: formData.location,
-          image_url: imageUrl,
-          event_date: formData.event_date || null,
-          event_time: formData.event_time || null,
-          manual_participants: parseInt(formData.manual_participants) || 0,
-          manual_participants_note: formData.manual_participants_note || null,
-          category_id: formData.category_id || null,
-          show_features: formData.show_features,
-          is_private: formData.is_private,
-          preview_password: formData.preview_password.trim() || null,
-          collect_demographics: formData.collect_demographics,
-          show_on_english_site: formData.show_on_english_site,
-          title_en: formData.title_en.trim() || null,
-          description_en: formData.description_en.trim() || null,
-          consent_text_en: formData.consent_text_en.trim() || null,
-          early_bird_enabled: formData.early_bird_enabled,
-          early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
-          early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
-          consent_text: formData.consent_text.trim() || null,
-          ...zeroBookingCutoffToColumns(zeroCutoff),
-          ...(keepUnreadableOption ? {} : participantOptionToColumns(participantOption)),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', params.id)
+      const { error } = await adminRows.update('workshops', params.id as string, {
+        title: formData.title,
+        description: formData.description,
+        rich_description: formData.rich_description || null,
+        price: parseInt(formData.price),
+        duration: parseInt(formData.duration),
+        max_participants: parseInt(formData.max_participants),
+        location: formData.location,
+        image_url: imageUrl,
+        event_date: formData.event_date || null,
+        event_time: formData.event_time || null,
+        manual_participants: parseInt(formData.manual_participants) || 0,
+        manual_participants_note: formData.manual_participants_note || null,
+        category_id: formData.category_id || null,
+        show_features: formData.show_features,
+        is_private: formData.is_private,
+        preview_password: formData.preview_password.trim() || null,
+        collect_demographics: formData.collect_demographics,
+        show_on_english_site: formData.show_on_english_site,
+        title_en: formData.title_en.trim() || null,
+        description_en: formData.description_en.trim() || null,
+        consent_text_en: formData.consent_text_en.trim() || null,
+        early_bird_enabled: formData.early_bird_enabled,
+        early_bird_discount: formData.early_bird_enabled ? (parseInt(formData.early_bird_discount) || null) : null,
+        early_bird_slots: formData.early_bird_enabled ? (parseInt(formData.early_bird_slots) || null) : null,
+        consent_text: formData.consent_text.trim() || null,
+        ...zeroBookingCutoffToColumns(zeroCutoff),
+        ...(keepUnreadableOption ? {} : participantOptionToColumns(participantOption)),
+        updated_at: new Date().toISOString()
+      })
 
       if (error) throw error
 

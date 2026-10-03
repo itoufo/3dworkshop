@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { adminJson } from '@/lib/admin-api-client'
+import { adminRows } from '@/lib/admin-rows-client'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import {
   BOOKING_SOURCES,
@@ -65,17 +65,17 @@ export default function NewBookingPage() {
 
   useEffect(() => {
     async function load() {
-      // 顧客は管理用の API（service role）経由で読む。workshops / workshop_sessions は公開情報なので anon で読める
+      // 顧客も、非公開のワークショップとその日程も、anon では読めない。管理用の API（service role）経由で読む
       const [c, w, s] = await Promise.all([
         adminJson<{ customers: CustomerOption[] }>('/api/admin/customers'),
-        supabase.from('workshops').select('id, title, price, event_date').order('created_at', { ascending: false }),
-        supabase
-          .from('workshop_sessions')
-          .select('id, workshop_id, event_date, event_time, status')
-          .order('event_date', { ascending: false }),
+        adminRows.list<WorkshopOption>('workshops', { columns: 'id,title,price,event_date', order: 'created_at.desc' }),
+        adminRows.list<SessionOption>('workshop-sessions', {
+          columns: 'id,workshop_id,event_date,event_time,status',
+          order: 'event_date.desc',
+        }),
       ])
       if (!c.ok || w.error || s.error) {
-        console.error('manual booking load failed:', !c.ok ? c.message : w.error || s.error)
+        console.error('manual booking load failed:', !c.ok ? c.message : (w.error || s.error)?.message)
         setLoadError('顧客・ワークショップの読み込みに失敗しました。再読み込みしてください。')
       }
       setCustomers(c.ok ? c.data.customers || [] : [])

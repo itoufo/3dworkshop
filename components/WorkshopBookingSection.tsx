@@ -333,8 +333,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         setCouponValidation({
           loading: false,
           valid: false,
-          // サーバーの文言は日本語なので、英語ページでは英文に置き換える
-          error: t.useServerError ? data.error : 'This coupon code cannot be used.'
+          // サーバーの文言は日本語なので、英語ページでは英文に置き換える（429 は「待てば使える」ことが伝わる文言に）
+          error: t.useServerError ? data.error : response.status === 429 ? t.couponTooManyAttempts : 'This coupon code cannot be used.'
         })
       }
     } catch {

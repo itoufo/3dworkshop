@@ -53,8 +53,11 @@ function normalizeSessions(w: Workshop): Workshop {
   return { ...w, sessions: sorted }
 }
 
+// ⚠ 限定公開（is_private）のワークショップも返す。anon は公開中の行しか読めないので service role で読む。
+//   限定公開かどうかの出し分け（/workshops/[id] → /workshops/preview/[id] への転送、パスワードの確認）は
+//   呼び出し側の責任。一覧系の取得（下の getAllWorkshops など）は公開中だけを anon で読む。
 export const getWorkshop = cache(async (id: string): Promise<Workshop | null> => {
-  const { data } = await supabase
+  const { data } = await (supabaseAdmin ?? supabase)
     .from('workshops')
     .select(SELECT_WITH_RELATIONS)
     .eq('id', id)
@@ -149,8 +152,8 @@ export interface WorkshopActivityStats {
 // 取得行数は現在114行。PostgREST の行数上限に届くようになったら、
 // 集計を RPC (SECURITY DEFINER) に移すこと。
 //
-// ⚠ bookings / customers は個人情報なので service role で読む（このファイルの他の取得は
-//   公開情報なので anon のまま）。返すのは集計値だけで、行の中身はページへ渡さない。
+// ⚠ bookings / customers は個人情報なので service role で読む。返すのは集計値だけで、行の中身はページへ渡さない。
+//   （このファイルで service role を使うのは、これと getWorkshop だけ。一覧系は公開中の行を anon で読む）
 export const getWorkshopActivityStats = cache(async (): Promise<WorkshopActivityStats> => {
   if (!supabaseAdmin) return { heldDays: 0, participants: 0, firstHeldDate: null }
   const { data } = await supabaseAdmin

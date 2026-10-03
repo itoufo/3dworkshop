@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { adminRows } from '@/lib/admin-rows-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { adminJson } from '@/lib/admin-api-client'
 import { variantLabel } from '@/lib/product-variants'
@@ -23,14 +23,12 @@ export default function AdminProductsPage() {
   const [navigating, setNavigating] = useState(false)
 
   const loadProducts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
+    // 非公開の商品も出すので、管理用の API 経由で読む
+    const { data, error } = await adminRows.list<Product>('products', { order: 'created_at.desc' })
     if (error) {
       console.error('Error loading products:', error)
     }
-    setProducts((data as Product[]) ?? [])
+    setProducts(data ?? [])
     const seriesRes = await adminJson<{ series: ProductSeries[] }>('/api/admin/product-series')
     if (seriesRes.ok) setSeriesById(Object.fromEntries(seriesRes.data.series.map((s) => [s.id, s])))
     setLoading(false)
@@ -41,10 +39,7 @@ export default function AdminProductsPage() {
   }, [loadProducts])
 
   async function toggleActive(product: Product) {
-    const { error } = await supabase
-      .from('products')
-      .update({ is_active: !product.is_active })
-      .eq('id', product.id)
+    const { error } = await adminRows.update('products', product.id, { is_active: !product.is_active })
     if (error) {
       alert('公開状態の変更に失敗しました')
       return
