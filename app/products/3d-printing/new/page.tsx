@@ -59,6 +59,7 @@ export default function New3DPrintingOrder() {
 
     if (!file.name.toLowerCase().endsWith('.stl')) {
       alert('STLファイルのみアップロード可能です')
+      e.target.value = ''
       return
     }
 
@@ -89,7 +90,8 @@ export default function New3DPrintingOrder() {
       //   バケットは model/stl 以外を受け付けない
       const { error } = await supabase.storage
         .from(signed.bucket)
-        .uploadToSignedUrl(signed.path, signed.token, new Blob([file], { type: 'model/stl' }))
+        // ⚠ cacheControl を省くと "undefined" が送られて保存される（uploadToSignedUrl は既定値を持たない）
+        .uploadToSignedUrl(signed.path, signed.token, new Blob([file], { type: 'model/stl' }), { cacheControl: '3600' })
 
       if (error) throw error
 

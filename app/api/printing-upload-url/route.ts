@@ -21,8 +21,9 @@ export const dynamic = 'force-dynamic'
 const BUCKET = 'stl-files'
 
 const WINDOW_MS = 10 * 60 * 1000
-/** 同じ接続元から10分に発行できる数。選び直しの分の余裕を持たせる */
-const MAX_URLS = 20
+/** 同じ接続元から10分に発行できる数。1回の依頼で選び直すのは数回なので、その余裕だけ持たせる
+ *  （1つの許可証 = 最大50MBのファイル1つ。数を増やすほど、置けるデータ量の上限が上がる） */
+const MAX_URLS = 10
 
 /**
  * 1ファイルの上限（50MB）。バケット stl-files の file_size_limit と同じ値。
