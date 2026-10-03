@@ -103,7 +103,12 @@ export default function ProductForm({ product }: Props) {
         id: string
         name: string
         variant_options: Record<string, string> | null
-      }>('products', { columns: 'id,name,variant_options', filter: { series_id: seriesId } })
+      }>('products', {
+        columns: 'id,name,variant_options',
+        filter: { series_id: seriesId },
+        // 保存の途中で呼ぶ。ログインが切れていても再読み込みせず、入力中の商品の内容を残す
+        keepPageOn401: true,
+      })
       const twin = (siblings ?? []).find(
         (s) =>
           s.id !== product?.id &&

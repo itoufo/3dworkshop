@@ -28,6 +28,8 @@ export type AdminListOptions = {
   order?: string
   /** 返す列。例 'id,title'。省くと全列 */
   columns?: string
+  /** 入力フォームの保存中に呼ぶ読み取り（重複の確認など）に付ける。ログインが切れていても再読み込みせず、書きかけを残す */
+  keepPageOn401?: boolean
 }
 
 /**
@@ -48,9 +50,11 @@ async function call<TBody, T>(
   url: string,
   init: RequestInit | undefined,
   pick: (body: TBody) => T,
+  keepPageOn401 = Boolean(init?.method),
 ): Promise<AdminResult<T>> {
-  // 保存（POST / PATCH）でログインが切れていたときは、再読み込みせず案内を出す（入力中の内容を残す）
-  const result = await adminJson<TBody>(url, init, { keepPageOn401: Boolean(init?.method) })
+  // 保存（POST / PATCH）でログインが切れていたときは、再読み込みせず案内を出す（入力中の内容を残す）。
+  // 読み取りでも、保存の途中で呼ぶものは呼び出し側が keepPageOn401 を付ける
+  const result = await adminJson<TBody>(url, init, { keepPageOn401 })
   if (!result.ok) return { data: null, error: { message: result.message } }
   return { data: pick(result.data), error: null }
 }
@@ -67,7 +71,12 @@ function listUrl(resource: AdminRowsResource, options: AdminListOptions): string
 export const adminRows = {
   /** 一覧（全件）。非公開の行も含む */
   list<T = AdminRow>(resource: AdminRowsResource, options: AdminListOptions = {}): Promise<AdminResult<T[]>> {
-    return call<{ rows: T[] }, T[]>(listUrl(resource, options), undefined, (body) => body.rows ?? [])
+    return call<{ rows: T[] }, T[]>(
+      listUrl(resource, options),
+      undefined,
+      (body) => body.rows ?? [],
+      options.keepPageOn401 ?? false,
+    )
   },
 
   /** 1件取得。無ければ error */
