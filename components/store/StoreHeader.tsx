@@ -14,7 +14,8 @@ export default async function StoreHeader() {
 
   return (
     <StoreHeaderFrame className="bg-white border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+      {/* スマホ: 1行目にロゴと右側（言語・ログイン）、2行目にナビ。3行に増やさない */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2">
         <StoreHomeLink className="flex items-center gap-2.5 shrink-0">
           <span className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold">
             3D
@@ -25,7 +26,7 @@ export default async function StoreHeader() {
           </span>
         </StoreHomeLink>
 
-        <nav className="flex items-center gap-5 text-base text-gray-700">
+        <nav className="order-last w-full sm:order-none sm:w-auto flex items-center gap-5 text-base text-gray-700">
           <ByStoreLocale
             ja={
               <>

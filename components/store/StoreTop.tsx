@@ -45,26 +45,28 @@ function heroTileShape(index: number, count: number): string {
   return count === 2 ? styles.tileTall : ''
 }
 
-const minOf = (values: (number | null)[]) => {
-  const numbers = values.filter((v): v is number => v != null)
-  return numbers.length > 0 ? Math.min(...numbers) : null
-}
-
 /**
  * ストアのトップページ本体（日本語 / と英語 /en で共通）。
  * ⚠ 作品へのリンクは言語に関係なく /p/<id>。英語の作品ページは無い。
  * ⚠ 作品名・出品者名は出品者が日本語で入れたものなので、英語版でも訳さず lang="ja" を付けて出す。
  */
-export default function StoreTop({ locale, products }: { locale: StoreLocale; products: StoreTopProduct[] }) {
+export default function StoreTop({
+  locale,
+  products,
+  lowestPrices,
+}: {
+  locale: StoreLocale
+  products: StoreTopProduct[]
+  /** 「〜から」に出す最安値。並べている60件ではなく、公開中の全作品から出したもの */
+  lowestPrices: { data: number | null; print: number | null }
+}) {
   const t = STORE_TOP_COPY[locale]
   const userText = locale === 'en' ? { lang: 'ja' } : {}
   const heroProducts = products.filter((p) => p.image_urls[0]).slice(0, 3)
-  const minDataPrice = minOf(products.map(dataPriceOf))
-  const minPrintPrice = minOf(products.map(printPriceOf))
 
   const ways = [
-    { key: 'data', icon: Download, tone: styles.wayData, copy: t.ways.data, minPrice: minDataPrice },
-    { key: 'print', icon: Package, tone: styles.wayPrint, copy: t.ways.print, minPrice: minPrintPrice },
+    { key: 'data', icon: Download, tone: styles.wayData, copy: t.ways.data, minPrice: lowestPrices.data },
+    { key: 'print', icon: Package, tone: styles.wayPrint, copy: t.ways.print, minPrice: lowestPrices.print },
   ]
 
   return (
@@ -118,12 +120,12 @@ export default function StoreTop({ locale, products }: { locale: StoreLocale; pr
                     }
                     className="object-cover"
                   />
-                  {/* 右の2枚は幅が狭いので、スマホでは作品名を1行に切り詰める */}
-                  <span
-                    className={`${styles.caption} font-bold text-white ${index === 0 ? 'text-base' : 'text-sm sm:text-base line-clamp-1 sm:line-clamp-2'}`}
-                    {...userText}
-                  >
-                    {p.title}
+                  {/* 行数の切り詰めは内側の span に付ける。余白のある外側に付けると、
+                      切り詰めた次の行の上半分が下の余白にはみ出して見える */}
+                  <span className={`${styles.caption} font-bold text-white`} {...userText}>
+                    <span className={index === 0 ? 'text-base line-clamp-2' : 'text-sm sm:text-base line-clamp-1 sm:line-clamp-2'}>
+                      {p.title}
+                    </span>
                   </span>
                 </Link>
               ))}

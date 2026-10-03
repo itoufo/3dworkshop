@@ -46,7 +46,7 @@ const ja: StoreTopCopy = {
       title: '3Dデータ',
       summary: '自分の3Dプリンターで印刷する方へ',
       points: [
-        'お支払い後すぐにダウンロードできます',
+        'お支払いのあと、ダウンロード用のリンクをメールでお送りします',
         `ダウンロードできるのは${STORE_DOWNLOAD_VALID_DAYS}日間・${STORE_DOWNLOAD_MAX_COUNT}回までです`,
         'ご自分で印刷して楽しむためのデータです。データそのものの再配布・再販売はできません',
       ],
@@ -68,14 +68,17 @@ const ja: StoreTopCopy = {
     title: '届くまでの流れ',
     steps: [
       { title: '作品と買い方を選ぶ', body: '作品ページで「3Dデータ」か「完成品」を選び、カートに入れます。' },
-      { title: 'お名前とメールを入れる', body: 'カートの画面で、お名前とメールアドレスを入力します。' },
+      {
+        title: 'お名前とメールを入れる',
+        body: 'カートの画面で、お名前とメールアドレスを入力します。3Dデータのダウンロード用リンクと注文の確認は、このメールアドレスにお送りします。',
+      },
       {
         title: 'Stripe で支払う',
         body: 'お支払いは Stripe の決済画面で行います。カード情報は当社に保存されません。完成品のお届け先もこの画面で入力します。',
       },
       {
         title: '受け取る',
-        body: '3Dデータは、お支払い後すぐにダウンロードできます。完成品は 3DLab が印刷して発送します。',
+        body: '3Dデータは、お支払いのあとメールで届くリンクからダウンロードします。完成品は 3DLab が印刷して発送します。',
       },
     ],
   },
@@ -105,7 +108,8 @@ const en: StoreTopCopy = {
     browse: 'Browse the works',
     how: 'How buying works',
   },
-  notice: 'Product pages and checkout are in Japanese. Finished prints ship to addresses in Japan only.',
+  notice:
+    'Product pages, checkout and the emails we send after purchase are in Japanese. Finished prints ship to addresses in Japan only.',
   ways: {
     title: 'Two ways to buy',
     lead: 'The same work arrives differently depending on how you buy it.',
@@ -114,7 +118,7 @@ const en: StoreTopCopy = {
       title: '3D data',
       summary: 'For people who print on their own 3D printer',
       points: [
-        'Download right after payment',
+        'A download link is emailed to you after payment',
         `Downloads stay available for ${STORE_DOWNLOAD_VALID_DAYS} days, up to ${STORE_DOWNLOAD_MAX_COUNT} times`,
         'The data is for printing and enjoying yourself. You may not redistribute or resell the data itself',
       ],
@@ -140,14 +144,17 @@ const en: StoreTopCopy = {
     title: 'From order to delivery',
     steps: [
       { title: 'Choose a work and how to buy it', body: 'On the product page, pick “3D data” or “finished print” and add it to your cart.' },
-      { title: 'Enter your name and email', body: 'You enter your name and email address on the cart page.' },
+      {
+        title: 'Enter your name and email',
+        body: 'You enter your name and email address on the cart page. The download link for 3D data and the order confirmation are sent to this address.',
+      },
       {
         title: 'Pay with Stripe',
         body: 'Payment is made on Stripe’s checkout page. We do not store your card details. For a finished print, you enter the delivery address there too.',
       },
       {
         title: 'Receive it',
-        body: '3D data can be downloaded right after payment. Finished prints are printed and shipped by 3DLab.',
+        body: 'For 3D data, you download it from the link in the email sent after payment. Finished prints are printed and shipped by 3DLab.',
       },
     ],
   },

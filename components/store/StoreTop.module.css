@@ -19,6 +19,8 @@
   /* 文節の途中で折り返さない（対応していないブラウザでは通常の折り返しになる） */
   word-break: auto-phrase;
   text-wrap: balance;
+  /* auto-phrase だと長い文節が折り返せず、幅320pxで横にはみ出す。入りきらないときだけ途中で折る */
+  overflow-wrap: anywhere;
 }
 
 /* 濃い面。細い横線は積層の線に見立てたもの */
@@ -71,6 +73,7 @@
   grid-row: span 2;
 }
 .caption {
+  display: block;
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 0.9rem 0.7rem;
