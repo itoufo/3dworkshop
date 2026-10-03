@@ -3,8 +3,11 @@ import Link from 'next/link'
 /**
  * 英語ページ（/en）のフッター。
  * 規約・プライバシー等は日本語版しかないため、日本語ページへのリンクであることを明記する。
+ *
+ * @param siteBase 3dlab.jp 以外のホスト（stores.3dlab.jp）で使うときに 'https://3dlab.jp' を渡す。
+ *   ⚠ 相対リンクのままだと、ストア側では /store/* に書き換わって 404 になる（components/Footer.tsx と同じ）。
  */
-export default function EnglishFooter() {
+export default function EnglishFooter({ siteBase = '' }: { siteBase?: string } = {}) {
   return (
     <footer className="bg-gray-900 text-gray-300 py-12" lang="en">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,22 +33,22 @@ export default function EnglishFooter() {
 
         <div className="border-t border-gray-800 pt-6 mb-6">
           <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-base">
-            <Link href="/en/workshops" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/en/workshops`} className="text-gray-400 hover:text-purple-400 transition-colors">
               Workshops
             </Link>
-            <Link href="/en/faq" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/en/faq`} className="text-gray-400 hover:text-purple-400 transition-colors">
               FAQ
             </Link>
-            <Link href="/terms" hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/terms`} hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
               Terms of use (Japanese)
             </Link>
-            <Link href="/privacy" hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/privacy`} hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
               Privacy policy (Japanese)
             </Link>
-            <Link href="/tokushoho" hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/tokushoho`} hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
               Legal notice (Japanese)
             </Link>
-            <Link href="/" hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
+            <Link href={`${siteBase}/`} hrefLang="ja" className="text-gray-400 hover:text-purple-400 transition-colors">
               日本語サイト
             </Link>
           </div>

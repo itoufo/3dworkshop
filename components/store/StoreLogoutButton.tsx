@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useStoreLocale } from './StoreLocale'
 
 export default function StoreLogoutButton({ className }: { className?: string }) {
   const [busy, setBusy] = useState(false)
+  const locale = useStoreLocale()
 
   async function logout() {
     setBusy(true)
@@ -13,13 +15,13 @@ export default function StoreLogoutButton({ className }: { className?: string })
         headers: { 'Content-Type': 'application/json' },
       })
     } finally {
-      window.location.href = '/'
+      window.location.href = locale === 'en' ? '/en' : '/'
     }
   }
 
   return (
     <button type="button" onClick={logout} disabled={busy} className={className}>
-      ログアウト
+      {locale === 'en' ? 'Log out' : 'ログアウト'}
     </button>
   )
 }
