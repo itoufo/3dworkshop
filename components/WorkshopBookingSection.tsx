@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Workshop, WorkshopSession } from '@/types'
-import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
@@ -15,6 +14,7 @@ import { getConsentTextFor } from '@/lib/consent-default'
 import { sessionStartJst, zeroBookingCutoffJst, formatCutoffJst, formatCutoffJstEn } from '@/lib/booking-deadline'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import { BOOKING_TEXT, type BookingText, type Locale } from '@/lib/i18n'
+import { MAX_PARTICIPANTS_PER_BOOKING } from '@/lib/booking-limits'
 import { parseParticipantOption, participantChoicesTotal, groupParticipantChoices, type ParticipantOptionChoice } from '@/lib/participant-option'
 
 // 開始時刻（JST）を過ぎていない回。端末のタイムゾーンに左右されないよう JST で比べる
@@ -142,6 +142,8 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   const checkoutStartedRef = useRef(false)
   // GA4: フォームに一度でも触れたか。「開いただけ」と「入力したが送信手前で離脱」を分離する。
   const formStartedRef = useRef(false)
+  // この画面が直前に作った仮予約の id。決済画面の作成に失敗した後のやり直しで、サーバーに取り消してもらう
+  const lastBookingIdRef = useRef<string | null>(null)
   const closeMethodRef = useRef<string>('unknown')
   const prevModalOpenRef = useRef(false)
   // モーダルを閉じる唯一の入口。閉じ方(× / 背景 / Esc)を記録してから閉じる。
@@ -401,48 +403,48 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     setSubmitting(true)
 
     try {
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .upsert({
-          email: booking.email,
-          name: booking.name,
-          phone: booking.phone,
-          // 年齢・性別は収集対象のワークショップで入力があった場合のみ更新（未入力は不明のまま）
-          ...(workshop.collect_demographics && booking.age ? { age: parseInt(booking.age) } : {}),
-          ...(workshop.collect_demographics && booking.gender ? { gender: booking.gender } : {})
-        }, {
-          onConflict: 'email'
-        })
-        .select()
-        .single()
-
-      if (customerError) throw customerError
-
-      const bookingDate = selectedSession?.event_date || workshop.event_date || new Date().toISOString().split('T')[0]
-      const bookingTime = selectedSession?.event_time || workshop.event_time || '10:00'
-
-      const { data: bookingData, error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
+      // 顧客行と仮予約はサーバーが作る。開催日時と金額もサーバーが DB から決めるので送らない
+      const createRes = await fetch('/api/create-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           workshop_id: workshop.id,
           session_id: selectedSession?.id || null,
-          customer_id: customer.id,
-          booking_date: bookingDate,
-          booking_time: bookingTime,
+          name: booking.name,
+          email: booking.email,
+          phone: booking.phone,
+          // 年齢・性別は収集対象のワークショップで入力があった場合のみ送る（未入力は不明のまま）
+          ...(workshop.collect_demographics && booking.age ? { age: parseInt(booking.age) } : {}),
+          ...(workshop.collect_demographics && booking.gender ? { gender: booking.gender } : {}),
           participants: booking.participants,
-          // 選択肢のあるワークショップでは、サーバーが決済セッション作成時に満額を書き直す
-          total_amount: workshop.price * booking.participants + optionTotal,
-          status: 'pending',
-          payment_status: 'pending',
           minor_count: booking.hasMinors ? booking.minorCount : null,
           minor_grades: booking.hasMinors ? booking.minorGrades.filter(Boolean).join(', ') : null,
           // 同伴者は親子向け日程のみ無料・定員外。participants（＝料金/残席の基準）には含めない
           companion_count: isFamilySession ? booking.companionCount : 0,
-        })
-        .select()
-        .single()
-
-      if (bookingError) throw bookingError
+          // やり直しのとき、この画面が直前に作った仮予約をサーバーが取り消せるように伝える
+          ...(lastBookingIdRef.current ? { previous_booking_id: lastBookingIdRef.current } : {}),
+        }),
+      })
+      const bookingData: { booking_id?: string; error?: string } = await createRes.json().catch(() => ({}))
+      if (!createRes.ok || !bookingData.booking_id) {
+        // 残席不足・中止（409）: 表示中の空席が古い。理由を伝えて読み込み直す
+        if (createRes.status === 409) {
+          gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'sold_out' })
+          alert(t.seatsUnavailable(bookingData.error))
+          window.location.reload()
+          return
+        }
+        // 入力の不備（400）・送信が多すぎる（429）: サーバーが返した理由をそのまま伝える（英語ページは共通の文言）
+        if ((createRes.status === 400 || createRes.status === 429) && bookingData.error && t.useServerError) {
+          gaEvent('ws_booking_error', { workshop_id: workshop.id, step: 'create' })
+          alert(bookingData.error)
+          setSubmitting(false)
+          return
+        }
+        throw new Error(bookingData.error || t.bookingFailed)
+      }
+      const bookingId = bookingData.booking_id
+      lastBookingIdRef.current = bookingId
 
       // 無料回は Stripe を通さず、その場で予約を確定して完了画面へ送る
       if (isFree) {
@@ -450,7 +452,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // 同意の日時と本文はサーバー側で記録する
-          body: JSON.stringify({ booking_id: bookingData.id, consent: agreedToConsent, locale }),
+          body: JSON.stringify({ booking_id: bookingId, consent: agreedToConsent, locale }),
         })
         const freeData = await freeRes.json()
 
@@ -476,7 +478,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         })
         checkoutStartedRef.current = true
 
-        window.location.href = `${successPath}?booking_id=${bookingData.id}`
+        window.location.href = `${successPath}?booking_id=${bookingId}`
         return
       }
 
@@ -487,7 +489,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         },
         body: JSON.stringify({
           workshop_id: workshop.id,
-          booking_id: bookingData.id,
+          booking_id: bookingId,
           customer_email: booking.email,
           amount: workshop.price * booking.participants,
           participants: booking.participants,
@@ -918,7 +920,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                 setBooking({ ...booking, participants: p, minorCount: c, minorGrades: resizeGrades(booking.minorGrades, c) })
               }}
             >
-              {[...Array(Math.min(availability?.available_spots || workshop.max_participants, 5))].map((_, i) => (
+              {[...Array(Math.min(availability?.available_spots || workshop.max_participants, MAX_PARTICIPANTS_PER_BOOKING))].map((_, i) => (
                 <option key={i + 1} value={i + 1}>
                   {t.people(i + 1)}
                 </option>

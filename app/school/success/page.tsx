@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import { CheckCircle, Calendar, Mail, Home, BookOpen } from 'lucide-react'
 import Link from 'next/link'
@@ -13,16 +12,9 @@ export default function SchoolSuccessPage() {
   const router = useRouter()
   const sessionId = searchParams.get('session_id')
   const [enrollmentDetails, setEnrollmentDetails] = useState<{
-    id: string
-    name: string
-    email: string
-    program: string
-    created_at: string
     class_name: string
     student_name: string
-    customer?: {
-      email: string
-    }
+    email: string | null
   } | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -34,20 +26,14 @@ export default function SchoolSuccessPage() {
       }
 
       try {
-        // Stripe session IDを使って申込情報を取得
-        const { data, error } = await supabase
-          .from('school_enrollments')
-          .select(`
-            *,
-            customer:customers(*)
-          `)
-          .eq('stripe_payment_intent_id', sessionId)
-          .single()
+        // Stripe session IDを使って申込情報を取得（完了画面に出す項目だけをサーバーから受け取る）
+        const res = await fetch(`/api/school-enrollment?session_id=${encodeURIComponent(sessionId)}`)
+        const data = await res.json().catch(() => ({}))
 
-        if (error) {
-          console.error('Error fetching enrollment:', error)
+        if (!res.ok || !data.enrollment) {
+          console.error('Error fetching enrollment:', res.status)
         } else {
-          setEnrollmentDetails(data)
+          setEnrollmentDetails(data.enrollment)
         }
       } catch (error) {
         console.error('Error:', error)
@@ -132,7 +118,7 @@ export default function SchoolSuccessPage() {
                   <Mail className="w-5 h-5 text-purple-600 mt-0.5 mr-3" />
                   <div>
                     <p className="text-sm text-gray-600">メールアドレス</p>
-                    <p className="font-medium text-gray-900">{enrollmentDetails.customer?.email}</p>
+                    <p className="font-medium text-gray-900">{enrollmentDetails.email}</p>
                   </div>
                 </div>
               </div>

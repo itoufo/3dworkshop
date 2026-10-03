@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import Header from '@/components/Header'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -14,37 +13,11 @@ import { useCustomerProfile } from '@/lib/use-customer-profile'
 import {
   CAMPAIGN_END_LABEL,
   REGULAR_REGISTRATION_FEE,
-  getRegistrationFee,
   isEnrollmentFeeCampaignActive,
 } from '@/lib/school-campaign'
+import { getSchoolClass } from '@/lib/school-classes'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
-
-interface SchoolClass {
-  id: 'free' | 'basic'
-  name: string
-  description: string
-  price: number
-  registrationFee: number
-  duration: string
-  frequency: string
-  perks: string
-  schedule?: string
-}
-
-const classes: Record<string, SchoolClass> = {
-  free: {
-    id: 'free',
-    name: '自由創作クラス（教室開放）',
-    description: 'PCや有料版AIを自由に使いながら、自分のアイデアをとことん形にできるクラス',
-    price: 17000,
-    // 通常 20000円（税別）= 22000円（税込）。キャンペーン期間中は 0 円
-    registrationFee: getRegistrationFee(),
-    duration: '120分/回',
-    frequency: '開校日の好きな日に月2回',
-    perks: '制作し放題（時間内）'
-  }
-}
 
 const campaignActive = isEnrollmentFeeCampaignActive()
 
@@ -52,7 +25,7 @@ export default function SchoolApplyPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const classType = searchParams.get('class') || 'free'
-  const selectedClass = classes[classType] || classes.free
+  const selectedClass = getSchoolClass(classType)
   
   // 受講者区分。大人は保護者情報・学年を持たないためフォームを切り替える
   const [studentType, setStudentType] = useState<'child' | 'adult'>('child')
@@ -155,57 +128,27 @@ export default function SchoolApplyPage() {
     setSubmitting(true)
 
     try {
-      // 顧客情報を保存または更新
-      const customerData: { 
-        email: string; 
-        name: string; 
-        phone: string;
-        address?: string;
-      } = {
-        email: formData.email,
-        // 大人は本人が契約者。子どもの場合は保護者が契約者になる
-        name: isAdult ? formData.studentName : formData.parentName,
-        phone: formData.phone
-      }
-      
-      // addressカラムが存在する場合のみ追加（移行中の互換性のため）
-      if (formData.address) {
-        customerData.address = formData.address
-      }
-      
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .upsert(customerData, {
-          onConflict: 'email'
-        })
-        .select()
-        .single()
-
-      if (customerError) throw customerError
-
-      // スクール申込情報を保存
-      const { data: enrollmentData, error: enrollmentError } = await supabase
-        .from('school_enrollments')
-        .insert({
-          customer_id: customer.id,
+      // 顧客行と申込行はサーバーが作る。クラス名・月謝・入会金はサーバーが決める（送るのはクラスの種別だけ）
+      const createRes = await fetch('/api/create-school-enrollment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           class_type: selectedClass.id,
-          class_name: selectedClass.name,
           student_type: studentType,
           student_name: formData.studentName,
           student_age: parseInt(formData.studentAge),
-          student_grade: isAdult ? null : formData.studentGrade,
-          monthly_fee: selectedClass.price,
-          registration_fee: selectedClass.registrationFee,
-          total_amount: totalAmount, // 入会金 + 初月月謝
+          student_grade: formData.studentGrade,
+          parent_name: formData.parentName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
           notes: formData.notes,
-          status: 'pending',
-          payment_status: 'pending',
-          enrollment_date: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (enrollmentError) throw enrollmentError
+        }),
+      })
+      const enrollmentData: { enrollment_id?: string; error?: string } = await createRes.json().catch(() => ({}))
+      if (!createRes.ok || !enrollmentData.enrollment_id) {
+        throw new Error(enrollmentData.error || '申込の保存に失敗しました')
+      }
 
       // Stripe決済セッションを作成
       const response = await fetch('/api/create-school-checkout-session', {
@@ -213,12 +156,10 @@ export default function SchoolApplyPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        // 月謝・入会金・クラスは送らない（サーバーが申込行から取る）
         body: JSON.stringify({
-          enrollment_id: enrollmentData.id,
-          class_type: selectedClass.id,
+          enrollment_id: enrollmentData.enrollment_id,
           customer_email: formData.email,
-          monthly_fee: selectedClass.price,
-          registration_fee: selectedClass.registrationFee,
           coupon_id: appliedCoupon?.id,
           discount_amount: discountAmount
         }),

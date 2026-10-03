@@ -6,6 +6,7 @@ import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
 import { sumBookedParticipants, manualParticipantsFor } from '@/lib/session-participants'
 import { sendEmail, generateBookingConfirmationEmail } from '@/app/lib/email'
 import { parseParticipantOption } from '@/lib/participant-option'
+import { BOOKING_SUMMARY_COLUMNS } from '@/lib/booking-summary'
 
 /**
  * 参加費0円のワークショップの予約確定。
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 参加同意書への同意がない予約は確定しない。
-    // ⚠ 同意の日時と本文はサーバーで書く（予約行はブラウザが作るので、そこにある値は信用しない）
+    // ⚠ 同意の日時と本文はここで書く（仮予約を作る /api/create-booking は同意を記録しない）
     if (body.consent !== true) {
       // デプロイ前に開いたままのタブ（同意欄のない古い画面）から来た場合。仮予約は取り消す
       if (booking.status === 'pending') {
@@ -71,8 +72,15 @@ export async function POST(request: NextRequest) {
     const consentAgreedAt = booking.consent_agreed_at || new Date().toISOString()
 
     // 二重確定を防ぐ（リトライ・二重送信時は既存の予約をそのまま返す）
+    // ⚠ 上で読んだ booking は顧客行・ワークショップ行を全列で持っている。そのまま返さない
     if (booking.status === 'confirmed') {
-      return NextResponse.json({ success: true, booking })
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from('bookings')
+        .select(BOOKING_SUMMARY_COLUMNS)
+        .eq('id', booking_id)
+        .single()
+      if (existingError || !existing) throw existingError ?? new Error('confirmed booking could not be re-read')
+      return NextResponse.json({ success: true, booking: existing })
     }
 
     // 予約締切（開始時刻・予約0人の締切）。締切後なら仮予約を取り消して止める
@@ -118,11 +126,7 @@ export async function POST(request: NextRequest) {
         consent_text_snapshot: getConsentTextFor(workshop, toLocale(body.locale)),
       })
       .eq('id', booking_id)
-      .select(`
-        *,
-        workshop:workshops(*),
-        customer:customers(*)
-      `)
+      .select(BOOKING_SUMMARY_COLUMNS)
       .single()
 
     if (updateError) throw updateError

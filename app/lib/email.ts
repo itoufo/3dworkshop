@@ -121,7 +121,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             </div>
             <div class="info-row">
               <span class="info-label">生徒名：</span>
-              <span class="info-value">${enrollment.student_name}様</span>
+              <span class="info-value">${escapeHtml(enrollment.student_name)}様</span>
             </div>
             ${enrollment.student_age ? `
             <div class="info-row">
@@ -132,7 +132,7 @@ export function generateSchoolEnrollmentEmail(enrollment: SchoolEnrollment, clas
             ${enrollment.student_grade ? `
             <div class="info-row">
               <span class="info-label">学年：</span>
-              <span class="info-value">${enrollment.student_grade}</span>
+              <span class="info-value">${escapeHtml(enrollment.student_grade)}</span>
             </div>
             ` : ''}
             
@@ -241,7 +241,7 @@ export function generateBookingConfirmationEmail(
           <h1>ワークショップ予約確認</h1>
         </div>
         <div class="content">
-          <p>${userName} 様</p>
+          <p>${escapeHtml(userName)} 様</p>
           <p>このたびはご予約をいただき、誠にありがとうございます。</p>
           <p>ご参加にあたっての詳細と注意事項をご案内いたします。必ずご確認ください。</p>
 
@@ -251,7 +251,7 @@ export function generateBookingConfirmationEmail(
             <p><strong>開催日:</strong> ${date}</p>
             <p><strong>開始時間:</strong> ${time}</p>
             ${participants ? `<p><strong>人数:</strong> ${participants}名</p>` : ''}
-            ${minorCount ? `<p><strong>高校生以下:</strong> ${minorCount}名${minorGrades ? `（${minorGrades}）` : ''}</p>` : ''}
+            ${minorCount ? `<p><strong>高校生以下:</strong> ${minorCount}名${minorGrades ? `（${escapeHtml(minorGrades)}）` : ''}</p>` : ''}
             ${companionCount ? `<p><strong>同伴者（付き添い）:</strong> ${companionCount}名（無料）</p>` : ''}
             ${participantChoice?.summary ? `<p><strong>${escapeHtml(participantChoice.label)}:</strong> ${escapeHtml(participantChoice.summary)}</p>` : ''}
             ${consentAgreedAt ? `<p><strong>参加同意書:</strong> 同意済み</p>` : ''}
@@ -351,13 +351,13 @@ export function generate3DPrintingRequestEmail(
           <h1>3Dプリント制作依頼確認</h1>
         </div>
         <div class="content">
-          <p>${userName} 様</p>
+          <p>${escapeHtml(userName)} 様</p>
           <p>3Dプリント制作のご依頼を承りました。</p>
           
           <div class="info-box">
             <h3>依頼内容</h3>
             <p><strong>依頼番号:</strong> ${requestId}</p>
-            <p><strong>ファイル名:</strong> ${fileName}</p>
+            <p><strong>ファイル名:</strong> ${escapeHtml(fileName)}</p>
             <p><strong>選択材料:</strong> ${material}</p>
           </div>
           

@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
     }
     // 参加同意書への同意がない予約は決済に進めない。
-    // ⚠ 同意の日時と本文はここ（サーバー）で書く。予約行はブラウザが anon キーで作るので、
-    //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうる
+    // ⚠ 同意の日時と本文はここで書く（仮予約を作る /api/create-booking は同意を記録しない）。
+    //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうるので使わない
     const { data: bookingRow } = await supabaseAdmin
       .from('bookings')
       .select('id, status, workshop_id, stripe_session_id')
@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
     // 同意の記録と一緒に、満額と選択の控えを書く。
     // ⚠ 決済セッションを作る前に書くこと。後に書くと、書き込みに失敗しても客は支払えてしまい、
     //   「何を選んだか」が予約行に残らない（スタッフが用意するものが分からなくなる）
-    // ⚠ 予約行はブラウザが作るので、そこにある金額・選択は信用しない。満額は必ずここで書き直す
-    //   （選択肢の無いワークショップでは 参加費×人数 で、正常なブラウザが書く値と同じ）
+    // ⚠ 仮予約（/api/create-booking）の total_amount は 参加費×人数 だけで、選んだものの代金を含まない。
+    //   満額は必ずここで書き直す（選択肢の無いワークショップでは同じ値になる）
     const { error: recordError } = await supabaseAdmin
       .from('bookings')
       .update({

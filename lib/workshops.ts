@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Workshop, WorkshopCategory, WorkshopSession } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import { jstToday, sessionStartJst } from '@/lib/booking-deadline'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -147,8 +148,12 @@ export interface WorkshopActivityStats {
 //
 // 取得行数は現在114行。PostgREST の行数上限に届くようになったら、
 // 集計を RPC (SECURITY DEFINER) に移すこと。
+//
+// ⚠ bookings / customers は個人情報なので service role で読む（このファイルの他の取得は
+//   公開情報なので anon のまま）。返すのは集計値だけで、行の中身はページへ渡さない。
 export const getWorkshopActivityStats = cache(async (): Promise<WorkshopActivityStats> => {
-  const { data } = await supabase
+  if (!supabaseAdmin) return { heldDays: 0, participants: 0, firstHeldDate: null }
+  const { data } = await supabaseAdmin
     .from('bookings')
     .select('booking_date, participants, companion_count, customer:customers(email)')
     .eq('status', 'confirmed')

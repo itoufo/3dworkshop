@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
 import { isBookingSource } from '@/lib/booking-sources'
+import { fetchAllRows } from '@/lib/supabase-fetch-all'
+import { ADMIN_CUSTOMER_COLUMNS } from '@/lib/admin-customer-columns'
 
-// 管理画面からの予約（売上）の手動登録。
+// 管理画面の予約: 一覧（GET）・対応状況の変更（PATCH）・手動登録（POST）。
 //
-// メール・電話・他の予約サイト（ストアカ等）経由で受けた予約を、サイトの予約と同じ
+// 手動登録は、メール・電話・他の予約サイト（ストアカ等）経由で受けた予約を、サイトの予約と同じ
 // bookings に入れて、売上と人数の集計に乗せるための口。Stripe は通らないので
 // 支払状況は管理者の入力値をそのまま使う。
 //
-// ⚠ 書き込みは anon キーではなくこのルート（service role）経由にする（/api/admin/customers と同じ理由）。
+// ⚠ 読み書きは anon キーではなくこのルート（service role）経由にする（/api/admin/customers と同じ理由）。
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,6 +32,97 @@ function nonNegativeInt(value: unknown): number | null {
   if (value === '' || value === null || value === undefined) return null
   const n = Number(value)
   return Number.isInteger(n) && n >= 0 && n <= MAX_AMOUNT ? n : null
+}
+
+/** 一覧の対応状況の欄で選べる値（Booking['status']） */
+const LIST_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'] as const
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * 予約一覧で返す列。管理画面（app/admin/page.tsx）が読むものだけ。
+ * ⚠ `*` や `workshops(*)` で返さない。ワークショップ行は本文（rich_description）が1件あたり数KB〜十数KB あり、
+ *   予約の行数ぶん重複して載る。全列で返すと予約 約570件で Vercel の応答サイズ上限（4.5MB）を超え、
+ *   一覧も売上の集計も読めなくなる（2026-10 時点の実測: 220件で 1.7MB）。
+ *   画面に項目を足すときは、ここに必要な列だけを足す。
+ */
+const BOOKING_LIST_COLUMNS = [
+  'id, workshop_id, session_id, customer_id, coupon_id, booking_date, booking_time, participants',
+  'total_amount, discount_amount, commission_amount, status, payment_status',
+  'minor_count, minor_grades, companion_count, participant_choices, source, source_detail, created_at',
+  'workshop:workshops(id, title, event_date, event_time, location, participant_option)',
+  'workshop_session:workshop_sessions(id, event_date, event_time)',
+  `customer:customers(${ADMIN_CUSTOMER_COLUMNS})`,
+  'coupon:coupons(id, code)',
+].join(', ')
+
+/** 予約の一覧。ワークショップ・開催回・顧客・クーポンを付けて、新しい順に全件返す */
+export async function GET() {
+  const denied = await requireAdmin()
+  if (denied) return denied
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'server_misconfigured', message: 'サーバーの設定に問題があります' }, { status: 500 })
+  }
+  const admin = supabaseAdmin
+
+  // ⚠ 古い順に読んで、返す前に新しい順へ並べ替える。新しい順のままページを繰ると、
+  //   読んでいる最中に予約が1件入ったとき全行が1つ後ろへずれ、ページの境目の行が2回入る
+  //   （売上に2回足される）。古い順なら新しい行は末尾に付くだけなので、ずれない
+  const { data, error } = await fetchAllRows((from, to) =>
+    admin
+      .from('bookings')
+      .select(BOOKING_LIST_COLUMNS)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, to),
+  )
+  if (error) {
+    console.error('[admin/bookings] list', error.code, error.message)
+    return NextResponse.json({ error: 'db_error', message: '予約の取得に失敗しました' }, { status: 500 })
+  }
+
+  return NextResponse.json({ bookings: data.reverse() })
+}
+
+/** 対応状況（保留・確定・キャンセル）の変更 */
+export async function PATCH(request: NextRequest) {
+  const denied = await requireAdmin()
+  if (denied) return denied
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'server_misconfigured', message: 'サーバーの設定に問題があります' }, { status: 500 })
+  }
+
+  let body: { id?: unknown; status?: unknown }
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'bad_request', message: 'リクエストの形式が不正です' }, { status: 400 })
+  }
+  if (!body || typeof body.id !== 'string' || !UUID.test(body.id)) {
+    return NextResponse.json({ error: 'bad_request', message: '対象の指定が正しくありません' }, { status: 400 })
+  }
+  const status = LIST_STATUSES.find((s) => s === body.status)
+  if (!status) {
+    return NextResponse.json({ error: 'bad_request', message: '知らない対応状況です' }, { status: 400 })
+  }
+
+  // ⚠ 更新できた行を必ず確かめる。0件でもエラーは出ないので、確かめないと
+  //   「変えたのに変わっていない」が画面から分からない
+  const { data, error } = await supabaseAdmin
+    .from('bookings')
+    .update({ status })
+    .eq('id', body.id)
+    .select('id')
+
+  if (error) {
+    console.error('[admin/bookings] update', error.code, error.message)
+    return NextResponse.json({ error: 'db_error', message: 'ステータスの更新に失敗しました' }, { status: 500 })
+  }
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: 'not_found', message: '対象の予約が見つかりませんでした' }, { status: 404 })
+  }
+
+  return NextResponse.json({ ok: true })
 }
 
 export async function POST(request: NextRequest) {

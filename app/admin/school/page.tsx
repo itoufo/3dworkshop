@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { adminJson } from '@/lib/admin-api-client'
 import { Users, CheckCircle, XCircle, Clock, Mail, Phone, User, BookOpen } from 'lucide-react'
 
 interface SchoolEnrollment {
@@ -32,6 +32,8 @@ interface SchoolEnrollment {
 export default function SchoolAdminPage() {
   const [enrollments, setEnrollments] = useState<SchoolEnrollment[]>([])
   const [loading, setLoading] = useState(true)
+  /** 一覧が読めなかったときの表示。空一覧と区別するために要る */
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [selectedClass, setSelectedClass] = useState<string>('all')
 
@@ -40,39 +42,31 @@ export default function SchoolAdminPage() {
   }, [])
 
   async function fetchEnrollments() {
-    try {
-      const { data, error } = await supabase
-        .from('school_enrollments')
-        .select(`
-          *,
-          customer:customers(*)
-        `)
-        .order('enrollment_date', { ascending: false })
-
-      if (error) throw error
-      setEnrollments(data || [])
-    } catch (error) {
-      console.error('Error fetching enrollments:', error)
-    } finally {
-      setLoading(false)
+    // 氏名・連絡先が入っているので、管理用の API（service role）経由で読む
+    const result = await adminJson<{ enrollments: SchoolEnrollment[] }>('/api/admin/school-enrollments')
+    if (result.ok) {
+      setEnrollments(result.data.enrollments || [])
+      setLoadError(null)
+    } else {
+      // ⚠ 失敗を黙って空一覧にしない。「0件」と「読めなかった」は画面上で区別できない
+      console.error('Error fetching enrollments:', result.message)
+      setLoadError(result.message)
     }
+    setLoading(false)
   }
 
   async function updateEnrollmentStatus(enrollmentId: string, status: string) {
-    try {
-      const { error } = await supabase
-        .from('school_enrollments')
-        .update({ status })
-        .eq('id', enrollmentId)
-
-      if (error) throw error
-      
-      // リストを更新
-      fetchEnrollments()
-    } catch (error) {
-      console.error('Error updating enrollment status:', error)
+    const result = await adminJson<{ ok: true }>('/api/admin/school-enrollments', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: enrollmentId, status }),
+    })
+    if (!result.ok) {
+      console.error('Error updating enrollment status:', result.message)
       alert('ステータスの更新中にエラーが発生しました')
+      return
     }
+    // リストを更新
+    fetchEnrollments()
   }
 
   const filteredEnrollments = enrollments.filter(enrollment => {
@@ -131,6 +125,12 @@ export default function SchoolAdminPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-8">スクール生管理</h1>
+
+        {loadError && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-base text-red-800">
+            スクール申込を読み込めませんでした（{loadError}）。再読み込みしてください。
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
