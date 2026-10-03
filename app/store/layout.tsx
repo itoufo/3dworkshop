@@ -13,9 +13,10 @@ import { MAIN_SITE_URL, STORE_URL } from '@/lib/store/urls'
 export const metadata: Metadata = {
   metadataBase: new URL(STORE_URL),
   title: {
-    // ⚠ ここには「| 3DLab」を付けない。app/layout.tsx の template（'%s | 3DLab'）が付ける
-    default: 'みんなの作品ストア',
-    template: '%s | 3DLab みんなの作品ストア',
+    // ⚠ 既定のタイトルは absolute で書く。default で書くと app/layout.tsx の template（'%s | 3DLab'）が
+    //   付いて「3DLab Store | 3DLab」と名前が重なる
+    absolute: '3DLab Store',
+    template: '%s | 3DLab Store',
   },
   description:
     '3DLab のスクール生がつくった 3D データと、3DLab が印刷してお届けする作品のストア。データをダウンロードして自分で印刷することも、完成品を届けてもらうこともできます。',
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   //   null で app/layout.tsx の canonical（https://3dlab.jp）も打ち消す。
   alternates: { canonical: null },
   openGraph: {
-    siteName: '3DLab みんなの作品ストア',
+    siteName: '3DLab Store',
     locale: 'ja_JP',
     type: 'website',
     // ⚠ openGraph はここで丸ごと置き換わるので、画像も書き直す（無いと共有時に画像が出ない）
