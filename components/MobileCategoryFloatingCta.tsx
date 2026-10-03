@@ -5,12 +5,11 @@ import Link from 'next/link'
 import { Calendar, Clock, Users, ArrowRight, Sparkles, X } from 'lucide-react'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
 import { formatPrice } from '@/lib/price'
+import { useBookableSessions, type BookableSessionInput } from '@/lib/use-bookable-sessions'
 
-interface SessionRef {
-  id: string
+interface SessionRef extends BookableSessionInput {
   event_date: string
   event_time: string | null
-  workshop_id: string
   workshop_price: number
   workshop_max_participants: number
 }
@@ -26,8 +25,10 @@ function formatDateLong(iso: string): string {
   })
 }
 
-export default function MobileCategoryFloatingCta({ categorySlug, upcomingSessions }: Props) {
+export default function MobileCategoryFloatingCta({ categorySlug, upcomingSessions: sessions }: Props) {
   const [open, setOpen] = useState(false)
+  // 締切を過ぎた回は閲覧時に除く（ページは ISR で古いことがある）
+  const upcomingSessions = useBookableSessions(sessions)
 
   // body scroll lock
   useEffect(() => {

@@ -5,16 +5,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import WorkshopRequestForm from '@/components/WorkshopRequestForm'
-import { jstToday, sessionStartJst } from '@/lib/booking-deadline'
+import { jstToday, sessionStartJst, zeroBookingCutoffJst } from '@/lib/booking-deadline'
 import MobileCategoryFloatingCta from '@/components/MobileCategoryFloatingCta'
+import CategorySessionList, { type CategorySession } from '@/components/CategorySessionList'
 import MediaCoverage from '@/components/MediaCoverage'
-import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
-import { ArrowRight, Calendar, Clock, Users, Sparkles } from 'lucide-react'
+import { ArrowRight, Calendar, Sparkles } from 'lucide-react'
 import { optimizeImageUrl } from '@/lib/image-optimization'
 import styles from '@/app/workshops/[id]/workshop.module.css'
 import Footer from '@/components/Footer'
 import { optimizeRichContentImages } from '@/lib/rich-content'
-import { formatPrice } from '@/lib/price'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -45,6 +44,8 @@ interface SessionRef {
   workshop_price: number
   workshop_max_participants: number
   workshop_duration: number
+  start_ms: number
+  zero_booking_cutoff_ms: number | null
 }
 
 // JST の今日。Vercel の関数は UTC で動くので、素の Date だと 0〜9時に前日になる
@@ -94,7 +95,7 @@ export default async function CategoryPillarPage({ params }: Props) {
   // カテゴリ配下の workshops + sessions を取得
   const { data: workshops } = await supabase
     .from('workshops')
-    .select('id, title, description, rich_description, price, duration, max_participants, location, image_url, updated_at, sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)')
+    .select('id, title, description, rich_description, price, duration, max_participants, location, image_url, updated_at, zero_booking_cutoff_days_before, zero_booking_cutoff_time, sessions:workshop_sessions(id, event_date, event_time, status, is_family_friendly)')
     .eq('category_id', category.id)
     .eq('is_service', false)
     .eq('is_private', false)
@@ -120,6 +121,8 @@ export default async function CategoryPillarPage({ params }: Props) {
         workshop_price: w.price,
         workshop_max_participants: w.max_participants,
         workshop_duration: w.duration,
+        start_ms: sessionStartJst(s).getTime(),
+        zero_booking_cutoff_ms: zeroBookingCutoffJst(w, s)?.getTime() ?? null,
       }
       // 開始時刻（JST）を過ぎた当日の回は予約できないので数えない
       if (s.status === 'scheduled' && s.event_date >= today && sessionStartJst(s).getTime() > nowMs) upcomingSessions.push(ref)
@@ -131,6 +134,19 @@ export default async function CategoryPillarPage({ params }: Props) {
     return (a.event_time || '').localeCompare(b.event_time || '')
   })
   pastSessions.sort((a, b) => b.event_date.localeCompare(a.event_date))
+
+  // 日程リスト（PC・モバイル）に渡す形。予約0人締切は閲覧時にブラウザ側で判定する
+  const bookableSessions: CategorySession[] = upcomingSessions.map((s) => ({
+    id: s.id,
+    workshop_id: s.workshop_id,
+    event_date: s.event_date,
+    event_time: s.event_time,
+    is_family_friendly: s.is_family_friendly,
+    workshop_price: s.workshop_price,
+    workshop_max_participants: s.workshop_max_participants,
+    start_ms: s.start_ms,
+    zero_booking_cutoff_ms: s.zero_booking_cutoff_ms,
+  }))
 
   // 代表 workshop = 最新の workshop (説明文表示用)
   const representativeWorkshop = (workshops || [])[0] || null
@@ -272,69 +288,7 @@ export default async function CategoryPillarPage({ params }: Props) {
             <div className="lg:col-span-1 hidden lg:block">
               <div className="lg:sticky lg:top-24 space-y-6">
                 {/* 予約可能な日程 */}
-                <div className="bg-white rounded-2xl shadow-xl ring-2 ring-purple-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center text-white">
-                      <Calendar className="w-5 h-5 mr-2" />
-                      <h2 className="text-xl font-bold">予約可能な日程</h2>
-                    </div>
-                    {upcomingSessions.length > 0 && (
-                      <span className="bg-white text-purple-700 text-sm font-bold rounded-full px-3 py-0.5 flex-shrink-0">
-                        {upcomingSessions.length}件
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="p-5">
-                    {upcomingSessions.length === 0 ? (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
-                        <Sparkles className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                        <p className="text-gray-900 font-medium text-sm mb-1">予約可能な日程はありません</p>
-                        <p className="text-gray-600 text-xs">下のフォームからリクエストを送ってください</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-                        {upcomingSessions.map((s) => (
-                          <Link
-                            key={s.id}
-                            href={`/workshops/${s.workshop_id}`}
-                            className="group block bg-gradient-to-br from-white to-purple-50/40 rounded-xl p-4 border-2 border-purple-100 hover:border-purple-400 hover:shadow-lg transition-all"
-                          >
-                            <div className="flex items-center justify-between gap-2 mb-1.5">
-                              <span className="text-base font-bold text-gray-900 truncate">
-                                {formatDateLong(s.event_date)}
-                              </span>
-                              <span className="text-base font-bold text-purple-700 flex-shrink-0">
-                                {formatPrice(s.workshop_price)}
-                              </span>
-                            </div>
-                            <div className="text-sm text-gray-600 flex items-center gap-3 mb-3">
-                              {s.event_time && (
-                                <span className="inline-flex items-center">
-                                  <Clock className="w-3.5 h-3.5 mr-1 text-purple-400" />
-                                  {s.event_time.slice(0, 5)}〜
-                                </span>
-                              )}
-                              <span className="inline-flex items-center">
-                                <Users className="w-3.5 h-3.5 mr-1 text-purple-400" />
-                                最大{s.workshop_max_participants}名
-                              </span>
-                            </div>
-                            {s.is_family_friendly && (
-                              <div className="mb-3">
-                                <FamilyFriendlyBadge />
-                              </div>
-                            )}
-                            <span className="flex items-center justify-center w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm rounded-full py-2.5 shadow group-hover:shadow-md transition-all">
-                              この日程を予約する
-                              <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <CategorySessionList sessions={bookableSessions} />
 
                 {/* リクエストフォーム: 日程があるときは折りたたみで控えめに */}
                 {upcomingSessions.length === 0 ? (
@@ -374,14 +328,7 @@ export default async function CategoryPillarPage({ params }: Props) {
       {/* モバイル floating CTA + bottom sheet (lg未満のみ) */}
       <MobileCategoryFloatingCta
         categorySlug={slug}
-        upcomingSessions={upcomingSessions.map((s) => ({
-          id: s.id,
-          event_date: s.event_date,
-          event_time: s.event_time,
-          workshop_id: s.workshop_id,
-          workshop_price: s.workshop_price,
-          workshop_max_participants: s.workshop_max_participants,
-        }))}
+        upcomingSessions={bookableSessions}
       />
 
       {/* SEO Content */}
