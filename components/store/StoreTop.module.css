@@ -77,7 +77,9 @@
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 0.9rem 0.7rem;
-  background: linear-gradient(180deg, transparent, rgb(25 13 42 / 0.86));
+  /* 作品写真は白っぽいものが多い。文字の1行目の高さまでに十分暗くして、白文字が読めるようにする */
+  background: linear-gradient(180deg, transparent, rgb(25 13 42 / 0.88) 42%);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
 }
 
 /* ページを開いたときの1回だけの動き: 写真が下から積層されるように現れる。
