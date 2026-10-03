@@ -21,8 +21,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Secrets の CLAUDE_CODE_OAUTH_TOKEN が無いうちは、失敗で赤くせずにスキップする
+  # （ジョブの if では secrets を直接見られないので、出力に写してから判定する）
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLAUDE_CODE_OAUTH_TOKEN が未設定なので、Claude のレビューはスキップします"
+          fi
+
   review:
+    needs: preflight
     if: >-
+      needs.preflight.outputs.enabled == 'true' &&
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
