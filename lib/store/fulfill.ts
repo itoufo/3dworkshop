@@ -2,6 +2,7 @@ import 'server-only'
 import type Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
+import { storeLocaleOf, storePath } from './locale'
 import { notifyAdminOrphanPayment, notifyStoreCheckoutPaid } from './notify'
 import { createStoreDownloadToken, STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from './orders'
 import { STORE_URL } from './urls'
@@ -12,6 +13,10 @@ import { STORE_URL } from './urls'
  *
  * ⚠ pending の行だけを paid にする。Stripe は同じイベントを再送するので、2回目以降は0行になり、
  *   メールも合言葉も二重に出ない。
+ *
+ * 購入者の言語は、決済画面を作るときに載せた metadata.locale から読む（lib/store/checkout-session.ts）。
+ * 'en' なら、購入者あてのメールとダウンロードのリンクを英語のページにする。それ以外（古い決済画面で
+ * metadata に無い場合を含む）は日本語。
  */
 export async function fulfillStorePayment(
   session: Stripe.Checkout.Session,
@@ -19,6 +24,7 @@ export async function fulfillStorePayment(
 ): Promise<void> {
   if (!supabaseAdmin) throw new Error('Supabase admin client not available')
 
+  const locale = storeLocaleOf(session.metadata?.locale)
   const collected = session.collected_information?.shipping_details
   const address = collected?.address
   const now = new Date()
@@ -120,11 +126,23 @@ export async function fulfillStorePayment(
         session.customer_details?.phone ? `電話 ${session.customer_details.phone}` : '',
       ].filter(Boolean)
     : []
+  // 購入者あての書き方。英語では番地から国へ、記号（〒・電話）を付けずに書く
+  const buyerShippingLines =
+    locale === 'en' && address
+      ? [
+          collected?.name || '',
+          [address.line1, address.line2].filter(Boolean).join(', '),
+          [[address.city, address.state].filter(Boolean).join(', '), address.postal_code].filter(Boolean).join(' '),
+          'Japan',
+          session.customer_details?.phone ? `Phone: ${session.customer_details.phone}` : '',
+        ].filter(Boolean)
+      : shippingLines
 
   const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v)
   await notifyStoreCheckoutPaid({
     orderNo: ('checkoutId' in match ? match.checkoutId : match.orderId).slice(0, 8),
-    buyerName: paid[0].buyer_name || session.customer_details?.name || 'お客様',
+    locale,
+    buyerName: paid[0].buyer_name || session.customer_details?.name || (locale === 'en' ? 'Customer' : 'お客様'),
     buyerEmail: paid[0].buyer_email || session.customer_details?.email || '',
     lines: paid.map((o) => {
       const product = one(o.product as { title: string } | { title: string }[] | null)
@@ -141,10 +159,11 @@ export async function fulfillStorePayment(
         sellerAmount: o.seller_amount,
         sellerName: seller?.display_name ?? '',
         sellerEmail: seller?.login_email ?? null,
-        downloadUrl: token ? `${STORE_URL}/download#${token}` : undefined,
+        downloadUrl: token ? `${STORE_URL}${storePath(locale, '/download')}#${token}` : undefined,
       }
     }),
     shippingLines,
+    buyerShippingLines,
     shippingLeadTimeText: SHIPPING_LEAD_TIME_TEXT,
     downloadValidDays: STORE_DOWNLOAD_VALID_DAYS,
     downloadMaxCount: STORE_DOWNLOAD_MAX_COUNT,

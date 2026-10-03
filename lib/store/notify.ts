@@ -1,6 +1,17 @@
 import 'server-only'
 import { sendEmail } from '@/app/lib/email'
+import {
+  storeBuyerPaidEmail,
+  storeLineName,
+  storeLineRow,
+  storeSubjectItems,
+  type PaidStoreCheckout,
+  type PaidStoreLine,
+} from './buyer-email'
+import { esc, layout, yen } from './email-html'
 import { MAIN_SITE_URL, STORE_URL } from './urls'
+
+export type { PaidStoreCheckout, PaidStoreLine } from './buyer-email'
 
 /**
  * ストアのお知らせメール。
@@ -12,18 +23,6 @@ import { MAIN_SITE_URL, STORE_URL } from './urls'
 /** 出品の申請・審査待ちを知らせる先 */
 const STORE_ADMIN_NOTIFY = '3dlab@sunu25.com'
 const STORE_ADMIN_CC = ['yuho.ito@walker.co.jp']
-
-function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
-}
-
-function layout(title: string, body: string): string {
-  return `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111827;line-height:1.7;">
-  <h2 style="color:#7c3aed;">${esc(title)}</h2>
-  ${body}
-  <p style="color:#6b7280;font-size:13px;margin-top:32px;">3DLab Store<br>${STORE_URL}</p>
-</div>`
-}
 
 async function safeSend(to: string, subject: string, html: string, cc?: string[]) {
   try {
@@ -75,45 +74,6 @@ export async function notifySellerReviewed(input: {
   await safeSend(input.to, subject, html)
 }
 
-const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`
-
-export interface PaidStoreLine {
-  kind: 'data' | 'print'
-  title: string
-  variantLabel: string | null
-  quantity: number
-  /** 1個の価格 */
-  price: number
-  /** この行の出品者の取り分（数量込み） */
-  sellerAmount: number
-  sellerName: string
-  sellerEmail: string | null
-  /** データのときだけ */
-  downloadUrl?: string
-}
-
-export interface PaidStoreCheckout {
-  /** メールに出す注文番号 */
-  orderNo: string
-  buyerName: string
-  buyerEmail: string
-  lines: PaidStoreLine[]
-  /** 完成品があるときだけ。⚠ 出品者宛てには載せない */
-  shippingLines: string[]
-  shippingLeadTimeText: string
-  downloadValidDays: number
-  downloadMaxCount: number
-}
-
-function lineName(l: PaidStoreLine): string {
-  const kind = l.kind === 'data' ? '3D データ' : '完成品'
-  return `${l.title}（${kind}${l.variantLabel ? `・${l.variantLabel}` : ''}）`
-}
-
-function lineRow(l: PaidStoreLine): string {
-  return `<li>${esc(lineName(l))} × ${l.quantity} … ${yen(l.price * l.quantity)}</li>`
-}
-
 /**
  * 支払いが済んだ決済（1点でもカートでも）を、購入者・管理者・出品者に知らせる。
  * 購入者と管理者には1通ずつ、出品者には自分の作品の行だけを1通ずつ。
@@ -121,34 +81,13 @@ function lineRow(l: PaidStoreLine): string {
  */
 export async function notifyStoreCheckoutPaid(c: PaidStoreCheckout) {
   const total = c.lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
-  const dataLines = c.lines.filter((l) => l.kind === 'data')
   const hasPrint = c.lines.some((l) => l.kind === 'print')
-  const first = lineName(c.lines[0])
-  const subjectItems = c.lines.length > 1 ? `${first} ほか${c.lines.length - 1}点` : first
+  const subjectItems = storeSubjectItems(c)
 
-  // 購入者
+  // 購入者（買ったときの言語で送る。組み立ては lib/store/buyer-email.ts）
   {
-    const downloads = dataLines.length
-      ? `<p>3D データは下のボタンからダウンロードできます（${c.downloadValidDays}日間・${c.downloadMaxCount}回まで）。このメールは保存しておいてください。</p>
-  ${dataLines
-    .map(
-      (l) => `<p style="margin:16px 0;">${esc(lineName(l))}<br><a href="${esc(l.downloadUrl ?? '')}" style="display:inline-block;margin-top:8px;background:#7c3aed;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none;font-weight:bold;">データをダウンロード</a></p>`,
-    )
-    .join('')}
-  <p style="font-size:14px;color:#4b5563;">データはご自身で印刷して楽しむためのものです。再配布・再販売はできません。</p>`
-      : ''
-    const shipping = hasPrint
-      ? `<p>完成品は 3DLab が印刷して、${esc(c.shippingLeadTimeText)}します。</p>
-  ${c.shippingLines.length ? `<p>お届け先:<br>${c.shippingLines.map(esc).join('<br>')}</p>` : ''}`
-      : ''
-    const html = layout('ご購入ありがとうございます', `<p>${esc(c.buyerName)} 様</p>
-  <p>ご購入いただき、ありがとうございます。</p>
-  <ul>${c.lines.map(lineRow).join('')}</ul>
-  <p>合計 ${yen(total)}（税込・送料込）<br>注文番号: ${esc(c.orderNo)}</p>
-  ${downloads}
-  ${shipping}
-  <p style="font-size:14px;color:#4b5563;">ご不明な点は 3dlab@sunu25.com までお問い合わせください。</p>`)
-    await safeSend(c.buyerEmail, `ご購入ありがとうございます: ${subjectItems}`, html)
+    const { subject, html } = storeBuyerPaidEmail(c)
+    await safeSend(c.buyerEmail, subject, html)
   }
 
   // 管理者（完成品はここから作業が始まる）
@@ -156,10 +95,10 @@ export async function notifyStoreCheckoutPaid(c: PaidStoreCheckout) {
     const subject = `【ストア】${hasPrint ? '印刷の注文' : 'データの販売'}: ${subjectItems}`
     const html = layout(subject.replace('【ストア】', ''), `
   <ul>${c.lines
-    .map((l) => `<li>${esc(lineName(l))} × ${l.quantity} … ${yen(l.price * l.quantity)}（出品者 ${esc(l.sellerName)}・取り分 ${yen(l.sellerAmount)}）</li>`)
+    .map((l) => `<li>${esc(storeLineName(l))} × ${l.quantity} … ${yen(l.price * l.quantity)}（出品者 ${esc(l.sellerName)}・取り分 ${yen(l.sellerAmount)}）</li>`)
     .join('')}</ul>
   <p>合計 ${yen(total)}<br>注文番号: ${esc(c.orderNo)}</p>
-  <p>購入者: ${esc(c.buyerName)}（${esc(c.buyerEmail)}）</p>
+  <p>購入者: ${esc(c.buyerName)}（${esc(c.buyerEmail)}）${c.locale === 'en' ? '<br>購入者の言語: 英語（決済画面と購入者あてのメールは英語で出しています）' : ''}</p>
   ${c.shippingLines.length ? `<p>お届け先:<br>${c.shippingLines.map(esc).join('<br>')}</p>` : ''}
   <p><a href="${MAIN_SITE_URL}/admin/store/orders">管理画面で注文を見る</a></p>`)
     await safeSend(STORE_ADMIN_NOTIFY, subject, html, STORE_ADMIN_CC)
@@ -176,10 +115,10 @@ export async function notifyStoreCheckoutPaid(c: PaidStoreCheckout) {
     const html = layout('作品が売れました', `
   <p>${esc(lines[0].sellerName)} さん</p>
   <p>次の作品が売れました。${lines.some((l) => l.kind === 'print') ? '完成品の印刷と発送は 3DLab が行います。' : ''}</p>
-  <ul>${lines.map(lineRow).join('')}</ul>
+  <ul>${lines.map((l) => storeLineRow(l)).join('')}</ul>
   <p>あなたの取り分: <strong>${yen(amount)}</strong></p>
   <p><a href="${STORE_URL}/sell">出品者メニューを開く</a></p>`)
-    await safeSend(email, `作品が売れました: ${lineName(lines[0])}${lines.length > 1 ? ` ほか${lines.length - 1}点` : ''}`, html)
+    await safeSend(email, `作品が売れました: ${storeLineName(lines[0])}${lines.length > 1 ? ` ほか${lines.length - 1}点` : ''}`, html)
   }
 }
 

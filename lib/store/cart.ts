@@ -81,7 +81,10 @@ export function addToStoreCart(line: Omit<StoreCartLine, 'quantity'>, quantity: 
   if (existing) {
     existing.quantity = result
   } else {
-    if (lines.length >= STORE_CART_MAX_LINES) throw new Error(`カートに入れられるのは ${STORE_CART_MAX_LINES} 種類までです`)
+    // ⚠ 画面はこの code を見て、その言語の文言を出す（message は日本語のまま残す）
+    if (lines.length >= STORE_CART_MAX_LINES) {
+      throw Object.assign(new Error(`カートに入れられるのは ${STORE_CART_MAX_LINES} 種類までです`), { code: 'cart_full' as const })
+    }
     lines.push({ ...line, quantity: result })
   }
   write(lines)

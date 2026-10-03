@@ -3,6 +3,8 @@
 import { useMemo } from 'react'
 import { axisValues, isAvailable, type Selection } from '@/lib/product-variants'
 import { asVariantItems, type StoreVariant } from '@/lib/store/variants'
+import { STORE_UI } from '@/lib/store/ui-copy'
+import { useStoreLocale } from './StoreLocale'
 
 interface Props {
   axes: string[]
@@ -18,13 +20,20 @@ interface Props {
 export default function VariantPicker({ axes, variants, selection, onChoose }: Props) {
   const items = useMemo(() => asVariantItems(variants), [variants])
   const values = useMemo(() => axisValues(items, axes), [items, axes])
+  const locale = useStoreLocale()
+  const t = STORE_UI[locale].variant
+  /** 項目の名前と値は出品者が入れた文字。英語のページでは lang="ja" を付けて出す */
+  const userText = locale === 'en' ? { lang: 'ja' } : {}
 
   return (
     <div className="space-y-3">
       {axes.map((axis) => (
         <fieldset key={axis}>
           <legend className="text-base text-gray-700 mb-2">
-            {axis}：<span className="font-semibold text-gray-900">{selection[axis] ?? '未選択'}</span>
+            <span {...userText}>{t.current(axis, selection[axis]).label}</span>
+            <span className="font-semibold text-gray-900" {...(selection[axis] ? userText : {})}>
+              {t.current(axis, selection[axis]).value}
+            </span>
           </legend>
           <div className="flex flex-wrap gap-2">
             {values[axis].map((value) => {
@@ -36,7 +45,8 @@ export default function VariantPicker({ axes, variants, selection, onChoose }: P
                   type="button"
                   onClick={() => onChoose(axis, value)}
                   aria-pressed={selected}
-                  title={available ? undefined : `${value} はいまの組み合わせにはありません（選ぶと他の項目を合わせます）`}
+                  {...userText}
+                  title={available ? undefined : t.unavailable(value)}
                   className={`px-3 py-1.5 rounded-lg border-2 text-base transition-colors ${
                     selected
                       ? 'border-purple-600 bg-purple-50 text-purple-800 font-semibold'

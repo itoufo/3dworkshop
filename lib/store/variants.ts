@@ -6,6 +6,8 @@
  * ⚠ 選択肢は完成品だけ。3D データはサイズや色で変わらないので、データの価格は作品に1つ。
  */
 import { PRICE_MAX, PRICE_MIN } from './product-rules'
+import type { StoreLocale } from './locale'
+import { STORE_MESSAGES } from './messages'
 
 export interface StoreVariant {
   /**
@@ -167,22 +169,25 @@ export function resolveOffer(
   },
   kind: 'data' | 'print',
   variantId: unknown,
+  /** 買えない理由の文言の言語。省くと日本語 */
+  locale: StoreLocale = 'ja',
 ): { price: number; variantId: string | null; variantLabel: string | null } | { error: string } {
+  const m = STORE_MESSAGES[locale]
   // ⚠ 組み合わせを指して来たのに、その作品が今は組み合わせを持たない（出品者が選択肢をやめた等）なら止める。
   //   黙って別の値段の品物として売らない
   const pointsAtVariant = typeof variantId === 'string' && variantId !== ''
   if (kind === 'data') {
-    if (pointsAtVariant) return { error: '選んだ組み合わせが見つかりません。ページを読み込み直してください' }
-    if (!product.sell_data || product.data_price == null) return { error: 'この作品はデータでは販売していません' }
+    if (pointsAtVariant) return { error: m.variantNotFound }
+    if (!product.sell_data || product.data_price == null) return { error: m.dataNotSold }
     return { price: product.data_price, variantId: null, variantLabel: null }
   }
-  if (!product.sell_print) return { error: 'この作品は完成品では販売していません' }
+  if (!product.sell_print) return { error: m.printNotSold }
   if (hasVariants(product)) {
     const variant = product.print_variants.find((v) => v.id === variantId)
-    if (!variant) return { error: '選んだ組み合わせが見つかりません。ページを読み込み直してください' }
+    if (!variant) return { error: m.variantNotFound }
     return { price: variant.price, variantId: variant.id, variantLabel: variantName(variant, product.option_axes) }
   }
-  if (pointsAtVariant) return { error: '選んだ組み合わせが見つかりません。ページを読み込み直してください' }
-  if (product.print_price == null) return { error: 'この作品は完成品では販売していません' }
+  if (pointsAtVariant) return { error: m.variantNotFound }
+  if (product.print_price == null) return { error: m.printNotSold }
   return { price: product.print_price, variantId: null, variantLabel: null }
 }

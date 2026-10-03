@@ -1,5 +1,6 @@
 import { SHIPPING_LEAD_TIME_DAYS, SHIPPING_LEAD_TIME_TEXT } from '@/lib/shipping'
 import { STORE_DOWNLOAD_MAX_COUNT, STORE_DOWNLOAD_VALID_DAYS } from './download-limits'
+import type { StoreLocale } from './locale'
 import { SELLER_MIN_ENROLLED_MONTHS } from './urls'
 
 /**
@@ -10,11 +11,11 @@ import { SELLER_MIN_ENROLLED_MONTHS } from './urls'
  *   app/api/store/cart/checkout が送料を足さない）。lib/shipping.ts の SHIPPING_FEE は本サイトの
  *   物販のもので、ストアの決済には効かない。ストアの送料を変えるときは、それらとここを一緒に直す。
  */
-export type StoreLocale = 'ja' | 'en'
+export type { StoreLocale } from './locale'
 
 export interface StoreTopCopy {
   hero: { title: string; lead: string; browse: string; how: string }
-  /** 英語版だけに出す注意書き（作品ページと決済が日本語であること、発送先が日本国内であること） */
+  /** 英語版だけに出す注意書き（発送先が日本国内であること、作品名と説明は出品者が書いた日本語のままであること） */
   notice: string | null
   ways: {
     title: string
@@ -109,7 +110,7 @@ const en: StoreTopCopy = {
     how: 'How buying works',
   },
   notice:
-    'Product pages, checkout and the emails we send after purchase are in Japanese. Finished prints ship to addresses in Japan only.',
+    'Finished prints ship to addresses in Japan only. The names and descriptions of the works appear as their makers wrote them, in Japanese.',
   ways: {
     title: 'Two ways to buy',
     lead: 'The same work arrives differently depending on how you buy it.',
