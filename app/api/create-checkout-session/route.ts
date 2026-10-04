@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, checkoutExpiresAt } from '@/lib/stripe'
+import { validShippingAddress } from '@/lib/booking-policy'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getConsentTextFor } from '@/lib/consent-default'
 import { closeBookingIfPastDeadline } from '@/lib/booking-deadline-server'
@@ -53,12 +54,15 @@ export async function POST(request: NextRequest) {
     //   ブラウザが送った日時・本文は端末の時計や任意の文字列になりうるので使わない
     const { data: bookingRow } = await supabaseAdmin
       .from('bookings')
-      .select('id, status, workshop_id, stripe_session_id')
+      .select('id, status, workshop_id, stripe_session_id, shipping_postal_code, shipping_prefecture, shipping_address')
       .eq('id', booking_id)
       .single()
 
     if (!bookingRow || bookingRow.workshop_id !== workshop.id) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+    if (workshop.shipping_address_required && !validShippingAddress(bookingRow)) {
+      return NextResponse.json({ error: '日本国内の発送先住所を入力してください' }, { status: 400 })
     }
     if (body.consent !== true) {
       // デプロイ前に開いたままのタブ（同意欄のない古い画面）から来た場合。仮予約を残すと早割の枠を食うので取り消す

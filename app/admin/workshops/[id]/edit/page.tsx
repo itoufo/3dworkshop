@@ -59,6 +59,8 @@ export default function EditWorkshop() {
     show_features: true,
     is_private: false,
     preview_password: '',
+    shipping_address_required: false,
+    booking_cutoff_days: 0,
     collect_demographics: false,
     show_on_english_site: false,
     title_en: '',
@@ -105,6 +107,8 @@ export default function EditWorkshop() {
           show_features: workshopData.show_features !== false,
           is_private: workshopData.is_private === true,
           preview_password: workshopData.preview_password || '',
+          shipping_address_required: workshopData.shipping_address_required === true,
+          booking_cutoff_days: workshopData.booking_cutoff_days ?? 0,
           collect_demographics: workshopData.collect_demographics === true,
           show_on_english_site: workshopData.show_on_english_site === true,
         title_en: workshopData.title_en || '',
@@ -200,6 +204,8 @@ export default function EditWorkshop() {
         show_features: formData.show_features,
         is_private: formData.is_private,
         preview_password: formData.preview_password.trim() || null,
+        shipping_address_required: formData.shipping_address_required,
+        booking_cutoff_days: formData.booking_cutoff_days,
         collect_demographics: formData.collect_demographics,
         show_on_english_site: formData.show_on_english_site,
         title_en: formData.title_en.trim() || null,
@@ -480,6 +486,13 @@ export default function EditWorkshop() {
               )}
             </div>
 
+              <div className="space-y-3 my-4">
+                <label className="flex gap-2 items-center"><input type="checkbox" checked={formData.shipping_address_required} onChange={e => setFormData({ ...formData, shipping_address_required: e.target.checked, booking_cutoff_days: e.target.checked ? 5 : formData.booking_cutoff_days })} />国内発送先住所を必須にする（海外発送不可）</label>
+                <label className="block">予約受付を開催日の何日前に終了するか
+                  <input type="number" min="0" max="365" required className="border rounded p-2 ml-2 w-24" value={formData.booking_cutoff_days} onChange={e => setFormData({ ...formData, booking_cutoff_days: Number(e.target.value) })} />
+                </label>
+                <p className="text-sm text-gray-500">5の場合、開催日の5日前の午前0時（日本時間）に人数にかかわらず受付を終了します。0は締切なしです。</p>
+              </div>
             {/* 早割チケット設定 */}
             <div className="p-4 bg-pink-50 border border-pink-200 rounded-md space-y-3">
               <div className="flex items-center justify-between">
@@ -506,6 +519,7 @@ export default function EditWorkshop() {
                   />
                 </button>
               </div>
+
 
               {formData.early_bird_enabled && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-pink-200">

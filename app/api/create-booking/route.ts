@@ -1,3 +1,4 @@
+import { isBookingClosed, validShippingAddress } from '@/lib/booking-policy'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { clientIp, tooManyRequests } from '@/lib/rate-limit'
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
 
   const { data: workshop } = await supabaseAdmin
     .from('workshops')
-    .select('id, price, event_date, event_time, collect_demographics, max_participants, manual_participants')
+    .select('id, price, event_date, event_time, collect_demographics, max_participants, manual_participants, shipping_address_required, booking_cutoff_days')
     .eq('id', workshopId)
     .maybeSingle()
   if (!workshop) return NextResponse.json({ error: 'Workshop not found' }, { status: 404 })
@@ -125,6 +126,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'この日程は中止になりました', code: 'sold_out' }, { status: 409 })
     }
     session = data
+  }
+
+  const shippingAddress = {
+    shipping_postal_code: typeof body.shipping_postal_code === 'string' ? body.shipping_postal_code.trim() : '',
+    shipping_prefecture: typeof body.shipping_prefecture === 'string' ? body.shipping_prefecture.trim() : '',
+    shipping_address: typeof body.shipping_address === 'string' ? body.shipping_address.trim() : '',
+  }
+  if (workshop.shipping_address_required && (!validShippingAddress(shippingAddress) || shippingAddress.shipping_address.length > 500)) {
+    return bad('日本国内の郵便番号・都道府県・住所を入力してください')
+  }
+  if (isBookingClosed(session?.event_date || workshop.event_date, workshop.booking_cutoff_days)) {
+    return NextResponse.json({ error: 'この開催日の予約受付は終了しました', code: 'booking_closed' }, { status: 409 })
   }
 
   // 同じ画面からのやり直し。直前に作った仮予約（決済画面まで進まなかったもの）を取り消してから数える。
@@ -185,6 +198,7 @@ export async function POST(request: NextRequest) {
   const { data: booking, error } = await supabaseAdmin
     .from('bookings')
     .insert({
+      ...(workshop.shipping_address_required ? shippingAddress : {}),
       workshop_id: workshop.id,
       session_id: sessionId,
       customer_id: customer.id,

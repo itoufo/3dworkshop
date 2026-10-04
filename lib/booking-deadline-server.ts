@@ -19,7 +19,7 @@ export async function closeBookingIfPastDeadline(
     .from('bookings')
     .select(
       'id, workshop_id, session_id, ' +
-        'workshop:workshops(event_date, event_time, manual_participants, zero_booking_cutoff_days_before, zero_booking_cutoff_time), ' +
+        'workshop:workshops(event_date, event_time, manual_participants, booking_cutoff_days, zero_booking_cutoff_days_before, zero_booking_cutoff_time), ' +
         'session:workshop_sessions(event_date, event_time, manual_participants)'
     )
     .eq('id', bookingId)
@@ -33,6 +33,7 @@ export async function closeBookingIfPastDeadline(
       event_date: string | null
       event_time: string | null
       manual_participants: number | null
+      booking_cutoff_days: number | null
       zero_booking_cutoff_days_before: number | null
       zero_booking_cutoff_time: string | null
     } | null

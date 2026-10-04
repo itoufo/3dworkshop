@@ -7,6 +7,7 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import FamilyFriendlyBadge from '@/components/FamilyFriendlyBadge'
 import { Calendar, Clock, MapPin, Users, Shield, User, Mail, Phone, Tag, X, ArrowRight, ChevronDown } from 'lucide-react'
 import { gaEvent, gaWorkshopItem, GA_CURRENCY } from '@/lib/gtag'
+import { JAPAN_PREFECTURES, bookingDeadline, isBookingClosed, validShippingAddress } from '@/lib/booking-policy'
 import { formatPrice, isFreePrice } from '@/lib/price'
 import RememberCustomerInfo from '@/components/RememberCustomerInfo'
 import { useCustomerProfile } from '@/lib/use-customer-profile'
@@ -105,6 +106,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     name: '',
     email: '',
     phone: '',
+    shipping_postal_code: '',
+    shipping_prefecture: '',
+    shipping_address: '',
     age: '',
     gender: '',
     hasMinors: false,
@@ -160,7 +164,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     // 予約締切（開始時刻・予約0人の締切）
     is_closed?: boolean
     closes_at?: string | null
-    close_reason?: 'started' | 'zero_booking_cutoff' | 'no_session' | null
+    close_reason?: 'started' | 'shipping_cutoff' | 'zero_booking_cutoff' | 'no_session' | null
     early_bird?: {
       enabled: boolean
       discount: number
@@ -170,7 +174,9 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
   } | null>(null)
 
   // 満席か締切後なら申込を受け付けない
-  const isClosed = !!availability?.is_closed
+  const eventDate = selectedSession?.event_date || workshop.event_date
+  const deadline = bookingDeadline(eventDate, workshop.booking_cutoff_days)
+  const isClosed = !!availability?.is_closed || isBookingClosed(eventDate, workshop.booking_cutoff_days)
   const cannotBook = !!availability?.is_full || isClosed
   // 予約0人の回にだけ出す「◯月◯日 24:00 締切」。開始時刻より前に来るときだけ
   const zeroCutoffLabel = (() => {
@@ -392,6 +398,14 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     e.preventDefault()
 
     if (submitting || !agreedToConsent) return
+    if (isBookingClosed(eventDate, workshop.booking_cutoff_days)) {
+      alert('この開催日の予約受付は終了しました。')
+      return
+    }
+    if (workshop.shipping_address_required && !validShippingAddress(booking)) {
+      alert('日本国内の郵便番号・都道府県・市区町村と番地を入力してください。')
+      return
+    }
 
     persist({
       name: booking.name,
@@ -408,6 +422,11 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...(workshop.shipping_address_required ? {
+            shipping_postal_code: booking.shipping_postal_code.replace('-', ''),
+            shipping_prefecture: booking.shipping_prefecture,
+            shipping_address: booking.shipping_address.trim(),
+          } : {}),
           workshop_id: workshop.id,
           session_id: selectedSession?.id || null,
           name: booking.name,
@@ -706,7 +725,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
                           className="mr-3 accent-purple-600"
                         />
                         <div className="flex-1 text-sm">
-                          <div className="font-medium text-gray-900">{dateLabel}</div>
+                          <div className="font-medium text-gray-900">{dateLabel}{isBookingClosed(s.event_date, workshop.booking_cutoff_days) && <span className="ml-2 text-gray-500">（受付終了）</span>}</div>
                           {timeLabel && <div className="text-gray-600 text-xs">{timeLabel}</div>}
                         </div>
                         {closed && (
@@ -793,6 +812,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           </div>
         </div>
 
+        {deadline && <p className="text-sm text-gray-600 mb-4">予約受付終了：{deadline.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })} 午前0時（日本時間）。サンプルを事前発送するため、人数にかかわらず受付を終了します。</p>}
         {isClosed ? (
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
             <p className="text-gray-800 font-semibold mb-2">{t.closedTitle}</p>
@@ -981,6 +1001,24 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             />
           </div>
 
+          {workshop.shipping_address_required && (
+            <fieldset className="space-y-3 border rounded-xl p-4">
+              <legend className="text-sm font-semibold">発送先住所（必須・日本国内のみ）</legend>
+              <p className="text-xs text-gray-600">サンプルと完成作品を発送します。海外発送には対応していません。宛名は上記のお名前を使用します。</p>
+              <label className="block text-sm">郵便番号
+                <input required autoComplete="shipping postal-code" inputMode="numeric" pattern="[0-9]{3}-?[0-9]{4}" maxLength={8} placeholder="123-4567" className="block w-full border rounded-lg p-3" value={booking.shipping_postal_code} onChange={e => setBooking({ ...booking, shipping_postal_code: e.target.value })} />
+              </label>
+              <label className="block text-sm">都道府県
+                <select required autoComplete="shipping address-level1" className="block w-full border rounded-lg p-3" value={booking.shipping_prefecture} onChange={e => setBooking({ ...booking, shipping_prefecture: e.target.value })}>
+                  <option value="">選択してください</option>
+                  {JAPAN_PREFECTURES.map(name => <option key={name} value={name}>{name}</option>)}
+                </select>
+              </label>
+              <label className="block text-sm">市区町村・番地・建物名・部屋番号
+                <input required autoComplete="shipping street-address" maxLength={500} placeholder="文京区湯島3-14-8 加田湯島ビル5F" className="block w-full border rounded-lg p-3" value={booking.shipping_address} onChange={e => setBooking({ ...booking, shipping_address: e.target.value })} />
+              </label>
+            </fieldset>
+          )}
           {/* Email */}
           <div>
             <label htmlFor="booking-email" className="block text-sm font-medium text-gray-700 mb-2">

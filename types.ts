@@ -34,6 +34,8 @@ export interface Workshop {
   is_service?: boolean
   is_private?: boolean
   preview_password?: string | null
+  shipping_address_required?: boolean
+  booking_cutoff_days?: number
   collect_demographics?: boolean
   early_bird_enabled?: boolean
   early_bird_discount?: number | null
@@ -121,6 +123,9 @@ export interface User {
 }
 
 export interface Booking {
+  shipping_postal_code?: string | null
+  shipping_prefecture?: string | null
+  shipping_address?: string | null
   id: string
   workshop_id: string
   session_id?: string | null

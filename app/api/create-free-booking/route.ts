@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isBookingClosed, validShippingAddress } from '@/lib/booking-policy'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getConsentTextFor } from '@/lib/consent-default'
 import { toLocale } from '@/lib/i18n'
@@ -87,6 +88,13 @@ export async function POST(request: NextRequest) {
     const deadline = await closeBookingIfPastDeadline(supabaseAdmin, booking_id)
     if (deadline.closed) {
       return NextResponse.json({ error: deadline.message, code: 'booking_closed' }, { status: 409 })
+    }
+
+    if (booking.status !== 'pending' || booking.workshop_session?.status === 'cancelled' || isBookingClosed(booking.workshop_session?.event_date || workshop.event_date, workshop.booking_cutoff_days)) {
+      return NextResponse.json({ error: 'この開催日の予約受付は終了しました' }, { status: 409 })
+    }
+    if (workshop.shipping_address_required && !validShippingAddress(booking)) {
+      return NextResponse.json({ error: '日本国内の発送先住所を入力してください' }, { status: 400 })
     }
 
     // 空席の再確認。無料回は席だけ押さえられる事故が起きやすいので、

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const { data: workshop, error: workshopError } = await supabaseAdmin
       .from('workshops')
-      .select('max_participants, manual_participants, early_bird_enabled, early_bird_discount, early_bird_slots, event_date, event_time, zero_booking_cutoff_days_before, zero_booking_cutoff_time')
+      .select('max_participants, manual_participants, early_bird_enabled, early_bird_discount, early_bird_slots, event_date, event_time, zero_booking_cutoff_days_before, zero_booking_cutoff_time, booking_cutoff_days')
       .eq('id', workshopId)
       .single()
 
@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
       const isCancelled = session.status === 'cancelled'
 
       return NextResponse.json({
+
         scope: 'session',
         session_id: sessionId,
         max_participants: maxParticipants,
@@ -117,6 +118,7 @@ export async function GET(request: NextRequest) {
     const availableSpots = workshop.max_participants - totalParticipants
 
     return NextResponse.json({
+
       scope: 'workshop',
       max_participants: workshop.max_participants,
       booked_participants: bookedParticipants,

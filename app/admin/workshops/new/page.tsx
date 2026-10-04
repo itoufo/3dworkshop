@@ -65,6 +65,8 @@ export default function NewWorkshopPage() {
     show_features: true,
     is_private: false,
     preview_password: '',
+    shipping_address_required: false,
+    booking_cutoff_days: 0,
     collect_demographics: false,
     show_on_english_site: false,
     title_en: '',
@@ -113,6 +115,8 @@ export default function NewWorkshopPage() {
         show_features: src.show_features !== false,
         is_private: src.is_private === true,
         preview_password: src.preview_password || '',
+        shipping_address_required: src.shipping_address_required === true,
+        booking_cutoff_days: src.booking_cutoff_days ?? 0,
         collect_demographics: src.collect_demographics === true,
         show_on_english_site: src.show_on_english_site === true,
         title_en: src.title_en || '',
@@ -230,6 +234,8 @@ export default function NewWorkshopPage() {
         show_features: workshop.show_features,
         is_private: workshop.is_private,
         preview_password: workshop.preview_password.trim() || null,
+        shipping_address_required: workshop.shipping_address_required,
+        booking_cutoff_days: workshop.booking_cutoff_days,
         collect_demographics: workshop.collect_demographics,
         show_on_english_site: workshop.show_on_english_site,
         title_en: workshop.title_en.trim() || null,
@@ -534,6 +540,13 @@ export default function NewWorkshopPage() {
               )}
             </div>
 
+              <div className="space-y-3 my-4">
+                <label className="flex gap-2 items-center"><input type="checkbox" checked={workshop.shipping_address_required} onChange={e => setWorkshop({ ...workshop, shipping_address_required: e.target.checked, booking_cutoff_days: e.target.checked ? 5 : workshop.booking_cutoff_days })} />国内発送先住所を必須にする（海外発送不可）</label>
+                <label className="block">予約受付を開催日の何日前に終了するか
+                  <input type="number" min="0" max="365" required className="border rounded p-2 ml-2 w-24" value={workshop.booking_cutoff_days} onChange={e => setWorkshop({ ...workshop, booking_cutoff_days: Number(e.target.value) })} />
+                </label>
+                <p className="text-sm text-gray-500">5の場合、開催日の5日前の午前0時（日本時間）に人数にかかわらず受付を終了します。0は締切なしです。</p>
+              </div>
             {/* 早割チケット設定 */}
             <div className="p-4 bg-pink-50 border border-pink-200 rounded-xl space-y-3">
               <div className="flex items-center justify-between">
@@ -560,6 +573,7 @@ export default function NewWorkshopPage() {
                   />
                 </button>
               </div>
+
 
               {workshop.early_bird_enabled && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-pink-200">

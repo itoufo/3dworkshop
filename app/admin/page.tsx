@@ -812,6 +812,11 @@ export default function AdminDashboard() {
                           内部/テスト
                         </span>
                       )}
+                      {booking.shipping_postal_code && (
+                        <div className="text-sm text-gray-700 mt-2">
+                          発送先：〒{booking.shipping_postal_code} {booking.shipping_prefecture}{booking.shipping_address}
+                        </div>
+                      )}
                       {booking.customer?.phone && (
                         <div className="text-xs text-gray-500">
                           <Phone className="w-3 h-3 inline mr-1" />

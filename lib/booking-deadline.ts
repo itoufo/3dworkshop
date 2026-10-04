@@ -1,3 +1,4 @@
+import { bookingDeadline } from '@/lib/booking-policy'
 /**
  * 予約締切の判定（純粋関数のみ。サーバー・ブラウザ両方から使う）
  *
@@ -14,6 +15,7 @@
  */
 
 export interface DeadlineWorkshop {
+  booking_cutoff_days?: number | null
   zero_booking_cutoff_days_before?: number | null
   zero_booking_cutoff_time?: string | null
 }
@@ -23,7 +25,7 @@ export interface DeadlineSession {
   event_time?: string | null // HH:MM or HH:MM:SS
 }
 
-export type CloseReason = 'started' | 'zero_booking_cutoff' | 'no_session'
+export type CloseReason = 'started' | 'shipping_cutoff' | 'zero_booking_cutoff' | 'no_session'
 
 export interface BookableResult {
   bookable: boolean
@@ -93,14 +95,18 @@ export function isSessionBookable({
   if (now.getTime() >= start.getTime()) {
     return { bookable: false, reason: 'started', closesAt: start }
   }
+  const shippingCutoff = bookingDeadline(session.event_date, workshop.booking_cutoff_days ?? 0)
+  if (shippingCutoff && now >= shippingCutoff) {
+    return { bookable: false, reason: 'shipping_cutoff', closesAt: shippingCutoff }
+  }
   const cutoff = zeroBookingCutoffJst(workshop, session)
   if (cutoff && totalParticipants <= 0) {
     if (now.getTime() >= cutoff.getTime()) {
       return { bookable: false, reason: 'zero_booking_cutoff', closesAt: cutoff }
     }
-    return { bookable: true, reason: null, closesAt: cutoff < start ? cutoff : start }
+    return { bookable: true, reason: null, closesAt: new Date(Math.min(cutoff.getTime(), start.getTime(), shippingCutoff?.getTime() ?? Infinity)) }
   }
-  return { bookable: true, reason: null, closesAt: start }
+  return { bookable: true, reason: null, closesAt: shippingCutoff && shippingCutoff < start ? shippingCutoff : start }
 }
 
 /** 締切時刻の表示。0:00 は「前日 24:00」と書く（例: 10月4日 24:00） */
@@ -128,6 +134,7 @@ function isMidnight(d: Date): boolean {
 }
 
 export const CLOSE_REASON_LABEL: Record<CloseReason, string> = {
+  shipping_cutoff: 'サンプルの事前発送のため予約受付を終了しました',
   started: '開始時刻を過ぎたため受付を終了しました',
   zero_booking_cutoff: '受付期間が終了しました',
   no_session: 'この日程は受付していません',
