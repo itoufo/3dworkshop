@@ -7,10 +7,11 @@ ALTER TABLE public.bookings
   ADD COLUMN IF NOT EXISTS shipping_prefecture text,
   ADD COLUMN IF NOT EXISTS shipping_address text;
 
--- オンラインと明記されている既存ワークショップに適用。新規作成は管理画面で設定する。
+-- オンラインの作品制作ワークショップに適用。発送のないウェビナーは除外する。
 UPDATE public.workshops SET shipping_address_required = true, booking_cutoff_days = 5
 WHERE NOT coalesce(is_service, false)
-  AND (title LIKE '%オンライン%' OR location LIKE '%オンライン%');
+  AND (title LIKE '%オンライン%' OR location LIKE '%オンライン%')
+  AND title NOT LIKE '%ウェビナー%';
 
 -- ブラウザから直接保存される仮予約にも住所と締切を適用する。
 -- 決済済み予約の更新には適用しない（決済開始後のWebhookを妨げない）。
