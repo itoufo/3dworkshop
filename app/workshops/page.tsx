@@ -43,11 +43,11 @@ export default async function WorkshopsPage() {
             東京で3Dプリンタを体験しよう
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
-            東京都文京区湯島にある3Dプリンタ教室。<br className="hidden sm:inline" />
-            初心者から上級者まで、最新の3Dプリンターで創造的な体験を。
+            東京都文京区湯島にある3Dプリンタ教室です。<br className="hidden sm:inline" />
+            初心者から上級者まで、最新の3Dプリンターでものづくりを体験できます。
           </p>
           <p>
-            湯島駅から徒歩1分、御徒町・秋葉原・御茶ノ水からも徒歩圏内。<br className="hidden sm:inline" />
+            湯島駅から徒歩1分、御徒町・秋葉原・御茶ノ水からも歩いて来られます。<br className="hidden sm:inline" />
           </p>
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             <span className="px-3 py-1 bg-white/80 backdrop-blur text-sm text-gray-700 rounded-full border border-gray-200">
@@ -160,17 +160,17 @@ export default async function WorkshopsPage() {
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p>
                 <strong>3DLab（スリーディーラボ）</strong>は、東京都文京区湯島にある3Dプリンター専門の体験教室です。
-                東京メトロ千代田線の湯島駅から徒歩1分、JR御徒町駅から徒歩8分、秋葉原駅から徒歩10分と、
-                アクセス抜群の立地で、お仕事帰りや休日に気軽に3Dプリンティング技術を学ぶことができます。
+                東京メトロ千代田線の湯島駅から徒歩1分、JR御徒町駅から徒歩8分、秋葉原駅から徒歩10分の場所にあり、
+                仕事帰りや休日に気軽に3Dプリンティングを学べます。
               </p>
               <p>
-                初心者向けの<strong>3Dプリンター体験ワークショップ</strong>から、本格的な3Dモデリング技術を習得できる
-                <strong>スクールコース</strong>まで、幅広いプログラムをご用意。
-                最新の3Dプリンター機材を使用し、実践的なスキルを身につけることができます。
+                初心者向けの3Dプリンター体験ワークショップから、本格的な3Dモデリングを学べる
+                スクールコースまで用意しています。
+                最新の3Dプリンターを使って、実践的なスキルが身につきます。
               </p>
               <p>
                 東京・秋葉原エリアで3Dプリンターに興味がある方、プロトタイプ制作や企業研修をお考えの方は、
-                ぜひ3DLabの体験イベントにご参加ください。湯島・御徒町・御茶ノ水からもアクセス便利です。
+                ぜひ3DLabの体験イベントにご参加ください。湯島・御徒町・御茶ノ水からも歩いて来られます。
               </p>
             </div>
             <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">

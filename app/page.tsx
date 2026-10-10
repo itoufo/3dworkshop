@@ -50,10 +50,10 @@ export default function HomePage() {
                 頭の中のアイデアを手に取れるカタチに
               </h1>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
-                3DLabは最新の3Dプリンター（スリーディープリンター）と熟練のチームが揃う、東京・秋葉原エリアのクリエイティブスタジオです。
-                <strong className="text-purple-700">子どもも大人も楽しめる</strong>体験イベント・ワークショップから、企業のプロトタイプ制作、本格的なモノづくりまで。
-                <strong className="text-purple-700">AIも3Dプリンターも一緒に学び</strong>、家族で<strong className="text-purple-700">思い出作り</strong>。
-                あなたのアイデアを立体化する、すべてのプロセスをサポートします。
+                3DLabは、最新の3Dプリンター（スリーディープリンター）と熟練のチームが揃う、東京・秋葉原エリアのクリエイティブスタジオです。
+                子どもも大人も楽しめる体験イベント・ワークショップから、企業のプロトタイプ制作、本格的なものづくりまでお受けしています。
+                AIも3Dプリンターも一緒に学べて、家族の思い出作りにもなる場所です。
+                あなたのアイデアを立体にするまでの工程を、すべてサポートします。
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
                 <Link
@@ -94,7 +94,7 @@ export default function HomePage() {
                       </p>
                     </div>
                     <p className="text-gray-700 leading-relaxed">
-                      湯島のスタジオで、アイデアを立体化する楽しさを体感。観る、触れる、つくるプロセスを通じて、新しい発想と可能性が広がります。
+                      湯島のスタジオで、アイデアを立体にする楽しさを体験できます。見て、触れて、つくる過程で、新しい発想が広がり、できることも増えていきます。
                     </p>
                   </div>
                   <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
@@ -105,7 +105,7 @@ export default function HomePage() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 ">最先端の設備</h3>
                         <p className="text-sm text-gray-500">
-                          業務用3Dプリンタと多彩な素材で、プロ品質の造形を実現。試作から量産まで対応可能。
+                          業務用3Dプリンタと多彩な素材で、プロ品質の造形が可能です。試作から量産まで対応します。
                         </p>
                       </div>
                     </div>
@@ -118,7 +118,7 @@ export default function HomePage() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">プロが伴走</h3>
                         <p className="text-sm text-gray-500">
-                          3Dモデリングから造形、仕上げまで、経験豊富なスタッフが一貫してサポート。
+                          3Dモデリングから造形、仕上げまで、経験豊富なスタッフが一貫してサポートします。
                         </p>
                       </div>
                     </div>
@@ -140,9 +140,9 @@ export default function HomePage() {
             あらゆるシーンで、3Dを活用
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            「3Dプリンターでどこまでできるの？」という疑問に、東京・秋葉原の体験イベントでリアルな体験とプロの技術でお応えします。
+            「3Dプリンターでどこまでできるの？」という疑問に、東京・秋葉原の体験イベントで、実際の体験とプロの技術でお応えします。
             新製品のプロトタイプ、展示会の装飾、採用イベントのノベルティ、教育プログラムでの実習など、
-            あらゆる場面でスリーディープリンターの可能性を最大限に引き出します。
+            あらゆる場面でスリーディープリンターを活かします。
           </p>
         </div>
 
@@ -151,7 +151,7 @@ export default function HomePage() {
             <Box className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">体験イベント設計</h3>
             <p className="text-gray-600 flex-1">
-              東京・秋葉原エリアでの展示会や体験イベントでの3Dプリンター体験を企画・設計。来場者が実際に触れて、驚きと感動を味わえる、印象に残る演出を創造します。
+              東京・秋葉原エリアの展示会や体験イベント向けに、3Dプリンター体験を企画・設計します。来場者が実際に触れて、驚きや感動を味わえる、印象に残る演出をつくります。
             </p>
             <Link
               href="/portfolio"
@@ -165,7 +165,7 @@ export default function HomePage() {
             <Printer className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">3Dプリンター造形・プロトタイピング</h3>
             <p className="text-gray-600 flex-1">
-              スリーディープリンターを使った試作品から小ロット生産まで、スピーディーに対応。最適な素材選定、後処理、品質管理まで、プロ仕様の造形をワンストップでご提供します。
+              スリーディープリンターを使った試作品から小ロット生産まで、すばやく対応します。最適な素材の選定、後処理、品質管理まで、プロ仕様の造形をまとめてご提供します。
             </p>
             <Link
               href="/products/3d-printing/new"
@@ -179,9 +179,9 @@ export default function HomePage() {
             <Rocket className="w-12 h-12 text-purple-600 mb-6 hidden md:block" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">共創ワークショップ・体験イベント</h3>
             <p className="text-gray-600 flex-1">
-              <span className="font-semibold text-purple-700">子どもも大人も楽しめる</span>3Dプリンター体験イベントから、企業研修、チームビルディングまで。
-              <span className="font-semibold text-purple-700">AIもスリーディープリンターも一緒に学び</span>、家族で<span className="font-semibold text-purple-700">思い出作り</span>。
-              東京・秋葉原エリアで3Dプリンティングを通じて、創造性を引き出し、新しいアイデアを生み出す場を創ります。
+              子どもも大人も楽しめる3Dプリンター体験イベントから、企業研修、チームビルディングまで開いています。
+              AIもスリーディープリンターも一緒に学べるので、家族の思い出作りにもなる時間です。
+              東京・秋葉原エリアで、3Dプリンティングを通じて創造性を引き出し、新しいアイデアが生まれる場をつくります。
             </p>
             <Link
               href="/workshops"
@@ -222,22 +222,22 @@ export default function HomePage() {
                     1点からお受けします
                   </h2>
                   <p className="text-white/90 leading-relaxed mb-6">
-                    「こんなもの作れる？」そんなご相談から大歓迎。
+                    「こんなもの作れる？」という段階のご相談も歓迎です。
                     オリジナルフィギュア、試作品、記念品、ノベルティ、建築模型など、
-                    アイデア段階でもお気軽にどうぞ。3Dモデリングからプリント・仕上げまで一貫対応します。
+                    アイデアだけの状態でもお気軽にご相談ください。3Dモデリングからプリント、仕上げまで一貫して対応します。
                   </p>
                   <ul className="space-y-2 text-white/90 text-sm mb-6">
                     <li className="flex items-center gap-2">
                       <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
-                      個人のアイデアを形に &#8212; 趣味・プレゼント・作品づくり
+                      個人のアイデアを形に。趣味・プレゼント・作品づくりに
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
-                      法人の試作・小ロット &#8212; プロトタイプ・展示用モデル
+                      法人の試作・小ロットに。プロトタイプ・展示用モデル
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">&#10003;</span>
-                      データがなくてもOK &#8212; スケッチや写真からモデリング可能
+                      データがなくてもOK。スケッチや写真からモデリングできます
                     </li>
                   </ul>
                   <div className="flex flex-col sm:flex-row gap-3">

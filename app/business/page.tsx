@@ -31,7 +31,7 @@ export default function BusinessPage() {
             </p>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               展示会・社内イベント・チームビルディング・社員研修など、
-              あらゆるシーンで3Dプリンティングの魅力をお届けします。
+              あらゆる場面に3Dプリンティングの魅力をお届けします。
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function BusinessPage() {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   展示会、採用イベント、ファミリーデー、地域イベントなど、
                   御社のイベントに3Dプリンター体験ブースを出張設営します。
-                  来場者が実際に触れて、作って、持ち帰れる体験を提供します。
+                  来場者が実際に触れて、作って、持ち帰れる体験です。
                 </p>
 
                 <div className="space-y-3 mb-8">
@@ -107,8 +107,8 @@ export default function BusinessPage() {
               <div className="p-8">
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   3Dプリンター・AI・デジタルファブリケーションの基礎から応用まで、
-                  御社の課題やニーズに合わせたカスタム研修プログラムを提供します。
-                  新人研修、リスキリング、チームビルディングにも最適です。
+                  御社の課題や要望に合わせて研修プログラムを組みます。
+                  新人研修、リスキリング、チームビルディングにも適しています。
                 </p>
 
                 <div className="space-y-3 mb-8">
@@ -163,7 +163,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">採用イベント・会社説明会</h3>
               <p className="text-gray-600 text-sm">
-                最先端技術の体験で学生の興味を引きつけ、企業の先進性をアピール
+                最先端技術の体験で学生の興味を引き、企業の先進性を伝えられます
               </p>
             </div>
 
@@ -173,7 +173,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">ファミリーデー・社内イベント</h3>
               <p className="text-gray-600 text-sm">
-                子どもから大人まで楽しめる3Dプリンター体験で思い出に残るイベントに
+                子どもから大人まで楽しめる3Dプリンター体験で、思い出に残るイベントになります
               </p>
             </div>
 
@@ -183,7 +183,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">展示会・商業施設イベント</h3>
               <p className="text-gray-600 text-sm">
-                来場者の注目を集める体験型ブースで集客力アップ
+                来場者の注目を集める体験型ブースで、集客につながります
               </p>
             </div>
 
@@ -193,7 +193,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">新人研修・リスキリング</h3>
               <p className="text-gray-600 text-sm">
-                デジタルものづくりの基礎を実践的に学び、DX人材を育成
+                デジタルものづくりの基礎を手を動かして学び、DX人材を育てます
               </p>
             </div>
 
@@ -203,7 +203,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">チームビルディング</h3>
               <p className="text-gray-600 text-sm">
-                共同制作を通じてチームワークと創造力を高める体験プログラム
+                共同制作を通じて、チームワークと創造力を高める体験プログラムです
               </p>
             </div>
 
@@ -213,7 +213,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">地域・自治体イベント</h3>
               <p className="text-gray-600 text-sm">
-                地域活性化イベントやSTEM教育プログラムの一環として
+                地域活性化イベントやSTEM教育プログラムの一環として開催できます
               </p>
             </div>
           </div>
