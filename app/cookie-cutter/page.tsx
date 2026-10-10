@@ -64,8 +64,8 @@ export default function CookieCutterPage() {
               描いた絵が、そのままクッキー型に
             </h1>
             <p className="text-base sm:text-lg text-gray-700 max-w-2xl mx-auto">
-              絵やロゴをアップロードするほか、<strong>名前を入力する</strong>だけ、
-              <strong>アイコンから選ぶ</strong>だけでも作れます。その場で3Dの型ができるので、
+              絵やロゴをアップロードするほか、名前を入力するだけ、
+              アイコンから選ぶだけでも作れます。その場で3Dの型ができるので、
               焼く前に形を確かめられます。
               データだけ買って自分で印刷しても、こちらで印刷してお送りすることもできます。
             </p>
@@ -87,7 +87,7 @@ export default function CookieCutterPage() {
               <div>
                 <dt className="text-xl font-bold text-gray-900 mb-1">SVGも使えますか？</dt>
                 <dd className="text-base text-gray-700">
-                  使えます。イラストソフトで作った SVG をそのままアップロードしてください（2MBまで）。
+                  使えます。イラストソフトで作ったSVGをそのままアップロードしてください（2MBまで）。
                   塗りの色は問いません。線だけで描かれた図形も、囲まれた内側を塗りつぶした形として型にします。
                 </dd>
               </div>
@@ -103,7 +103,7 @@ export default function CookieCutterPage() {
               <div>
                 <dt className="text-xl font-bold text-gray-900 mb-1">アイコンは自由に使えますか？</dt>
                 <dd className="text-base text-gray-700">
-                  アイコンは Font Awesome（CC BY 4.0）のものです。ご自身で焼いて楽しむぶんには制限ありませんが、
+                  アイコンはFont Awesome（CC BY 4.0）のものです。ご自身で焼いて楽しむぶんには制限ありませんが、
                   アイコンをもとにした型や、それで作ったクッキーを販売する場合は、
                   出典の表示（Font Awesome / CC BY 4.0）が必要です。
                 </dd>
@@ -111,9 +111,9 @@ export default function CookieCutterPage() {
               <div>
                 <dt className="text-xl font-bold text-gray-900 mb-1">データはどの形式ですか？</dt>
                 <dd className="text-base text-gray-700">
-                  STL形式です。一般的なスライサーソフト（PrusaSlicer、Cura、Bambu Studio など）で開けます。
+                  STL形式です。一般的なスライサーソフト（PrusaSlicer、Cura、Bambu Studioなど）で開けます。
                   ふちを下にして置けばサポート材なしで印刷できる向きで書き出しています。
-                  ノズル0.4mm・積層0.2mm を想定しています。
+                  ノズル0.4mm・積層0.2mmを想定しています。
                 </dd>
               </div>
               <div>

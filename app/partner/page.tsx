@@ -60,7 +60,7 @@ export default function PartnerPage() {
               </span>
             </h1>
             <p className="text-xl text-gray-700 mb-4">
-              AI×3Dプリンター融合の学習体験を、あなたの場所でも
+              AIと3Dプリンターを組み合わせた学習体験を、あなたの場所でも
             </p>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               教育機関、自治体、企業、商業施設など、様々な場所で「3DLab」プログラムを
@@ -103,7 +103,7 @@ export default function PartnerPage() {
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">生成AIでデザイン</h3>
                     <p className="text-gray-600">
-                      最新の生成AIを使って、子どもから大人まで誰でも簡単にオリジナルデザインを作成できます。
+                      最新の生成AIを使って、子どもから大人まで誰でも簡単にオリジナルのデザインを作れます。
                     </p>
                   </div>
                 </div>
@@ -127,7 +127,7 @@ export default function PartnerPage() {
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">少人数制で安心</h3>
                     <p className="text-gray-600">
-                      一人ひとりに寄り添った指導で、初心者でも安心して参加できる環境を提供します。
+                      一人ひとりに合わせて教えるので、初心者でも安心して参加できます。
                     </p>
                   </div>
                 </div>
@@ -141,7 +141,7 @@ export default function PartnerPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">2時間の体験プログラム</h3>
                 <p className="text-gray-600 mb-6">
-                  アイデア出し → AIデザイン → 3Dプリント → 完成品お持ち帰り
+                  アイデア出しからAIデザイン、3Dプリント、完成品のお持ち帰りまで
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   <span className="bg-white px-3 py-1 rounded-full text-sm text-purple-600 font-medium">親子</span>
