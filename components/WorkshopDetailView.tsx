@@ -169,8 +169,17 @@ export default function WorkshopDetailView({ workshop }: { workshop: Workshop })
                       <Heart className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">作品は後日発送</h4>
-                      <p className="text-sm text-gray-600">制作した作品は後日発送いたします</p>
+                      {workshop.take_home_same_day ? (
+                        <>
+                          <h4 className="font-semibold text-gray-900">作品はその場でお持ち帰り</h4>
+                          <p className="text-sm text-gray-600">時間内に仕上がらなかった場合は、2週間以内に後日発送いたします</p>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="font-semibold text-gray-900">作品は後日発送</h4>
+                          <p className="text-sm text-gray-600">制作した作品は後日発送いたします</p>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
