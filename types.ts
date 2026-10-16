@@ -29,6 +29,8 @@ export interface Workshop {
   is_pinned: boolean
   pin_order: number | null
   show_features?: boolean
+  /** 作品をその場で持ち帰るワークショップ。特徴欄の「後日発送」を「その場でお持ち帰り」に替える */
+  take_home_same_day?: boolean
   category_id?: string | null
   category?: WorkshopCategory | null
   is_service?: boolean

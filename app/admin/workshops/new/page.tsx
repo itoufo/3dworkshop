@@ -63,6 +63,7 @@ export default function NewWorkshopPage() {
     event_time: '',
     category_id: '',
     show_features: true,
+    take_home_same_day: false,
     is_private: false,
     preview_password: '',
     shipping_address_required: false,
@@ -113,6 +114,7 @@ export default function NewWorkshopPage() {
         event_time: prev.event_time,
         category_id: src.category_id || fromCategory || '',
         show_features: src.show_features !== false,
+        take_home_same_day: src.take_home_same_day === true,
         is_private: src.is_private === true,
         preview_password: src.preview_password || '',
         shipping_address_required: src.shipping_address_required === true,
@@ -232,6 +234,7 @@ export default function NewWorkshopPage() {
         event_time: workshop.event_time || null,
         category_id: workshop.category_id || null,
         show_features: workshop.show_features,
+        take_home_same_day: workshop.take_home_same_day,
         is_private: workshop.is_private,
         preview_password: workshop.preview_password.trim() || null,
         shipping_address_required: workshop.shipping_address_required,
@@ -412,6 +415,28 @@ export default function NewWorkshopPage() {
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                     workshop.show_features ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  作品をその場で持ち帰る
+                </label>
+                <p className="text-xs text-gray-500">オンにすると特徴欄の「作品は後日発送」が「作品はその場でお持ち帰り（間に合わなければ2週間以内に後日発送）」になります</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWorkshop({ ...workshop, take_home_same_day: !workshop.take_home_same_day })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  workshop.take_home_same_day ? 'bg-indigo-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    workshop.take_home_same_day ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
