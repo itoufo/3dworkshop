@@ -29,6 +29,10 @@ function getUpcomingSessions(w: Workshop): WorkshopSession[] {
     })
 }
 
+// 予約フォームを開いた状態を表す URL パラメータ
+const BOOKING_PARAM = 'book'
+const SESSION_PARAM = 'session'
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 // 学年から小学生以下（同伴者が必要な区分）を検出する
@@ -370,6 +374,33 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
     })
     setModalOpen(true)
   }
+
+  // 予約フォームを開いた状態の URL（?book=1&session=<日程id>）を共有できるようにする。
+  // 開閉と日程の選択をアドレスバーに反映し、その URL で来た人にはフォームを開いて見せる。
+  const bookingUrlHandledRef = useRef(false)
+  useEffect(() => {
+    if (bookingUrlHandledRef.current) return
+    bookingUrlHandledRef.current = true
+    const params = new URLSearchParams(window.location.search)
+    if (!params.has(BOOKING_PARAM) || isPastWorkshop) return
+    const sessionId = params.get(SESSION_PARAM)
+    if (sessionId && upcomingSessions.some(s => s.id === sessionId)) setSelectedSessionId(sessionId)
+    openBookingModal()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (modalOpen) {
+      url.searchParams.set(BOOKING_PARAM, '1')
+      if (selectedSession) url.searchParams.set(SESSION_PARAM, selectedSession.id)
+      else url.searchParams.delete(SESSION_PARAM)
+    } else {
+      url.searchParams.delete(BOOKING_PARAM)
+      url.searchParams.delete(SESSION_PARAM)
+    }
+    if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url)
+  }, [modalOpen, selectedSession])
 
   // GA4: ws_form_start（モーダル内でフォームに最初に触れた1回だけ）。
   // add_to_cart(開いた) と begin_checkout(送信) の間を「入力に着手したか」で分解する。
