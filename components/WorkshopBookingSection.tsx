@@ -955,6 +955,32 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
           </p>
         </div>
         <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-4">
+          {/* 日程が複数ある回は、フォーム上でも日程を選び直せるようにする。
+              満席・受付終了の日程を選ぶとフォームごと閉じてしまうので選べなくしておく */}
+          {upcomingSessions.length >= 2 && (
+            <div>
+              <label htmlFor="booking-session" className="block text-sm font-medium text-gray-700 mb-2">
+                {t.chooseDate}
+              </label>
+              <select
+                id="booking-session"
+                value={selectedSession?.id ?? ''}
+                onChange={(e) => handleSessionSelect(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900 bg-white"
+              >
+                {upcomingSessions.map((s) => {
+                  const unavailable = closedSessionIds.has(s.id) || isBookingClosed(s.event_date, workshop.booking_cutoff_days)
+                  return (
+                    <option key={s.id} value={s.id} disabled={unavailable}>
+                      {t.sessionDate(s.event_date)}
+                      {s.event_time ? ` ${t.sessionStartTime(s.event_time.slice(0, 5))}` : ''}
+                      {unavailable ? `（${t.closed}）` : ''}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+          )}
           {/* Participants */}
           <div>
             <label htmlFor="booking-participants" className="block text-sm font-medium text-gray-700 mb-2">
