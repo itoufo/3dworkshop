@@ -22,7 +22,7 @@ export default function PrivacyPage() {
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
                   制定日：2024年1月1日<br />
-                  最終改定日：2024年3月28日
+                  最終改定日：2026年10月27日
                 </p>
               </section>
 
@@ -157,6 +157,7 @@ export default function PrivacyPage() {
                 <ol className="list-decimal list-inside space-y-2 text-gray-700">
                   <li>当社のウェブサイトでは、より良いサービス提供のため、Cookie（クッキー）を使用しています。</li>
                   <li>Cookieは、ウェブサイトの利用状況を把握し、ユーザーの利便性を向上させるために使用されます。</li>
+                  <li>当社は、当社が運営する広告配信・計測システムにより、ページのどこまで読まれたか・どこが押されたかといった閲覧状況を、個人を特定しない形で計測し、サービスとページの改善に利用しています。計測のため、ブラウザ内にランダムな識別子を保存することがあります。</li>
                   <li>ユーザーは、ブラウザの設定によりCookieの受け取りを拒否することができますが、その場合、一部のサービスが正常に機能しない可能性があります。</li>
                 </ol>
               </section>

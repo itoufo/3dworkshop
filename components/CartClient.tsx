@@ -319,6 +319,7 @@ export default function CartClient() {
           <button
             type="submit"
             disabled={submitting || buyable.length === 0 || blocked || anyLoading || Boolean(loadError)}
+            data-ad-goal="checkout"
             className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors disabled:opacity-50"
           >
             {submitting ? '決済画面へ移動しています...' : 'レジに進む（お支払いへ）'}

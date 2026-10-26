@@ -183,6 +183,13 @@ export default function RootLayout({
           async
           crossOrigin="anonymous"
         />
+        {/* 広告管理ツール（ads.walker.co.jp）のページ分析。読了・クリック・data-ad-goal の押下を匿名で計測する。
+            管理画面・マイページ・ダウンロード（URL の # が合言葉）は送らない */}
+        <script
+          async
+          src="https://ads.walker.co.jp/tag.js"
+          data-pageview-exclude="/admin,/account,/download"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

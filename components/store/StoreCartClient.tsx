@@ -223,6 +223,7 @@ export default function StoreCartClient({ defaultName, defaultEmail }: { default
           <button
             type="submit"
             disabled={submitting || anyLoading || blocked || buyable.length === 0 || Boolean(loadError)}
+            data-ad-goal="store-checkout"
             className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold transition-colors disabled:opacity-60"
           >
             {submitting ? '決済画面へ移動しています...' : 'レジに進む'}

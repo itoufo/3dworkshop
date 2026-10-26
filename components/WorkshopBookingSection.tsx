@@ -863,6 +863,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <button
               type="button"
               onClick={openBookingModal}
+              data-ad-goal="booking-open"
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center"
             >
               <Calendar className="w-5 h-5 mr-2" />
@@ -1416,6 +1417,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
             <button
               type="submit"
               disabled={submitting || !agreedToConsent}
+              data-ad-goal="booking-submit"
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? t.processing : isFree ? t.confirmBooking : t.proceedToPayment}
@@ -1441,6 +1443,7 @@ export default function WorkshopBookingSection({ workshop, relatedWorkshops, isP
       {!cannotBook && !modalOpen && (
         <button
           onClick={openBookingModal}
+          data-ad-goal="booking-open"
           className="lg:hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-semibold"
         >
           <Calendar className="w-5 h-5" />
