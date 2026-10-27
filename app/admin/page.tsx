@@ -15,7 +15,7 @@ import {
   type ServiceRequestStatus,
   type WorkshopRequestStatus,
 } from '@/lib/request-statuses'
-import { Booking, Customer, Workshop, Coupon, WorkshopCategory } from '@/types'
+import { Booking, Customer, Workshop, Coupon, WorkshopCategory, WorkshopSession } from '@/types'
 import { isInternalEmail } from '@/lib/internal-emails'
 import { parseParticipantOption, parseParticipantChoices, summarizeParticipantChoices } from '@/lib/participant-option'
 import { BOOKING_SOURCES, BOOKING_SOURCE_LABELS, bookingSourceLabel, isBookingSource, type BookingSource } from '@/lib/booking-sources'
@@ -72,6 +72,13 @@ interface ServiceRequestRow {
 const WORKSHOP_LIST_COLUMNS =
   'id,title,description,image_url,price,duration,max_participants,manual_participants,location,event_date,event_time,category_id,is_pinned,pin_order,is_private,created_at'
 
+/** ワークショップ一覧に並べる日程で読む列 */
+const SESSION_LIST_COLUMNS = 'id,workshop_id,event_date,event_time,status,max_participants,manual_participants'
+type SessionListRow = Pick<
+  WorkshopSession,
+  'id' | 'workshop_id' | 'event_date' | 'event_time' | 'status' | 'max_participants' | 'manual_participants'
+>
+
 /** ブログ一覧で読む列（本文の content は読まない） */
 const BLOG_POST_LIST_COLUMNS =
   'id,title,slug,excerpt,featured_image_url,category,tags,author_name,is_published,published_at,view_count,created_at'
@@ -98,6 +105,8 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState<(WorkshopCategory & { workshop_count: number })[]>([])
   /** 日程（workshop_sessions）を1件でも持つワークショップ。売上を開催日で数えてよいかの判定に使う */
   const [workshopIdsWithSessions, setWorkshopIdsWithSessions] = useState<Set<string>>(new Set())
+  /** ワークショップごとの日程。一覧に日程ごとの日付と人数を並べるのに使う */
+  const [sessionsByWorkshop, setSessionsByWorkshop] = useState<Map<string, SessionListRow[]>>(new Map())
   const [workshopRequests, setWorkshopRequests] = useState<WorkshopRequestRow[]>([])
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -187,8 +196,12 @@ export default function AdminDashboard() {
         adminRows.list<Coupon>('coupons', { order: 'created_at.desc' }),
         adminRows.list<BlogPost>('blog-posts', { columns: BLOG_POST_LIST_COLUMNS, order: 'created_at.desc' }),
         adminRows.list<WorkshopCategory>('workshop-categories', { order: 'sort_order.asc,name.asc' }),
-        // 日程を持つワークショップの一覧（オーダーメイド等の「日程のない商品」と区別する）
-        adminRows.list<{ workshop_id: string }>('workshop-sessions', { columns: 'workshop_id' }),
+        // 日程の一覧。日程を持つワークショップを「日程のない商品」（オーダーメイド等）と区別するのと、
+        // ワークショップ一覧に日程ごとの日付と人数を並べるのに使う
+        adminRows.list<SessionListRow>('workshop-sessions', {
+          columns: SESSION_LIST_COLUMNS,
+          order: 'event_date.asc,event_time.asc',
+        }),
       ])
       const workshopsData = workshopsResult.data
       const couponsData = couponsResult.data
@@ -221,6 +234,11 @@ export default function AdminDashboard() {
       setWorkshopIdsWithSessions(
         new Set((sessionRowsResult.data ?? []).map((r) => r.workshop_id)),
       )
+      const grouped = new Map<string, SessionListRow[]>()
+      for (const row of sessionRowsResult.data ?? []) {
+        grouped.set(row.workshop_id, [...(grouped.get(row.workshop_id) ?? []), row])
+      }
+      setSessionsByWorkshop(grouped)
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -363,7 +381,17 @@ export default function AdminDashboard() {
     participantsByWorkshop.set(b.workshop_id, (participantsByWorkshop.get(b.workshop_id) || 0) + b.participants)
   }
 
+  // 日程ごとの予約人数。予約ページの空き判定（check-availability）と同じ数え方にそろえる:
+  // キャンセル除外・支払い待ち/済みのみ・内部/テストも席を使うので含める
+  const participantsBySession = new Map<string, number>()
+  for (const b of bookings) {
+    if (!b.session_id || b.status === 'cancelled') continue
+    if (b.payment_status !== 'pending' && b.payment_status !== 'paid') continue
+    participantsBySession.set(b.session_id, (participantsBySession.get(b.session_id) || 0) + b.participants)
+  }
+
   const now = new Date()
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const monthKeyOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   const currentMonthKey = monthKeyOf(now)
 
@@ -1088,7 +1116,53 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {workshop.event_date ? (
+                        {sessionsByWorkshop.has(workshop.id) ? (() => {
+                          // 終わった日程と中止した日程は畳み、これからの日程だけ並べる（読むときに日付順にしてある）
+                          const sessions = sessionsByWorkshop.get(workshop.id) ?? []
+                          const upcoming = sessions.filter((s) => s.status !== 'cancelled' && s.event_date >= todayKey)
+                          const pastCount = sessions.filter((s) => s.status !== 'cancelled' && s.event_date < todayKey).length
+                          return (
+                            <div className="space-y-1">
+                              {upcoming.map((s) => {
+                                const max = s.max_participants ?? workshop.max_participants
+                                const manual = (s.manual_participants || 0) + (workshop.manual_participants || 0)
+                                const total = (participantsBySession.get(s.id) || 0) + manual
+                                const isFull = total >= max
+                                return (
+                                  <div key={s.id} className="text-sm flex items-center gap-3">
+                                    <span className="text-gray-900">
+                                      <Calendar className="w-3 h-3 inline mr-1 text-gray-400" />
+                                      {new Date(`${s.event_date}T00:00:00`).toLocaleDateString('ja-JP', {
+                                        month: 'numeric',
+                                        day: 'numeric',
+                                        weekday: 'short'
+                                      })}
+                                      {s.event_time && ` ${s.event_time.slice(0, 5)}`}
+                                    </span>
+                                    <span className={`font-semibold ${isFull ? 'text-red-600' : 'text-purple-700'}`}>
+                                      {total}/{max}名{isFull && ' 満席'}
+                                    </span>
+                                    {manual > 0 && (
+                                      <span className="text-xs text-orange-600">手動+{manual}</span>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                              {upcoming.length === 0 && (
+                                <div className="text-sm text-gray-400">予定している日程なし</div>
+                              )}
+                              {pastCount > 0 && (
+                                <div className="text-xs text-gray-400">終了 {pastCount}回</div>
+                              )}
+                              {workshop.location && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  <MapPin className="w-3 h-3 inline mr-1 text-gray-400" />
+                                  {workshop.location}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })() : workshop.event_date ? (
                           <div>
                             <div className="text-sm text-gray-900">
                               <Calendar className="w-3 h-3 inline mr-1 text-gray-400" />
@@ -1121,6 +1195,10 @@ export default function AdminDashboard() {
                         </div>
                         <div className="text-sm mt-1">
                           <Users className="w-3 h-3 inline mr-1 text-gray-400" />
+                          {sessionsByWorkshop.has(workshop.id) ? (
+                            // 日程ごとの人数は開催情報の列に出す。ここは1回あたりの定員だけ
+                            <span className="text-xs text-gray-500">最大{workshop.max_participants}名/回</span>
+                          ) : (<>
                           {(() => {
                             const booked =
                               (participantsByWorkshop.get(workshop.id) || 0) +
@@ -1133,6 +1211,7 @@ export default function AdminDashboard() {
                             )
                           })()}
                           <span className="text-xs text-gray-500"> / 最大{workshop.max_participants}名</span>
+                          </>)}
                         </div>
                         <div className="text-xs text-gray-500">{workshop.duration}分</div>
                         {workshop.manual_participants && workshop.manual_participants > 0 && (
