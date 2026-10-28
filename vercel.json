@@ -19,6 +19,51 @@
       "source": "/workshops/category/family-ai3d-printer-original-work",
       "destination": "/workshops/category/ai3d-printer-original-work-workshop",
       "statusCode": 301
+    },
+    {
+      "source": "/blog/filament-dryer-recommended-2026",
+      "destination": "/blog/filament-dryer-comparison-2026",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/filament-dryer-vs-drybox-guide-2026",
+      "destination": "/blog/filament-dryer-comparison-2026",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/free-3d-model-sites-comparison-thingiverse-printables-makerworld-2026",
+      "destination": "/blog/makerworld-printables-thingiverse-free-3d-model-sites-comparison-2026",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/printables-vs-thingiverse-vs-makerworld-comparison-2026",
+      "destination": "/blog/makerworld-printables-thingiverse-free-3d-model-sites-comparison-2026",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/sla-resin-guide-2026",
+      "destination": "/blog/3d-printer-resin-comparison-guide-2026",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/sla-resin-types-guide",
+      "destination": "/blog/3d-printer-resin-comparison-guide-2026",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/next-gen-3d-printer-expo-osaka-2026-autumn-highlights",
+      "destination": "/blog/next-gen-3d-printer-expo-osaka-2026-guide",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/3d-printer-useful-items-10",
+      "destination": "/blog/3d-printer-useful-goods-20",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/orcaslicer-2-4-new-features-guide-2026",
+      "destination": "/blog/orcaslicer-2-4-guide-orca-cloud-zaa-profile-sync",
+      "statusCode": 301
     }
   ],
   "headers": [
