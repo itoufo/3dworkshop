@@ -8,7 +8,7 @@ import { MapPin, Clock, CircleDollarSign, Users, Calendar, Train, CheckCircle } 
 export const metadata: Metadata = {
   title: 'アルバイト募集（ワークショップ講師）東京・湯島',
   description:
-    '湯島駅徒歩1分の3Dプリンター体験スタジオ3DLabで、ワークショップ講師のアルバイトを募集しています。未経験可・週2日/1日4時間から・時給1,250円〜。',
+    '湯島駅徒歩1分の3Dプリンター体験スタジオ3DLabで、ワークショップ講師のアルバイトを募集しています。未経験可・週2日/1日4時間から・時給1,300円〜。',
 }
 
 export default function RecruitPage() {
@@ -65,7 +65,7 @@ export default function RecruitPage() {
                 </div>
                 <div className="border border-gray-200 rounded-2xl p-5 text-center">
                   <CircleDollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                  <p className="font-bold text-gray-900">時給1,250円〜</p>
+                  <p className="font-bold text-gray-900">時給1,300円〜</p>
                   <p className="text-sm text-gray-500 mt-1">交通費支給</p>
                 </div>
               </div>
@@ -163,7 +163,7 @@ export default function RecruitPage() {
                   <CircleDollarSign className="w-5 h-5 text-purple-600 mr-3 mt-0.5" />
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">給与</h3>
-                    <p className="text-2xl font-bold text-gray-900">時給 1,250円〜</p>
+                    <p className="text-2xl font-bold text-gray-900">時給 1,300円〜</p>
                     <p className="text-sm text-gray-500 mt-1">交通費支給（上限あり）・昇給あり</p>
                   </div>
                 </div>
