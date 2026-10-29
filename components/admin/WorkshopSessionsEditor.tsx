@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { adminRows } from '@/lib/admin-rows-client'
 import { deleteAdminRecord } from '@/lib/admin-delete-client'
 import { WorkshopSession } from '@/types'
-import { Plus, Trash2, Calendar, Clock, Save, X, BellRing, BellOff, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Calendar, Clock, Save, X, BellRing, BellOff, Loader2, Copy } from 'lucide-react'
 import { fetchNotifiedScheduleKeys, notifyWorkshopSchedule } from '@/lib/notify-schedule'
 import { scheduleDedupeKey } from '@/lib/workshop-notification'
 
@@ -160,6 +160,8 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
     return <p className="text-sm text-gray-500">セッションを読み込み中...</p>
   }
 
+  const hasLiveSession = sessions.some((s) => s.status !== 'cancelled')
+
   return (
     <div className="space-y-3">
       {sessions.length === 0 && !adding && (
@@ -290,6 +292,25 @@ export default function WorkshopSessionsEditor({ workshopId }: Props) {
               キャンセル
             </button>
           </div>
+        </div>
+      ) : hasLiveSession ? (
+        // 1ワークショップ1日程が既定。別の日程はこの内容をコピーした別のワークショップとして作る
+        // （公開ページで1枠に複数の日程が並ばず、他のワークショップと同じ見え方になる）
+        <div className="space-y-2">
+          <a
+            href={`/admin/workshops/new?from_workshop=${workshopId}`}
+            className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-600 hover:border-indigo-500 hover:text-indigo-600 transition-colors flex items-center justify-center"
+          >
+            <Copy className="w-4 h-4 mr-1" />
+            この内容をコピーして別の日程を作る
+          </a>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="block mx-auto text-xs text-gray-400 hover:text-gray-600 underline"
+          >
+            このワークショップに日程を足す（1つの枠に複数の日程を並べる）
+          </button>
         </div>
       ) : (
         <button
