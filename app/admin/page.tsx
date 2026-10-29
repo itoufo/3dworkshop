@@ -392,6 +392,28 @@ export default function AdminDashboard() {
 
   const now = new Date()
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  // ワークショップ一覧は開催日順。これからの回を近い順に並べ、そのあとに終わった回を新しい順、
+  // 最後に日程のないもの。日付は日程（workshop_sessions）を優先し、無ければ workshops 側の開催日を使う
+  const sortedWorkshops = (() => {
+    const keyed = workshops.map((w) => {
+      const dates = (sessionsByWorkshop.get(w.id) ?? [])
+        .filter((s) => s.status !== 'cancelled')
+        .map((s) => `${s.event_date} ${s.event_time ?? ''}`)
+      if (dates.length === 0 && w.event_date) dates.push(`${w.event_date} ${w.event_time ?? ''}`)
+      dates.sort()
+      const upcoming = dates.find((d) => d.slice(0, 10) >= todayKey)
+      if (upcoming) return { w, group: 0, key: upcoming }
+      if (dates.length > 0) return { w, group: 1, key: dates[dates.length - 1] }
+      return { w, group: 2, key: '' }
+    })
+    keyed.sort((a, b) => {
+      if (a.group !== b.group) return a.group - b.group
+      if (a.group === 0) return a.key.localeCompare(b.key)
+      if (a.group === 1) return b.key.localeCompare(a.key)
+      return 0
+    })
+    return keyed.map((k) => k.w)
+  })()
   const monthKeyOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   const currentMonthKey = monthKeyOf(now)
 
@@ -1080,7 +1102,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {workshops.map((workshop) => (
+                  {sortedWorkshops.map((workshop) => (
                     <tr key={workshop.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center">

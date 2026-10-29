@@ -49,6 +49,9 @@ export default function NewWorkshopPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromCategory = searchParams.get('from_category')
+  // 日程追加：このワークショップの内容をコピーして、別の日程のワークショップを作る
+  const fromWorkshop = searchParams.get('from_workshop')
+  const isAddingSchedule = Boolean(fromCategory || fromWorkshop)
 
   const [workshop, setWorkshop] = useState({
     title: '',
@@ -154,7 +157,9 @@ export default function NewWorkshopPage() {
       const options = list || []
       setSourceWorkshops(options)
 
-      if (fromCategory) {
+      if (fromWorkshop && options.some(ws => ws.id === fromWorkshop)) {
+        await applySource(fromWorkshop)
+      } else if (fromCategory) {
         // 日程追加：既定はそのカテゴリの直近イベント。あとから選び直せる
         setWorkshop(prev => ({ ...prev, category_id: fromCategory }))
         const defaultSource = options.find(ws => ws.category_id === fromCategory)
@@ -166,7 +171,7 @@ export default function NewWorkshopPage() {
 
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromCategory])
+  }, [fromCategory, fromWorkshop])
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -325,7 +330,7 @@ export default function NewWorkshopPage() {
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
           <h2 className="text-2xl font-bold text-white">3DLab 新規ワークショップ作成</h2>
           <p className="text-white/80 mt-1">
-            {fromCategory ? '日程追加：コピー元を選び、日時を設定して保存してください' : '新しいワークショップの情報を入力してください'}
+            {isAddingSchedule ? '日程追加：コピー元を選び、日時を設定して保存してください' : '新しいワークショップの情報を入力してください'}
           </p>
         </div>
 
@@ -687,7 +692,7 @@ export default function NewWorkshopPage() {
                 開催情報
               </h3>
 
-              {fromCategory && (
+              {isAddingSchedule && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800">日程追加モード：開催日と開始時刻を設定してください。他の内容は前回のワークショップからコピーされています。</p>
                 </div>
@@ -695,7 +700,7 @@ export default function NewWorkshopPage() {
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
                 <p className="text-xs text-amber-800">
-                  💡 開催日・時刻は任意です。空のまま保存すると「開催リクエスト受付中」状態のワークショップになり、編集画面から複数日程を追加できます。
+                  💡 開催日・時刻は任意です。空のまま保存すると「開催リクエスト受付中」状態のワークショップになります。1つのワークショップには1つの日程を入れ、別の日程は「日程追加」で別のワークショップとして作ります。
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

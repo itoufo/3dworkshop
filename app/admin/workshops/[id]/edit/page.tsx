@@ -850,7 +850,7 @@ export default function EditWorkshop() {
               <h2 className="text-xl font-bold text-gray-900">開催日程セッション</h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              このワークショップの開催日を複数登録できます。日程未登録の場合、ユーザーには「開催リクエスト受付中」として表示されます。
+              1つのワークショップに1つの日程を登録します。別の日程は「この内容をコピーして別の日程を作る」から別のワークショップとして作ってください。日程未登録の場合、ユーザーには「開催リクエスト受付中」として表示されます。
             </p>
             <WorkshopSessionsEditor workshopId={params.id as string} />
           </div>
